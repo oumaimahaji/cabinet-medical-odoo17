@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_cabinet_bordereau" model="ir.sequence">
+        <field name="name">Bordereau CNAM Cabinet Médical</field>
+        <field name="code">cabinet.bordereau</field>
+        <field name="prefix">BORD/%(year)s/%(month)s/</field>
+        <field name="padding">3</field>
+        <field name="number_next">1</field>
+        <field name="number_increment">1</field>
+    </record>
+</odoo>

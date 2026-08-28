@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.cabinet.medical</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="100"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Cabinet Médical" string="Cabinet Médical" name="cabinet_medical" groups="cabinet_medical.group_medecin,cabinet_medical.group_secretaire">
+                    <div id="cabinet_medical_block">
+                        <block title="Paramètres du Cabinet" name="cabinet_medical_setting_container">
+                            <setting id="cabinet_nom_setting" string="Nom du cabinet" help="Saisir le nom du cabinet pour les impressions">
+                                <field name="cabinet_nom"/>
+                            </setting>
+                            <setting id="cabinet_adresse_setting" string="Adresse" help="Saisir l'adresse du cabinet">
+                                <field name="cabinet_adresse"/>
+                            </setting>
+                            <setting id="cabinet_telephone_setting" string="Téléphone" help="Saisir le numéro de téléphone">
+                                <field name="cabinet_telephone"/>
+                            </setting>
+                            <setting id="work_days_setting" string="Jours de travail" help="0=Lundi, 6=Dimanche (séparés par des virgules)">
+                                <field name="work_days"/>
+                            </setting>
+                            <setting id="heures_travail_setting" string="Heures de travail" help="Heure de début et de fin (ex: 8.0 et 17.0)">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="heure_debut" class="col-lg-3 o_light_label"/>
+                                        <field name="heure_debut" widget="float_time"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="heure_fin" class="col-lg-3 o_light_label"/>
+                                        <field name="heure_fin" widget="float_time"/>
+                                    </div>
+                                </div>
+                            </setting>
+                            <setting id="limites_rdv_setting" string="Limites de rendez-vous" help="Nombre maximum de RDV par jour">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="max_rdv_normal" class="col-lg-5 o_light_label"/>
+                                        <field name="max_rdv_normal"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="max_rdv_urgence" class="col-lg-5 o_light_label"/>
+                                        <field name="max_rdv_urgence"/>
+                                    </div>
+                                </div>
+                            </setting>
+                            <setting id="cnam_actif_setting" string="Gestion CNAM" help="Activer ou désactiver la facturation CNAM pour le cabinet">
+                                <field name="cnam_actif"/>
+                            </setting>
+                            <setting id="claude_api_key_setting" string="IA : Clé API Anthropic (Claude)" help="Clé API pour générer les insights intelligents du tableau de bord.">
+                                <field name="claude_api_key" password="True"/>
+                            </setting>
+                            <setting id="medecin_traitant_setting" string="Médecin Traitant" help="Informations légales du médecin" groups="cabinet_medical.group_medecin">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="medecin_nom" class="col-lg-5 o_light_label"/>
+                                        <field name="medecin_nom"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="medecin_inpe" class="col-lg-5 o_light_label"/>
+                                        <field name="medecin_inpe"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="medecin_code_convention" class="col-lg-5 o_light_label"/>
+                                        <field name="medecin_code_convention"/>
+                                    </div>
+                                </div>
+                            </setting>
+                            <setting id="taux_cnam_setting" string="Taux CNAM par Type d'Acte" help="Taux de remboursement CNAM selon le type d'acte (réalité tunisienne 2025)" groups="cabinet_medical.group_medecin">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="cnam_taux_consultation" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_consultation"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="cnam_taux_acte_technique" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_acte_technique"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="cnam_taux_biologie" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_biologie"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="cnam_taux_radiologie" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_radiologie"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="cnam_taux_dentaire" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_dentaire"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="cnam_taux_remboursement" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_remboursement"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="cnam_taux_apci" class="col-lg-5 o_light_label"/>
+                                        <field name="cnam_taux_apci"/>
+                                    </div>
+                                </div>
+                            </setting>
+                        </block>
+                    </div>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_cabinet_medical_configuration" model="ir.actions.act_window">
+        <field name="name">Paramètres du cabinet</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module' : 'cabinet_medical', 'bin_size': False}</field>
+    </record>
+</odoo>
+
+

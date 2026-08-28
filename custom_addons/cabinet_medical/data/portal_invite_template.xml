@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_portal_welcome_custom" model="mail.template">
+        <field name="name">Portail : Invitation Patient (Personnalisée)</field>
+        <field name="model_id" ref="portal.model_portal_wizard_user"/>
+        <field name="subject">Activation de votre espace patient - {{ object.user_id.company_id.name }}</field>
+        <field name="email_to">{{ object.user_id.email_normalized }}</field>
+        <field name="body_html" type="html">
+<table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #F1F1F1; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;"><tr><td align="center">
+<table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: white; color: #454748; border-collapse:separate;">
+<tbody>
+    <!-- HEADER -->
+    <tr>
+        <td align="center" style="min-width: 590px;">
+            <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                <tr><td valign="middle">
+                    <span style="font-size: 10px;">Votre Espace Patient</span><br/>
+                    <span style="font-size: 20px; font-weight: bold;" t-out="object.user_id.name or ''">Patient</span>
+                </td><td valign="middle" align="right">
+                    <img src="cid:logo_cabinet" style="padding: 0px; margin: 0px; height: 60px; width: auto;" t-att-alt="object.user_id.company_id.name"/>
+                </td></tr>
+                <tr><td colspan="2" style="text-align:center;">
+                  <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;"/>
+                </td></tr>
+            </table>
+        </td>
+    </tr>
+    <!-- CONTENT -->
+    <tr>
+        <td align="center" style="min-width: 590px;">
+            <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                <tr><td valign="top" style="font-size: 13px;">
+                    <div>
+                        Bonjour <t t-out="object.user_id.name or ''">Patient</t>,<br/><br/>
+                        Bienvenue sur le portail en ligne du <strong><t t-out="object.user_id.company_id.name">Cabinet Médical</t></strong> !<br/><br/>
+                        Votre espace personnel sécurisé a été créé. Il vous permet de :<br/>
+                        <ul>
+                            <li>Consulter et planifier vos <strong>rendez-vous</strong> en temps réel.</li>
+                            <li>Accéder à vos <strong>ordonnances</strong> de manière sécurisée.</li>
+                            <li>Consulter l'historique de vos <strong>facturations</strong> et reçus de soins.</li>
+                        </ul>
+                        <br/>
+                        Votre identifiant de connexion est votre adresse email : <strong><t t-out="object.user_id.login">patient@email.com</t></strong><br/><br/>
+                        Veuillez cliquer sur le bouton ci-dessous pour choisir votre mot de passe et activer votre compte :
+                        <div style="margin: 24px 0px 24px 0px; text-align: center;">
+                            <a t-att-href="object.user_id.signup_url" style="display: inline-block; padding: 12px 24px; text-decoration: none; font-size: 13px; font-weight: bold; background-color: #1a3a6e; color: #fff; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);">
+                                Activer mon compte
+                            </a>
+                        </div>
+                        <t t-out="object.wizard_id.welcome_message or ''"></t>
+                    </div>
+                </td></tr>
+                <tr><td style="text-align:center;">
+                  <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                </td></tr>
+            </table>
+        </td>
+    </tr>
+    <!-- FOOTER -->
+    <tr>
+        <td align="center" style="min-width: 590px;">
+            <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                <tr><td valign="middle" align="left">
+                    <t t-out="object.user_id.company_id.name or ''">Cabinet Médical</t>
+                </td></tr>
+                <tr><td valign="middle" align="left" style="opacity: 0.7;">
+                    Tél : <t t-out="object.user_id.company_id.phone or ''"/>
+                    <t t-if="object.user_id.company_id.email">
+                        | <a t-attf-href="mailto:{{ object.user_id.company_id.email }}" style="text-decoration:none; color: #454748;" t-out="object.user_id.company_id.email or ''"></a>
+                    </t>
+                </td></tr>
+            </table>
+        </td>
+    </tr>
+</tbody>
+</table>
+</td></tr>
+</table>
+        </field>
+        <field name="lang">{{ object.user_id.lang }}</field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>

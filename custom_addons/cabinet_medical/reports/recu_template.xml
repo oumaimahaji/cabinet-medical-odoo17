@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action Report Reçu -->
+    <record id="action_report_recu" model="ir.actions.report">
+        <field name="name">Reçu de Paiement</field>
+        <field name="model">cabinet.facture</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">cabinet_medical.report_recu_template</field>
+        <field name="report_file">cabinet_medical.report_recu_template</field>
+        <field name="print_report_name">'Reçu - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_cabinet_facture"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Template QWeb Reçu -->
+    <template id="report_recu_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page text-center" style="border: 2px solid #ccc; padding: 50px; margin-top: 50px; border-radius: 10px;">
+                        <h1>REÇU DE PAIEMENT</h1>
+                        <h3>N° <span t-field="doc.name"/></h3>
+                        <br/><br/>
+                        <p style="font-size: 18px;">
+                            Je soussigné(e), certifie avoir reçu de <strong><span t-field="doc.patient_id.name"/></strong> 
+                            la somme de <strong><span t-field="doc.montant_paye_cabinet"/> DT</strong> 
+                            pour des honoraires de consultation du <span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/>.
+                        </p>
+                        <br/><br/>
+                        <div class="row">
+                            <div class="col-6 text-left">
+                                <strong>Date d'émission : </strong><span t-field="doc.date_facture" t-options='{"widget": "date"}'/>
+                            </div>
+                            <div class="col-6 text-right">
+                                <strong>Cachet et Signature</strong>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

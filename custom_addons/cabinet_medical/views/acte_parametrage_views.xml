@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Tree -->
+    <record id="view_acte_parametrage_tree" model="ir.ui.view">
+        <field name="name">cabinet.acte.parametrage.tree</field>
+        <field name="model">cabinet.acte.parametrage</field>
+        <field name="arch" type="xml">
+            <tree string="Tarifs CNAM">
+                <field name="name" string="Nom de l'acte"/>
+                <field name="code_cnam"/>
+                <field name="type_acte"/>
+                <field name="tarif" string="Tarif conventionné (DT)"/>
+                <field name="taux_cnam" string="Taux CNAM (%)"/>
+                <field name="tarif_cnam" string="Part CNAM (DT)"/>
+                <field name="part_patient" string="Ticket modérateur (DT)"/>
+                <field name="is_remboursable" widget="boolean_toggle"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Form -->
+    <record id="view_acte_parametrage_form" model="ir.ui.view">
+        <field name="name">cabinet.acte.parametrage.form</field>
+        <field name="model">cabinet.acte.parametrage</field>
+        <field name="arch" type="xml">
+            <form string="Tarif CNAM">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nom de l'acte..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code_cnam"/>
+                            <field name="type_acte"/>
+                            <field name="is_remboursable"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Tarification CNAM">
+                            <field name="tarif" widget="monetary" options="{'currency_field': 'currency_id'}"
+                                   string="Tarif conventionné (DT)"/>
+                            <field name="taux_cnam" readonly="1" string="Taux CNAM (%)"/>
+                            <field name="tarif_cnam" readonly="1" string="Part CNAM (DT)"
+                                   decoration-success="tarif_cnam &gt; 0"/>
+                            <field name="part_patient" readonly="1" string="Ticket modérateur patient (DT)"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_acte_parametrage" model="ir.actions.act_window">
+        <field name="name">Tarifs CNAM par acte</field>
+        <field name="res_model">cabinet.acte.parametrage</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer un nouveau tarif CNAM
+            </p>
+            <p>
+                Configurez ici les tarifs conventionnés des actes pris en charge par la CNAM.
+            </p>
+        </field>
+    </record>
+</odoo>

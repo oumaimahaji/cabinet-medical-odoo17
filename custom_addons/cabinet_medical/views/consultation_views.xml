@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue liste Consultations pour Secrétaire -->
+    <record id="view_consultation_list" model="ir.ui.view">
+        <field name="name">cabinet.consultation.list</field>
+        <field name="model">cabinet.consultation</field>
+        <field name="arch" type="xml">
+            <tree limit="10" create="0" export_xlsx="1">
+                <field name="state" column_invisible="True"/>
+                <field name="has_facture" column_invisible="True"/>
+                <field name="date_consultation"/>
+                <field name="patient_id" decoration-bf="1"/>
+                <field name="total_actes" widget="badge" decoration-success="total_actes &gt; 0"/>
+                <button name="action_generer_facture" string="Générer Facture" type="object" class="btn-primary" icon="fa-money" invisible="state != 'done' or has_facture" groups="cabinet_medical.group_secretaire"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue liste Consultations pour Médecin -->
+    <record id="view_consultation_list_medecin" model="ir.ui.view">
+        <field name="name">cabinet.consultation.list.medecin</field>
+        <field name="model">cabinet.consultation</field>
+        <field name="arch" type="xml">
+            <tree limit="10" create="0" export_xlsx="1">
+                <field name="date_consultation"/>
+                <field name="patient_id" decoration-bf="1"/>
+                <field name="motif"/>
+                <field name="total_actes" widget="badge" decoration-success="total_actes &gt; 0"/>
+                <field name="diagnostic"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue formulaire Consultation -->
+    <record id="view_consultation_form" model="ir.ui.view">
+        <field name="name">cabinet.consultation.form</field>
+        <field name="model">cabinet.consultation</field>
+        <field name="arch" type="xml">
+            <form string="Consultation" create="0">
+                <header>
+                    <button name="action_terminer" string="Terminer la consultation" type="object" class="btn-success" invisible="state == 'done'" groups="cabinet_medical.group_medecin"/>
+                   
+                    <button name="action_planifier_suivi" string="Planifier un suivi" type="object" class="btn-primary" invisible="state != 'done'" groups="cabinet_medical.group_medecin"/>
+                    <button name="action_generer_facture" string="Générer Facture" type="object" class="btn-warning" icon="fa-money" invisible="state != 'done' or has_facture" groups="cabinet_medical.group_secretaire"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <field name="patient_id" invisible="1"/>
+                    <field name="has_facture" invisible="1"/>
+                    <widget name="web_ribbon" title="Terminée" bg_color="text-bg-success" invisible="state != 'done'"/>
+                    <div class="consultation-card">
+                        <div class="oe_title">
+                            <h1>
+                                <i class="fa fa-stethoscope text-primary mr-3" style="color: #017e84; margin-right: 15px;" title="Consultation"/>
+                                <span>Consultation — </span>
+                                <field name="nom_patient" readonly="1"/>
+                            </h1>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h3>
+
+                                        <i class="fa fa-calendar-alt mr-1" title="Date de consultation"/> Consultation du <field name="date_consultation" widget="date" readonly="1"/>
+                                    </h3>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <!-- Badge pour indiquer si c'est la première fois ou un suivi -->
+                                    <div class="badge badge-info">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alertes Médicales (provenant du patient) -->
+                        <div class="alert alert-danger" role="alert" invisible="not allergies and not antecedents" style="margin-top: 15px; margin-bottom: 25px; border-left: 5px solid #dc3545;">
+                            <h4 class="alert-heading" style="margin-bottom: 10px;" role="status"><i class="fa fa-exclamation-triangle mr-2" title="Alerte"/> Alertes Vitales du Patient</h4>
+                            <div invisible="not allergies" style="margin-bottom: 5px;">
+                                <strong>Allergies :</strong> <field name="allergies" readonly="1"/>
+                            </div>
+                            <div invisible="not antecedents">
+                                <strong>Antécédents :</strong> <field name="antecedents" readonly="1"/>
+                            </div>
+                        </div>
+
+                        <!-- Alertes Droits Assurance Expirés -->
+                        <field name="is_cnam_expired" invisible="1"/>
+                        <field name="is_apci_expired" invisible="1"/>
+                        <div class="alert alert-warning" role="alert" invisible="not is_cnam_expired and not is_apci_expired" style="margin-bottom: 25px; border-left: 5px solid #ffc107;">
+                            <h4 class="alert-heading" role="status"><i class="fa fa-info-circle mr-2" title="Attention"/> Droits d'assurance expirés</h4>
+                            <div invisible="not is_cnam_expired" class="d-flex align-items-center justify-content-between mt-2">
+                                <div><strong>CNAM :</strong> La carte de l'assuré est expirée. Facturation CNAM non recommandée.</div>
+                                <button name="action_ia_conseil_cnam" type="object" string="✨ Conseil IA" class="btn btn-sm btn-outline-dark shadow-sm"/>
+                            </div>
+                            <div invisible="not is_apci_expired" class="d-flex align-items-center justify-content-between mt-2">
+                                <div><strong>APCI :</strong> La décision de prise en charge est arrivée à échéance.</div>
+                                <button name="action_ia_conseil_apci" type="object" string="✨ Conseil IA" class="btn btn-sm btn-outline-dark shadow-sm"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="o_group">
+                                <h4><i class="fa fa-info-circle mr-2" title="Information"/>Informations générales</h4>
+                                <group>
+                                    <field name="currency_id" invisible="1"/>
+                                    <field name="total_actes" readonly="1" widget="badge" string="Total actes"/>
+                                    <field name="total_montant_actes" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1" string="Total actes (DT)"/>
+                                </group>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="o_group">
+                                <h4><i class="fa fa-bar-chart mr-2" title="Statistiques"/>Statistiques</h4>
+                                <div class="oe_button_box">
+                                    <button class="oe_stat_button" icon="fa-stethoscope">
+                                        <field name="total_actes" widget="statinfo" string="Actes"/>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <notebook>
+                        <!-- US13 - Motif de consultation -->
+                        <page string=" Motif de consultation" name="motif">
+                            <div class="consultation-card">
+                                <h4><i class="fa fa-clipboard mr-2" title="Motif"/>Motif de la consultation</h4>
+                                <field name="motif" nolabel="1" placeholder="Décrivez le motif de la consultation..." readonly="state == 'done'"/>
+                            </div>
+                        </page>
+
+                        <!-- US14 - Actes médicaux -->
+                        <page string="🩺 Actes médicaux" name="actes">
+                            <div class="consultation-card actes-table-wrapper">
+                                <h4><i class="fa fa-procedures mr-2" title="Actes médicaux"></i>Actes médicaux effectués</h4>
+                                <field name="acte_ids" readonly="state == 'done'" context="{'active_test': False}" class="o_actes_medicaux_field">
+                                    <tree editable="bottom" decoration-success="montant &gt; 0" decoration-muted="not active" limit="10" class="o_actes_medicaux_table">
+                                        <field name="active" column_invisible="True"/>
+                                        <field name="currency_id" column_invisible="1"/>
+                                        <field name="parametrage_id" string="Acte Conventionné" options="{'no_create': True}"/>
+                                        <field name="type_acte" string="Catégorie"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="date_acte" widget="datetime" string="Date"/>
+                                        <field name="code_acte" string="Code"/>
+                                        <field name="montant" widget="monetary" string="Montant (DT)"/>
+                                        <button name="action_archive" type="object" icon="fa-archive" title="Archiver" invisible="not active"/>
+                                        <button name="action_unarchive" type="object" icon="fa-undo" title="Restaurer" invisible="active"/>
+                                    </tree>
+                                <form>
+                                        <sheet>
+                                            <group>
+                                                <field name="parametrage_id" placeholder="Rechercher un acte configuré..." options="{'no_create': True}"/>
+                                                <field name="type_acte" widget="radio"/>
+                                                <field name="description" placeholder="Description détaillée de l'acte..."/>
+                                                <field name="date_acte" widget="datetime"/>
+                                                <field name="code_acte" placeholder="Code de l'acte..."/>
+                                                <field name="montant" widget="monetary"/>
+                                            </group>
+                                        </sheet>
+                                    </form>
+                                </field>
+                            </div>
+                        </page>
+
+                        <!-- US15 - Diagnostic et notes -->
+                        <page string="📋 Diagnostic et notes" name="diagnostic">
+                            <div class="consultation-card">
+                                <h4><i class="fa fa-notes-medical mr-2" title="Diagnostic"/>Diagnostic et notes médicales</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5><i class="fa fa-diagnoses mr-1" title="Diagnostic"/>Diagnostic</h5>
+                                        <field name="diagnostic" nolabel="1" placeholder="Diagnostic principal..." readonly="state == 'done'"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5><i class="fa fa-file-medical mr-1" title="Notes"/>Notes médicales</h5>
+                                        <field name="notes_medicales" nolabel="1" placeholder="Notes complémentaires..." readonly="state == 'done'"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </page>
+
+                        <!-- US16 - Prescriptions/Ordonnances -->
+                        <page string="💊 Prescriptions/Ordonnances" name="prescriptions">
+                            <div class="consultation-card">
+                                <h4><i class="fa fa-prescription-bottle mr-2" title="Ordonnances"/>Ordonnances et prescriptions</h4>
+                                <field name="prescription_ids" context="{'default_consultation_id': id, 'default_patient_id': patient_id}">
+                                    <tree decoration-info="date_prescription == context_today()" limit="10">
+                                        <control>
+                                            <create string="Nouvelle ordonnance"/>
+                                        </control>
+                                        <field name="active" column_invisible="True"/>
+                                        <field name="date_prescription" widget="date"/>
+                                        <field name="ordonnance_line_ids" widget="many2many_tags"/>
+                                        <field name="state" widget="badge" decoration-success="state == 'signed'" decoration-muted="state == 'draft'" string="Statut"/>
+                                        <field name="instructions" placeholder="Instructions générales..." optional="hide"/>
+                                        <button name="action_open_sign_wizard" string="✍️ Signer" type="object" icon="fa-pencil" class="btn-success btn-sm" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>
+                                        <button name="action_imprimer_ordonnance" string="Imprimer" type="object" icon="fa-print" class="btn-secondary"/>
+                                        <button name="action_archive_prescription" string="Archiver" type="object" icon="fa-archive" class="btn-warning" invisible="not active" groups="cabinet_medical.group_medecin"/>
+                                    </tree>
+                                    <form>
+                                        <header>
+                                            <button name="action_open_sign_wizard" string="✍️ Signer l'ordonnance" type="object" class="btn-success" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>
+                                            <button name="action_imprimer_ordonnance" string="Imprimer" type="object" class="btn-secondary" icon="fa-print"/>
+                                            <button name="action_archive_prescription" string="Archiver" type="object" class="btn-warning" invisible="not active" groups="cabinet_medical.group_medecin"/>
+                                        </header>
+                                        <sheet>
+                                            <field name="active" invisible="1"/>
+                                            <field name="is_validated" invisible="1"/>
+                                            <field name="is_ia_temporary_draft" invisible="1"/>
+                                            <field name="state" invisible="1"/>
+
+                                            <!-- Bannière ordonnance signée -->
+                                            <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3 rounded-3" role="alert" invisible="state != 'signed'" style="border-left: 5px solid #28a745; background-color: #f0fdf4;">
+                                                <div>
+                                                    <h5 class="alert-heading fw-bold mb-1 text-success">
+                                                        <i class="fa fa-check-circle me-2"/> ✅ Ordonnance signée par le médecin
+                                                    </h5>
+                                                    <div class="text-dark" style="font-size: 0.9rem;">
+                                                        <span><strong>Signataire :</strong> <field name="medecin_signataire_id" readonly="1" options="{'no_open': True}"/></span>
+                                                        <span class="ms-3"><strong>Signée le :</strong> <field name="date_signature" readonly="1"/></span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-success px-3 py-2 text-uppercase fw-bold"><i class="fa fa-lock me-1"/> Verrouillée</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Alertes IA -->
+                                            <field name="ia_statut" invisible="1"/>
+                                            <field name="ia_verified_by_user" invisible="1"/>
+                                            <div class="alert alert-danger" role="alert" invisible="ia_statut != 'allergy_risk' or not ia_verified_by_user" style="margin-bottom: 15px; border-left: 5px solid #dc3545;">
+                                                <h4 class="alert-heading" role="status"><i class="fa fa-exclamation-triangle mr-2" title="Alerte"/> ⚠️ Alerte allergique détectée — Vérification multi-niveaux</h4>
+                                                <field name="ia_message" readonly="1"/>
+                                            </div>
+                                            <div class="alert alert-success" role="alert" invisible="ia_statut != 'safe' or not ia_verified_by_user" style="margin-bottom: 15px; border-left: 5px solid #28a745;">
+                                                <h4 class="alert-heading" role="status"><i class="fa fa-check-circle mr-2" title="OK"/> Aucun Risque Allergique (IA)</h4>
+                                                <field name="ia_message" readonly="1"/>
+                                            </div>
+                                            
+                                            <div class="patient-header d-flex justify-content-between align-items-center">
+                                                <h3>
+                                                    <i class="medical-icon fa fa-prescription-bottle" title="Ordonnance"/>
+                                                    Ordonnance
+                                                </h3>
+                                                <button name="action_verifier_ia" string="🤖 Vérifier avec l'IA" type="object" class="btn btn-outline-info btn-sm" invisible="state == 'signed'"/>
+                                            </div>
+                                            <group>
+                                                <field name="consultation_id" invisible="1"/>
+                                                <field name="patient_id" invisible="1"/>
+                                                <field name="date_prescription" widget="date" readonly="state == 'signed'"/>
+                                            </group>
+                                            <notebook>
+                                                <page string="Médicaments">
+                                                    <h4><i class="fa fa-pills mr-2" title="Médicaments"/>Médicaments prescrits</h4>
+                                                    <field name="ordonnance_line_ids" context="{'active_test': False}" readonly="state == 'signed'">
+                                                        <tree editable="bottom" limit="10" decoration-muted="not active">
+                                                            <field name="active" column_invisible="True"/>
+                                                            <field name="sequence" widget="handle"/>
+                                                            <button name="action_archive" type="object" icon="fa-archive" title="Archiver" invisible="not active"/>
+                                                            <button name="action_unarchive" type="object" icon="fa-undo" title="Restaurer" invisible="active"/>
+                                                            <field name="medicament" placeholder="Nom du médicament..."/>
+                                                            <field name="dosage" placeholder="Dosage..."/>
+                                                            <field name="posologie" placeholder="Posologie..."/>
+                                                            <field name="duree" placeholder="Durée..."/>
+                                                            <field name="instructions_speciales" placeholder="Instructions spéciales..."/>
+                                                        </tree>
+                                                        <form>
+                                                            <sheet>
+                                                                <group>
+                                                                    <field name="sequence"/>
+                                                                    <field name="medicament" placeholder="Nom du médicament..."/>
+                                                                    <field name="dosage" placeholder="Ex: 500mg, 1g..."/>
+                                                                    <field name="posologie" placeholder="Ex: 1 comprimé matin et soir..."/>
+                                                                    <field name="duree" placeholder="Ex: 7 jours, 1 mois..."/>
+                                                                    <field name="instructions_speciales" placeholder="Instructions spéciales..."/>
+                                                                </group>
+                                                            </sheet>
+                                                        </form>
+                                                    </field>
+                                                </page>
+                                                <page string="Instructions générales">
+                                                    <h4><i class="fa fa-info-circle mr-2" title="Instructions"/>Instructions générales</h4>
+                                                    <field name="instructions" nolabel="1" placeholder="Instructions générales pour le patient..." readonly="state == 'signed'"/>
+                                                </page>
+                                            </notebook>
+                                        </sheet>
+                                        <footer>
+                                            <button string="✍️ Signer l'ordonnance" name="action_open_sign_wizard" type="object" class="btn-success" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>
+                                            <button string="💾 Enregistrer l'ordonnance" name="action_save_prescription" type="object" class="btn-primary" invisible="state == 'signed'" close="1"/>
+                                            <button string="✖ Fermer" special="cancel" class="btn-secondary" close="1"/>
+                                        </footer>
+                                    </form>
+                                </field>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue recherche Consultations -->
+    <record id="view_consultation_search" model="ir.ui.view">
+        <field name="name">cabinet.consultation.search</field>
+        <field name="model">cabinet.consultation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id"/>
+                <field name="motif"/>
+                <field name="diagnostic"/>
+                <filter string="Aujourd'hui" name="aujourd_hui" domain="[('date_consultation','&gt;=', context_today()), ('date_consultation','&lt;=', context_today())]"/>
+                <filter string="En cours" name="en_cours" domain="[('state','=','draft')]"/>
+                <filter string="Terminées" name="terminees" domain="[('state','=','done')]"/>
+                <separator/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Patient" name="group_patient" context="{'group_by':'patient_id'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by':'date_consultation:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action Consultations pour Médecin -->
+    <record id="action_consultation" model="ir.actions.act_window">
+        <field name="name">🩺 Liste des Consultations</field>
+        <field name="res_model">cabinet.consultation</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5,0,0),
+            (0,0,{'view_mode':'tree','view_id':ref('view_consultation_list_medecin')}),
+            (0,0,{'view_mode':'form','view_id':ref('view_consultation_form')})]"/>
+        <field name="search_view_id" ref="view_consultation_search"/>
+        <field name="context">{'search_default_en_cours': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Démarrez votre première consultation !
+            </p>
+        </field>
+    </record>
+
+    <!-- Action Consultations pour Secrétaire (lecture seule) -->
+    <record id="action_consultation_readonly" model="ir.actions.act_window">
+        <field name="name">🩺 Liste des Consultations</field>
+        <field name="res_model">cabinet.consultation</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5,0,0),
+            (0,0,{'view_mode':'tree','view_id':ref('view_consultation_list')}),
+            (0,0,{'view_mode':'form','view_id':ref('view_consultation_form')})]"/>
+        <field name="search_view_id" ref="view_consultation_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune consultation pour le moment.
+            </p>
+        </field>
+    </record>
+
+</odoo>
+
+

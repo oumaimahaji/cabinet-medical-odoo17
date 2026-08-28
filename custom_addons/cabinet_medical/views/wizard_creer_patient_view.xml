@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue formulaire du wizard de création de dossier patient -->
+    <record id="view_wizard_creer_patient_form" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.creer.patient.form</field>
+        <field name="model">cabinet.rendezvous.creer.patient</field>
+        <field name="arch" type="xml">
+            <form string="Créer le dossier patient">
+                <sheet>
+
+                    <!-- En-tête d'information -->
+                    <div class="alert alert-info" role="alert" style="margin-bottom: 20px; border-left: 5px solid #2c5aa0;">
+                        <h4 class="alert-heading" role="status">
+                            <i class="fa fa-user-plus mr-2" title="Nouveau patient"/> Nouveau patient — Création du dossier complet
+                        </h4>
+                        <p style="margin-bottom: 0;">
+                            Remplissez les informations du patient à partir de sa carte CNAM et de ses déclarations.
+                            Le dossier sera automatiquement lié au rendez-vous.
+                        </p>
+                    </div>
+
+                    <!-- Champ caché rendez-vous -->
+                    <field name="rendezvous_id" invisible="1"/>
+
+                    <!-- Section : Identité -->
+                    <group string="Identité du patient" col="2">
+                        <group>
+                            <field name="name" placeholder="Nom complet…" required="1"/>
+                            <field name="genre"/>
+                            <field name="date_naissance" widget="date" placeholder="JJ/MM/AAAA"/>
+                        </group>
+                        <group>
+                            <field name="telephone" placeholder="8 chiffres (ex : 23456789)"/>
+                            <field name="cin" placeholder="8 chiffres"/>
+                            <field name="adresse" placeholder="Adresse complète…"/>
+                        </group>
+                    </group>
+
+                    <!-- Section : Alertes médicales -->
+                    <group string="Alertes médicales" col="2">
+                        <group>
+                            <field name="allergies"
+                                   placeholder="Ex : Pénicilline, Arachides…"
+                                   nolabel="0"/>
+                        </group>
+                        <group>
+                            <field name="antecedents"
+                                   placeholder="Ex : Diabète type 2, Asthme…"
+                                   nolabel="0"/>
+                        </group>
+                    </group>
+
+                    <!-- Section : CNAM -->
+                    <group string="Couverture CNAM">
+                        <group>
+                            <field name="is_cnam" widget="boolean_toggle"/>
+                            <field name="numero_cnam"
+                                   invisible="not is_cnam"
+                                   placeholder="Numéro CNAM…"/>
+                            <field name="regime_cnam"
+                                   invisible="not is_cnam"
+                                   placeholder="Sélectionner un régime…"/>
+                            <field name="filiere_cnam"
+                                   invisible="not is_cnam"
+                                   placeholder="Sélectionner une filière…"/>
+                            <field name="date_validite_cnam"
+                                   invisible="not is_cnam"
+                                   widget="date"/>
+                        </group>
+                        <group>
+                            <field name="is_apci"
+                                   invisible="not is_cnam"
+                                   widget="boolean_toggle"/>
+                            <field name="numero_decision_apci"
+                                   invisible="not is_apci or not is_cnam"
+                                   placeholder="Numéro de décision APCI…"/>
+
+                            <field name="date_fin_apci"
+                                   invisible="not is_apci or not is_cnam"
+                                   widget="date"/>
+                        </group>
+                    </group>
+
+                    <!-- Section : Assurance privée -->
+                    <group string="Assurance privée">
+                        <group>
+                            <field name="has_assurance" widget="boolean_toggle"/>
+                            <field name="assurance_id"
+                                   invisible="not has_assurance"
+                                   placeholder="Sélectionner la compagnie…"/>
+                            <field name="assurance_numero"
+                                   invisible="not has_assurance"
+                                   placeholder="Numéro d'affiliation…"/>
+                        </group>
+                    </group>
+
+                </sheet>
+
+                <!-- Pied de page avec boutons d'action -->
+                <footer>
+                    <button name="action_confirmer"
+                            string="Créer le dossier"
+                            type="object"
+                            class="btn-primary"
+                            icon="fa-check"/>
+                    <button name="action_annuler"
+                            string="Annuler"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>
+
+

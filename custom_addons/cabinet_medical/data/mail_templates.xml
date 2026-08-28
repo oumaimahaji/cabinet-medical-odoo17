@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template Email pour Rendez-vous Annulé -->
+    <record id="mail_template_rdv_annule" model="mail.template">
+        <field name="name">Rendez-vous : Annulation</field>
+        <field name="model_id" ref="cabinet_medical.model_cabinet_rendezvous"/>
+        <field name="subject">Annulation de votre rendez-vous - {{ object.env.company.name }}</field>
+        <field name="email_to">{{ object.patient_id.email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: sans-serif; font-size: 14px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                <!-- LOGO HEADER -->
+                <div style="background-color: #f0f4fb; padding: 20px; text-align: center; border-bottom: 1px solid #dde4f0;">
+                    <img src="cid:logo_cabinet"
+                         alt="Cabinet Médical" style="height: 70px; width: auto;"/>
+                </div>
+                <!-- CONTENT -->
+                <div style="padding: 24px;">
+                    <h3 style="color: #dc3545; margin-top: 0;">Votre rendez-vous a été annulé</h3>
+                    <p>Bonjour <t t-out="object.patient_id.name"/>,</p>
+                    <p>Nous vous informons que votre rendez-vous prévu le <strong><t t-out="object.date_fr"/></strong> à <strong><t t-out="object._format_float_time(object.heure)"/></strong> a été annulé.</p>
+                    <p>Pour planifier une nouvelle visite, vous pouvez contacter le secrétariat au <strong><t t-out="object.env.company.phone or 'notre numéro'"/></strong>.</p>
+                    <br/>
+                    <p style="margin-bottom: 0;">Cordialement,</p>
+                    <p style="margin-top: 5px; font-weight: bold;">L'équipe du cabinet <t t-out="object.env.company.name"/></p>
+                </div>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <!-- Template Email pour Rendez-vous Reporté -->
+    <record id="mail_template_rdv_reporte" model="mail.template">
+        <field name="name">Rendez-vous : Modification/Report</field>
+        <field name="model_id" ref="cabinet_medical.model_cabinet_rendezvous"/>
+        <field name="subject">Modification de votre rendez-vous - {{ object.env.company.name }}</field>
+        <field name="email_to">{{ object.patient_id.email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: sans-serif; font-size: 14px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                <!-- LOGO HEADER -->
+                <div style="background-color: #f0f4fb; padding: 20px; text-align: center; border-bottom: 1px solid #dde4f0;">
+                    <img src="cid:logo_cabinet"
+                         alt="Cabinet Médical" style="height: 70px; width: auto;"/>
+                </div>
+                <!-- CONTENT -->
+                <div style="padding: 24px;">
+                    <h3 style="color: #fd7e14; margin-top: 0;">Votre rendez-vous a été reporté</h3>
+                    <p>Bonjour <t t-out="object.patient_id.name"/>,</p>
+                    <p>Nous vous informons que votre rendez-vous a été reprogrammé :</p>
+                    <p style="background-color: #fcf8e3; border-left: 4px solid #f0ad4e; padding: 10px; font-size: 15px;">
+                        Nouvelle date : <strong><t t-out="object.date_fr"/></strong> à <strong><t t-out="object._format_float_time(object.heure)"/></strong>.
+                    </p>
+                    <p>Si cet horaire ne vous convient pas, veuillez contacter le secrétariat au <strong><t t-out="object.env.company.phone or 'notre numéro'"/></strong>.</p>
+                    <br/>
+                    <p style="margin-bottom: 0;">Cordialement,</p>
+                    <p style="margin-top: 5px; font-weight: bold;">L'équipe du cabinet <t t-out="object.env.company.name"/></p>
+                </div>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>

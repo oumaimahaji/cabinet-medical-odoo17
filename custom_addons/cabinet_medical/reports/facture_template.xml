@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action Report Facture -->
+    <record id="action_report_facture" model="ir.actions.report">
+        <field name="name">Facture Médicale</field>
+        <field name="model">cabinet.facture</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">cabinet_medical.report_facture_template</field>
+        <field name="report_file">cabinet_medical.report_facture_template</field>
+        <field name="print_report_name">'Facture - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_cabinet_facture"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Template QWeb Facture -->
+    <template id="report_facture_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="row">
+                            <div class="col-6">
+                                <h2>Facture <span t-field="doc.name"/></h2>
+                                <strong>Date : </strong><span t-field="doc.date_facture" t-options='{"widget": "date"}'/><br/>
+                                <strong>Consultation : </strong><span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/>
+                            </div>
+                            <div class="col-6 text-right">
+                                <strong>Patient : </strong><span t-field="doc.patient_id.name"/><br/>
+                                <strong>CIN : </strong><span t-field="doc.patient_id.cin"/><br/>
+                                <strong>Scénario appliqué : </strong><span t-field="doc.scenario"/>
+                            </div>
+                        </div>
+
+                        <br/><br/>
+                        <!-- Tableau détaillé des actes médicaux -->
+                        <table class="table table-sm o_main_table">
+                            <thead>
+                                <tr>
+                                    <th>Code Acte</th>
+                                    <th>Description de l'acte médical</th>
+                                    <th class="text-right">Montant (DT)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="doc.consultation_id.acte_ids">
+                                    <t t-foreach="doc.consultation_id.acte_ids" t-as="acte">
+                                        <tr>
+                                            <td><span t-field="acte.type_acte"/></td>
+                                            <td><span t-field="acte.description"/></td>
+                                            <td class="text-right"><span t-field="acte.montant"/></td>
+                                        </tr>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <tr>
+                                        <td><span>Consultation</span></td>
+                                        <td><span>Consultation médicale standard</span></td>
+                                        <td class="text-right"><span t-field="doc.montant_total"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- Bloc des totaux et remboursements -->
+                        <div class="row mt32">
+                            <div class="col-7">
+                                <!-- Espace pour cachet -->
+                                <br/><br/>
+                                <strong>Cachet et signature du médecin :</strong>
+                            </div>
+                            <div class="col-5">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Total de la consultation</strong></td>
+                                        <td class="text-right"><strong><span t-field="doc.montant_total"/></strong></td>
+                                    </tr>
+                                    <tr class="bg-light">
+                                        <td><strong>Total à payer au cabinet</strong></td>
+                                        <td class="text-right"><strong><span t-field="doc.montant_paye_cabinet"/></strong></td>
+                                    </tr>
+                                    <tr t-if="doc.montant_cnam_cabinet &gt; 0">
+                                        <td><strong>Prise en charge directe (Tiers-payant)</strong></td>
+                                        <td class="text-right"><strong><span t-field="doc.montant_cnam_cabinet"/></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Reste à charge final estimé (après vos remboursements)</strong></td>
+                                        <td class="text-right"><strong><span t-field="doc.reste_a_charge_final"/></strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

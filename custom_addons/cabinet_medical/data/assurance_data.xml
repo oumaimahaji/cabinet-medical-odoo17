@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Assurances privées par défaut -->
+        <record id="assurance_maman" model="cabinet.assurance">
+            <field name="name">Maman</field>
+            <field name="taux">70</field>
+            <field name="description">Assurance Maman - Couverture complète</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_amen" model="cabinet.assurance">
+            <field name="name">Amen Bank</field>
+            <field name="taux">80</field>
+            <field name="description">Amen Bank Assurance - Taux élevé</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_star" model="cabinet.assurance">
+            <field name="name">Star Assurance</field>
+            <field name="taux">75</field>
+            <field name="description">Star Assurance - Bonne couverture</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_gulf" model="cabinet.assurance">
+            <field name="name">Gulf Insurance</field>
+            <field name="taux">85</field>
+            <field name="description">Gulf Insurance - Premium</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_tunisienne" model="cabinet.assurance">
+            <field name="name">Assurance Tunisienne</field>
+            <field name="taux">65</field>
+            <field name="description">Assurance Tunisienne - Standard</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_carthage" model="cabinet.assurance">
+            <field name="name">Carthage Assurance</field>
+            <field name="taux">90</field>
+            <field name="description">Carthage Assurance - Taux maximum</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_atlantique" model="cabinet.assurance">
+            <field name="name">Atlantique Assurance</field>
+            <field name="taux">60</field>
+            <field name="description">Atlantique Assurance - Basique</field>
+            <field name="active">True</field>
+        </record>
+        
+        <record id="assurance_comar" model="cabinet.assurance">
+            <field name="name">COMAR</field>
+            <field name="taux">72</field>
+            <field name="description">Compagnie d'Assurance et de Réassurance</field>
+            <field name="active">True</field>
+        </record>
+    </data>
+</odoo>

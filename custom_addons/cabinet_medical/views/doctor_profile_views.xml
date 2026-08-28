@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Formulaire pour la Configuration Signature et PIN Médecin -->
+    <record id="view_cabinet_doctor_profile_wizard_form" model="ir.ui.view">
+        <field name="name">cabinet.doctor.profile.wizard.form</field>
+        <field name="model">cabinet.doctor.profile.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Profil Médecin : Signature et PIN">
+                <sheet>
+                    <div class="alert alert-info p-3 mb-4 rounded-3 d-flex align-items-center gap-3">
+                        <div class="text-primary" style="font-size: 32px; flex-shrink: 0;">
+                            <i class="fa fa-user-md"/>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1 text-primary">Profil &amp; Signature Sécurisée du Médecin</h5>
+                            <p class="mb-0 text-muted" style="font-size: 0.88rem;">
+                                Enregistrez votre signature manuscrite une seule fois. Elle sera automatiquement apposée sur vos ordonnances lorsque vous validerez avec votre code PIN personnel secret.
+                            </p>
+                        </div>
+                    </div>
+
+                    <group>
+                        <group string="Identité">
+                            <field name="user_id" invisible="1"/>
+                            <field name="medecin_nom" string="Nom du Praticien"/>
+                            <field name="has_existing_signature" string="Signature active" widget="boolean_toggle" readonly="1"/>
+                            <field name="has_existing_pin" string="PIN configuré" widget="boolean_toggle" readonly="1"/>
+                        </group>
+                        <group string="Signature Manuscrite (Image)">
+                            <field name="signature_medecin" widget="image" class="oe_avatar" options="{'size': [250, 120]}"/>
+                            <button name="action_delete_signature" string="🗑️ Supprimer la signature" type="object" class="btn btn-outline-danger btn-sm mt-2" invisible="not has_existing_signature"/>
+                        </group>
+                    </group>
+
+                    <group string="Code PIN de Signature (4 à 8 chiffres)">
+                        <div class="text-muted mb-2" style="font-size: 0.85rem;">
+                            <i class="fa fa-lock text-primary me-1"/> Le code PIN est haché de manière sécurisée avec PBKDF2-SHA512 et n'est jamais stocké en clair. Il vous sera demandé pour chaque signature d'ordonnance.
+                        </div>
+                        <group>
+                            <field name="new_pin" password="True" placeholder="Code PIN secret..."/>
+                            <field name="confirm_pin" password="True" placeholder="Confirmer le code PIN..."/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="💾 Enregistrer mes paramètres" name="action_save_profile" type="object" class="btn-primary" close="1"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action pour ouvrir la configuration du profil médecin -->
+    <record id="action_cabinet_doctor_profile_wizard" model="ir.actions.act_window">
+        <field name="name">✍️ Signature et PIN Médecin</field>
+        <field name="res_model">cabinet.doctor.profile.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

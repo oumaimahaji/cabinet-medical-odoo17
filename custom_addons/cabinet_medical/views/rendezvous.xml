@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue Formulaire par défaut avec boutons -->
+    <record id="view_appointment_form" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.form</field>
+        <field name="model">cabinet.rendezvous</field>
+        <field name="arch" type="xml">
+            <form delete="0" string="Créer un rendez-vous">
+                <header>
+                    <field name="id" invisible="1"/>
+                    <field name="show_arrive_absent_buttons" invisible="1"/>
+                    <field name="show_demarrer_consultation_button" invisible="1"/>
+                    <field name="show_termine_button" invisible="1"/>
+                    <field name="state" widget="statusbar" readonly="1"
+                           statusbar_visible="en_attente,present,en_consultation,termine,annule,absent"/>
+                    <button name="action_patient_arrive" 
+                             string="Marquer comme présent" 
+                             type="object" 
+                             class="btn-success"
+                             icon="fa-check-circle"
+                             invisible="not show_arrive_absent_buttons"/>
+                    <button name="action_patient_absent" 
+                             string="Patient absent" 
+                             type="object" 
+                             class="btn-danger"
+                             icon="fa-times-circle"
+                             invisible="not show_arrive_absent_buttons"/>
+                    <button name="action_demarrer_consultation" 
+                             string="Démarrer consultation" 
+                             type="object" 
+                             class="btn-info"
+                             icon="fa-stethoscope"
+                             invisible="not show_demarrer_consultation_button"
+                             groups="cabinet_medical.group_medecin"/>
+                    <button name="action_termine" 
+                             string="Terminé" 
+                             type="object" 
+                             class="btn-success"
+                             icon="fa-check-circle"
+                             invisible="not show_termine_button"
+                             groups="cabinet_medical.group_medecin"/>
+                </header>
+                <sheet>
+                    <field name="create_date" invisible="1"/>
+                    <field name="is_past_unclosed" invisible="1"/>
+
+                    <!-- Alerte RDV passé non clôturé -->
+                    <div class="alert alert-warning"
+                         role="alert"
+                         invisible="not is_past_unclosed"
+                         style="margin-bottom: 16px; border-left: 5px solid #fd7e14; background-color: #fff3cd; color: #856404;">
+                        <h4 class="alert-heading" role="status" style="font-size: 15px; margin-bottom: 5px; font-weight: bold;">
+                            <i class="fa fa-clock-o mr-2" title="Action requise"/> Rendez-vous passé non qualifié
+                        </h4>
+                        <p style="margin-bottom: 0; font-size: 13px;">
+                            La date de ce rendez-vous est passée alors qu'il est resté <strong>"En attente"</strong>. 
+                            Veuillez mettre à jour son statut réel : <strong>"Marquer comme présent"</strong>, <strong>"Patient absent"</strong> ou <strong>"Annulé"</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Titre unifié -->
+                    <div class="oe_title" invisible="not patient_name and not patient_id">
+                        <h2><field name="display_patient_name" readonly="1" nolabel="1"/></h2>
+                    </div>
+                    <group>
+                        <group string="Patient">
+                            <!-- Cas 1 : Nouveau patient (nom seulement) -->
+                            <field name="patient_name"
+                                   string="Nouveau patient (Nom)"
+                                   placeholder="Saisir le nom complet du patient…"
+                                   invisible="patient_id"
+                                   help="Utilisez ce champ si le patient n'a pas encore de dossier."/>
+                            <!-- Cas 2 : Patient existant -->
+                            <field name="patient_id"
+                                   string="Patient existant"
+                                   placeholder="Sélectionner un patient existant…"
+                                   invisible="patient_name"/>
+                        </group>
+                        <group string="Rendez-vous">
+                            <field name="motif_rapide" placeholder="Motif de la consultation…"/>
+                            <field name="date" widget="date"/>
+                            <field name="heure" widget="float_time"/>
+                            <field name="is_urgence" widget="boolean_toggle"/>
+                            <field name="slot_availability_status" widget="html" readonly="1" nolabel="1" colspan="2"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+<!-- Vue Calendrier (Semaine) -->
+    <record id="view_appointment_calendar" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.calendar</field>
+        <field name="model">cabinet.rendezvous</field>
+        <field name="arch" type="xml">
+            <calendar string="Agenda des Rendez-vous"
+                     date_start="date_start_datetime"
+                     color="calendar_color"
+                     quick_create="false"
+                     mode="week"
+                     banner_route="/cabinet_medical/appointment_banner">
+                <field name="display_patient_name"/>
+                <field name="appointment_type"/>
+                <field name="state"/>
+                <field name="heure"/>
+                <field name="is_urgence"/>
+            </calendar>
+        </field>
+    </record>
+
+</odoo>
+
+

@@ -1,0 +1,487 @@
+/* =========================================
+   MENU D'ACTIONS (DESIGN UNIFIÉ - même style partout)
+   ========================================= */
+
+/* Espacer et aligner les conteneurs des deux engrenages */
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus {
+    margin-left: 20px !important;
+    display: inline-flex !important;
+}
+
+.o_control_panel_actions .o_cp_action_menus {
+    display: inline-flex !important;
+    margin-left: 10px !important;
+}
+
+/* ===== DESIGN UNIFIÉ DU BOUTON ENGRENAGE (les deux contextes) ===== */
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus .dropdown-toggle,
+.o_control_panel_actions .o_cp_action_menus .dropdown-toggle {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+}
+
+/* Hover unifié */
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus .dropdown-toggle:hover,
+.o_control_panel_actions .o_cp_action_menus .dropdown-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.28) !important;
+    border-color: rgba(255, 255, 255, 0.7) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Masquer le triangle / flèche de dropdown standard pour avoir un bouton ultra-propre */
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus .dropdown-toggle::after,
+.o_control_panel_actions .o_cp_action_menus .dropdown-toggle::after {
+    display: none !important;
+}
+
+/* Forcer l'affichage du texte "Actions" dans les deux cas */
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus .dropdown-toggle .o_dropdown_title,
+.o_control_panel_actions .o_cp_action_menus .dropdown-toggle .o_dropdown_title {
+    display: inline !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: white !important;
+}
+
+/* Icône engrenage — même couleur dans les deux cas */
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus .dropdown-toggle .fa,
+.o_control_panel_breadcrumbs_actions .o_cp_action_menus .dropdown-toggle .oi,
+.o_control_panel_actions .o_cp_action_menus .dropdown-toggle .fa,
+.o_control_panel_actions .o_cp_action_menus .dropdown-toggle .oi {
+    color: white !important;
+    font-size: 13px !important;
+}
+
+/* =========================================
+   PAGINATION EN BAS DU TABLEAU (VRAIE POSITION PROFESSIONNELLE)
+   ========================================= */
+
+/* On cache la pagination native du haut qui est dupliquée par notre JS en bas (uniquement sur liste et kanban) */
+.o_list_view .o_control_panel .o_pager,
+.o_kanban_view .o_control_panel .o_pager {
+    display: none !important;
+}
+
+/* Assurer un fond gris clair et un espacement de type carte moderne sur toutes les pages de liste/kanban */
+.o_list_view,
+.o_kanban_view,
+.o_view_controller,
+.o_action_manager,
+.o_content {
+    background-color: #f5f7fa !important;
+}
+
+/* Le renderer se réduit à la hauteur exacte de son tableau pour coller la pagination juste sous le dernier enregistrement */
+.o_list_view .o_list_renderer {
+    background-color: #ffffff !important;
+    border-radius: 8px 8px 0 0 !important; /* Arrondir uniquement les coins supérieurs */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    margin: 16px 16px 0 16px !important; /* Effet d'encadré/marge */
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+.o_list_view .o_content,
+.o_kanban_view .o_content {
+    background-color: #f5f7fa !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow-y: auto !important; /* Défilement global propre s'il y a beaucoup de contenu */
+}
+
+/* Structure de carte blanche pour le tableau lui-même */
+.o_list_view .o_list_table {
+    background-color: #ffffff !important;
+    overflow: hidden !important;
+}
+
+/* Le parent global de l'action */
+.o_action_manager,
+.o_action {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Container de la pagination professionnelle (généré par notre JS en bas du tableau) */
+.custom_bottom_pager_container {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    border-bottom-left-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    margin: 0 16px 16px 16px !important; /* Aligné avec le renderer */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    flex-shrink: 0 !important;
+}
+
+/* Information text on the left */
+.custom_bottom_pager_container .pager_info_text {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.custom_bottom_pager_container .pager_info_text .o_pager_counter {
+    color: #0f172a;
+    font-weight: 600;
+    margin: 0 4px;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.custom_bottom_pager_container .pager_info_text .o_pager_value,
+.custom_bottom_pager_container .pager_info_text .o_pager_limit {
+    font-weight: 700;
+}
+
+/* Button container on the right */
+.custom_bottom_pager_container .pager_buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* Professional buttons */
+.custom_bottom_pager_container .pager_buttons .btn.custom-pager-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    border-radius: 6px !important;
+    padding: 8px 14px !important;
+    min-width: 36px;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.custom_bottom_pager_container .pager_buttons .btn.custom-pager-btn.active-page {
+    background-color: #2c5aa0 !important;
+    color: #ffffff !important;
+    border-color: #2c5aa0 !important;
+    box-shadow: 0 2px 4px rgba(44, 90, 160, 0.2);
+}
+
+.custom_bottom_pager_container .pager_buttons .pager-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    color: #94a3b8;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.custom_bottom_pager_container .pager_buttons .btn.custom-pager-btn i {
+    font-size: 12px;
+}
+
+.custom_bottom_pager_container .pager_buttons .btn.custom-pager-btn:hover:not(:disabled) {
+    background-color: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.custom_bottom_pager_container .pager_buttons .btn.custom-pager-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.custom_bottom_pager_container .pager_buttons .btn.custom-pager-btn:disabled {
+    background-color: #f1f5f9 !important;
+    color: #94a3b8 !important;
+    border-color: #e2e8f0 !important;
+    cursor: not-allowed !important;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+/* =========================================
+   BOUTON NOUVEAU EN HAUT À DROITE & BARRE DE RECHERCHE
+   ========================================= */
+@media (min-width: 992px) {
+    /* Permettre de réordonner les éléments enfants du Control Panel */
+    .o_control_panel_main {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+    }
+
+    .o_control_panel_breadcrumbs {
+        display: contents !important;
+    }
+
+    /* Le titre (breadcrumb) reste à l'extrême gauche */
+    .o_breadcrumb, 
+    .breadcrumb,
+    .o_control_panel_breadcrumbs .breadcrumb,
+    .o_control_panel_breadcrumbs .o_breadcrumb {
+        order: 1 !important;
+        margin-right: 0 !important;
+    }
+
+    /* La barre de recherche (actions) centrée */
+    .o_control_panel_actions {
+        order: 2 !important;
+        max-width: 400px !important;
+        width: 100% !important;
+        margin: 0 auto !important; /* Centre horizontalement entre le titre et le reste */
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .o_control_panel_actions .o_searchview {
+        max-width: 400px !important;
+        width: 100% !important;
+    }
+
+    /* Le conteneur de navigation (filtres / pager) */
+    .o_control_panel_navigation {
+        order: 3 !important;
+        margin-right: 15px !important;
+    }
+
+    /* Le bouton Nouveau (main_buttons) placé à l'extrême droite */
+    .o_control_panel_main_buttons {
+        order: 4 !important;
+        display: flex !important;
+        align-items: center !important;
+        margin-left: 10px !important;
+    }
+}
+
+/* Styliser le bouton Nouveau pour qu'il soit bien visible et propre */
+button.o_list_button_add,
+button.o_form_button_create {
+    border-radius: 6px !important;
+    padding: 8px 18px !important;
+    font-weight: bold !important;
+    background-color: #2c5aa0 !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+button.o_list_button_add:hover,
+button.o_form_button_create:hover {
+    background-color: #1a3a6e !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Désactiver l'icône utilisateur par défaut de rdv_dashboard.css sur le nom de l'assurance */
+.o_assurance_tree th[data-name="name"] span::before {
+    display: none !important;
+}
+
+/* Positionner les boutons Sauvegarder/Annuler après le titre dans le formulaire */
+.o_form_view_container .o_breadcrumb,
+.o_form_view_container .breadcrumb {
+    order: 1 !important;
+    margin-right: 0 !important; /* Annule le margin-right auto pour les formulaires */
+}
+
+.o_form_view_container .o_form_status_indicator {
+    order: 2 !important;
+    margin-left: 15px !important;
+    margin-right: auto !important; /* Pousse le reste du bandeau vers la droite */
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* ============================================================
+   TABLE DESIGNS (COMPACT ROWS & HIGH CONTRAST HEADERS)
+   ============================================================ */
+
+/* Espacer les lignes du tableau pour remplir élégamment la hauteur de la page sans scroller */
+.o_list_view .o_data_row td {
+    padding: 12px 16px !important; /* Marges ajustées pour ne pas déclencher de défilement */
+    font-size: 13.5px !important;
+    line-height: 1.4 !important;
+}
+
+/* Améliorer le contraste des en-têtes de colonnes */
+.o_list_view thead th,
+.o_list_view thead th a,
+.o_list_view thead th span {
+    background-color: #1a3a6e !important; /* Bleu foncé pour contraste maximal */
+    color: #ffffff !important; /* Texte et liens blancs */
+    font-weight: 700 !important;
+    font-size: 13px !important;
+}
+
+.o_list_view thead th {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 2px solid #2c5aa0 !important; /* Ligne de séparation bleu moderne */
+}
+
+/* ============================================================
+   TRI VISUEL CLAIR SUR LES COLONNES (SORTING INDICATORS)
+   ============================================================ */
+
+/* En-tête de la colonne triée active */
+.o_list_view thead th.table-active {
+    background-color: #1a3a6e !important; /* Même couleur bleu foncé que les autres colonnes */
+    color: #ffffff !important;
+    position: relative;
+    box-shadow: none !important; /* Plus de ligne jaune sous la colonne triée pour un rendu épuré */
+}
+
+/* Lien ou texte dans l'en-tête de tri actif */
+.o_list_view thead th.table-active a,
+.o_list_view thead th.table-active span {
+    background-color: transparent !important;
+    color: #ffffff !important;
+}
+
+/* L'icône de tri (flèche) */
+.o_list_view thead th i.fa {
+    transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease !important;
+}
+
+/* L'icône de tri de la colonne active */
+.o_list_view thead th.table-active i.fa {
+    opacity: 1 !important;
+    color: #ffc107 !important; /* Flèche dorée contrastée */
+    transform: scale(1.15) !important;
+    margin-left: 6px !important;
+}
+
+/* Survol d'une colonne triable (non-active) */
+.o_list_view thead th.o_column_sortable:hover {
+    background-color: #234882 !important; /* Bleu un peu plus clair au survol */
+    cursor: pointer;
+}
+
+/* Survol de la colonne triable déjà active */
+.o_list_view thead th.o_column_sortable.table-active:hover {
+    background-color: #234882 !important; /* Même bleu de survol que les autres colonnes */
+}
+
+
+/* ============================================================
+   MESSAGE SYMPA DE LISTE VIDE (PREMIUM EMPTY STATES CARD)
+   ============================================================ */
+
+/* Fond global moderne et épuré pour l'état vide */
+.o_view_nocontent {
+    background-image: radial-gradient(at 50% 50%, #f8fafc 0%, #edf2f7 100%) !important;
+}
+
+/* Conteneur de l'aide / message d'absence de contenu */
+.o_view_nocontent .o_nocontent_help {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    padding: 40px 30px !important;
+    max-width: 500px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    pointer-events: auto !important;
+}
+
+/* Illustration (smiley, dossier vide, etc.) flottante */
+.o_view_nocontent .o_nocontent_help::before,
+.o_view_nocontent .o_nocontent_help .o_view_nocontent_smiling_face::before,
+.o_view_nocontent .o_nocontent_help .o_view_nocontent_neutral_face::before,
+.o_view_nocontent .o_nocontent_help .o_view_nocontent_empty_folder::before {
+    animation: floatIllustration 3s ease-in-out infinite !important;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.06)) !important;
+    margin-bottom: 20px !important;
+}
+
+@keyframes floatIllustration {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(1deg);
+    }
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+}
+
+/* Titre principal sympa */
+.o_view_nocontent .o_nocontent_help > p:first-of-type,
+.o_view_nocontent .o_nocontent_help .o_view_nocontent_smiling_face,
+.o_view_nocontent .o_nocontent_help .o_view_nocontent_empty_folder {
+    font-size: 19px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin-top: 15px !important;
+    margin-bottom: 8px !important;
+    letter-spacing: -0.025em !important;
+}
+
+/* Description / texte d'aide */
+.o_view_nocontent .o_nocontent_help p:not(:first-of-type),
+.o_view_nocontent .o_nocontent_help p {
+    color: #64748b !important;
+    font-size: 13.5px !important;
+    line-height: 1.6 !important;
+    margin-bottom: 18px !important;
+}
+
+/* Bouton / lien d'action principal de création */
+.o_view_nocontent .o_nocontent_help a,
+.o_view_nocontent .o_nocontent_help .o_nocontent_create {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #2c5aa0 !important;
+    color: #ffffff !important;
+    padding: 10px 22px !important;
+    border-radius: 8px !important;
+    font-weight: bold !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    box-shadow: 0 4px 6px -1px rgba(44, 90, 160, 0.2), 0 2px 4px -1px rgba(44, 90, 160, 0.1) !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+
+.o_view_nocontent .o_nocontent_help a:hover,
+.o_view_nocontent .o_nocontent_help .o_nocontent_create:hover {
+    background-color: #1a3a6e !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(44, 90, 160, 0.3), 0 4px 6px -2px rgba(44, 90, 160, 0.15) !important;
+    color: #ffffff !important;
+}

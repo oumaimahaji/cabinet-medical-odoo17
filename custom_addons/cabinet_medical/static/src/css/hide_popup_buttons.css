@@ -1,0 +1,6 @@
+.o_dialog .o_form_view .o_statusbar_buttons {
+    display: none !important;
+}
+.o_dialog .o_statusbar_status {
+    display: none !important;  
+}

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- View Tree -->
+    <record id="view_cabinet_acte_parametrage_tree" model="ir.ui.view">
+        <field name="name">cabinet.acte.parametrage.tree</field>
+        <field name="model">cabinet.acte.parametrage</field>
+        <field name="arch" type="xml">
+            <tree string="Actes Médicaux">
+                <field name="name"/>
+                <field name="type_acte"/>
+                <field name="code_cnam"/>
+                <field name="tarif_de_base" widget="monetary"/>
+                <field name="is_remboursable" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- View Form -->
+    <record id="view_cabinet_acte_parametrage_form" model="ir.ui.view">
+        <field name="name">cabinet.acte.parametrage.form</field>
+        <field name="model">cabinet.acte.parametrage</field>
+        <field name="arch" type="xml">
+            <form string="Paramétrage d'Acte Médical">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Ex: Consultation Spécialiste"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="type_acte"/>
+                            <field name="code_cnam"/>
+                        </group>
+                        <group>
+                            <field name="tarif_de_base" widget="monetary"/>
+                            <field name="is_remboursable" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_cabinet_acte_parametrage" model="ir.actions.act_window">
+        <field name="name">Paramétrage des Actes</field>
+        <field name="res_model">cabinet.acte.parametrage</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer un nouvel acte médical conventionné
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_cabinet_parametrage_actes"
+              name="Actes Médicaux"
+              parent="menu_cabinet_configuration"
+              action="action_cabinet_acte_parametrage"
+              sequence="30"/>
+</odoo>

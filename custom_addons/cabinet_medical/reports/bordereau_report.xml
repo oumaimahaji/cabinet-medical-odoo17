@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action Report Bordereau -->
+    <record id="action_report_bordereau" model="ir.actions.report">
+        <field name="name">Bordereau CNAM</field>
+        <field name="model">cabinet.bordereau</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">cabinet_medical.report_bordereau_template</field>
+        <field name="report_file">cabinet_medical.report_bordereau_template</field>
+        <field name="print_report_name">'Bordereau CNAM - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_cabinet_bordereau"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Template QWeb Bordereau -->
+    <template id="report_bordereau_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-family: Arial, sans-serif;">
+                        <h2 class="text-center">CAISSE NATIONALE D'ASSURANCE MALADIE (CNAM)</h2>
+                        <h3 class="text-center">BORDEREAU DE TRANSMISSION DES FACTURES</h3>
+                        <br/>
+                        
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <strong>Référence : </strong> <span t-field="doc.name"/><br/>
+                                <strong>Date de création : </strong> <span t-field="doc.date_creation" t-options='{"widget": "date"}'/><br/>
+                            </div>
+                            <div class="col-6 text-right">
+                                <strong>Période du : </strong> <span t-field="doc.date_debut" t-options='{"widget": "date"}'/> <strong> Au : </strong> <span t-field="doc.date_fin" t-options='{"widget": "date"}'/><br/>
+                            </div>
+                        </div>
+                        <br/>
+                        
+                        <table class="table table-bordered table-sm mt-4">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>N° Facture</th>
+                                    <th>Patient</th>
+                                    <th>N° CNAM / APCI</th>
+                                    <th>Scénario</th>
+                                    <th class="text-right">Montant Total (DT)</th>
+                                    <th class="text-right">Montant CNAM (DT)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.facture_ids" t-as="facture">
+                                    <tr>
+                                        <td><span t-field="facture.date_facture" t-options='{"widget": "date"}'/></td>
+                                        <td><span t-field="facture.name"/></td>
+                                        <td><span t-field="facture.patient_id.name"/></td>
+                                        <td>
+                                            <span t-field="facture.patient_id.numero_cnam"/>
+                                            <t t-if="facture.patient_id.is_apci">
+                                                <br/>APCI: <span t-field="facture.patient_id.numero_decision_apci"/>
+                                            </t>
+                                        </td>
+                                        <td><span t-field="facture.scenario"/></td>
+                                        <td class="text-right"><span t-field="facture.montant_total"/></td>
+                                        <td class="text-right"><span t-field="facture.montant_cnam_cabinet"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <p>
+                                    <strong>Nombre total de factures : </strong> <span t-field="doc.nb_factures"/>
+                                </p>
+                            </div>
+                            <div class="col-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Total Général des Actes (DT)</strong></td>
+                                        <td class="text-right"><strong><span t-field="doc.montant_total"/></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Général à rembourser par CNAM (DT)</strong></td>
+                                        <td class="text-right"><strong style="font-size: 1.2em;"><span t-field="doc.montant_cnam_demande"/></strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-5">
+                            <div class="col-12 text-right">
+                                Cachet et Signature du prestataire
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

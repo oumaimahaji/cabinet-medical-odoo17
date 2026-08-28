@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_prescription_form" model="ir.ui.view">
+        <field name="name">cabinet.prescription.form</field>
+        <field name="model">cabinet.prescription</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open_sign_wizard" string="✍️ Signer l'ordonnance" type="object" class="btn-success" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>
+                    <button name="action_imprimer_ordonnance" string="Imprimer l'ordonnance" type="object" class="btn-secondary" icon="fa-print"/>
+                    <button name="action_archive_prescription" string="Archiver" type="object" class="btn-warning" invisible="not active" groups="cabinet_medical.group_medecin"/>
+                </header>
+                <sheet>
+                    <field name="active" invisible="1"/>
+                    <field name="is_validated" invisible="1"/>
+                    <field name="is_ia_temporary_draft" invisible="1"/>
+                    <field name="state" invisible="1"/>
+
+                    <!-- Bannière ordonnance signée et verrouillée -->
+                    <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3 rounded-3" role="alert" invisible="state != 'signed'" style="border-left: 5px solid #28a745; background-color: #f0fdf4;">
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-1 text-success">
+                                <i class="fa fa-check-circle me-2"/> ✅ Ordonnance signée par le médecin
+                            </h5>
+                            <div class="text-dark" style="font-size: 0.9rem;">
+                                <span><strong>Signataire :</strong> <field name="medecin_signataire_id" readonly="1" options="{'no_open': True}"/></span>
+                                <span class="ms-3"><strong>Signée le :</strong> <field name="date_signature" readonly="1"/></span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success px-3 py-2 text-uppercase fw-bold"><i class="fa fa-lock me-1"/> Verrouillée</span>
+                        </div>
+                    </div>
+
+                    <!-- Alertes IA -->
+                    <field name="ia_statut" invisible="1"/>
+                    <field name="ia_verified_by_user" invisible="1"/>
+                    <div class="alert alert-danger" role="alert" invisible="ia_statut != 'allergy_risk' or not ia_verified_by_user" style="margin-bottom: 15px; border-left: 5px solid #dc3545;">
+                        <h4 class="alert-heading" role="status"><i class="fa fa-exclamation-triangle mr-2" title="Alerte"/> ⚠️ Alerte Médicale (Allergie / Interaction / Doublon) — Vérification multi-niveaux</h4>
+                        <field name="ia_message" readonly="1"/>
+                    </div>
+                    <div class="alert alert-success" role="alert" invisible="ia_statut != 'safe' or not ia_verified_by_user" style="margin-bottom: 15px; border-left: 5px solid #28a745;">
+                        <h4 class="alert-heading" role="status"><i class="fa fa-check-circle mr-2" title="OK"/> Aucun Risque Détecté (Allergies &amp; Interactions)</h4>
+                        <field name="ia_message" readonly="1"/>
+                    </div>
+                    
+                    <div class="patient-header d-flex justify-content-between align-items-center">
+                        <h3>
+                            <i class="medical-icon fa fa-prescription-bottle" title="Ordonnance"/>
+                            Ordonnance
+                        </h3>
+                        <button name="action_verifier_ia" string="🤖 Vérifier avec l'IA" type="object" class="btn btn-outline-info btn-sm" invisible="state == 'signed'"/>
+                    </div>
+                    <group>
+                        <field name="patient_id" readonly="state == 'signed'"/>
+                        <field name="consultation_id" readonly="state == 'signed'"/>
+                        <field name="date_prescription" widget="date" readonly="state == 'signed'"/>
+                    </group>
+                    <notebook>
+                        <page string="Médicaments">
+                            <h4><i class="fa fa-pills mr-2" title="Médicaments"/>Médicaments prescrits</h4>
+                            <field name="ordonnance_line_ids" context="{'active_test': False}" readonly="state == 'signed'">
+                                <tree editable="bottom" limit="10" decoration-muted="not active">
+                                    <field name="active" column_invisible="True"/>
+                                    <field name="sequence" widget="handle"/>
+                                    <button name="action_archive" type="object" icon="fa-archive" title="Archiver" invisible="not active"/>
+                                    <button name="action_unarchive" type="object" icon="fa-undo" title="Restaurer" invisible="active"/>
+                                    <field name="medicament" placeholder="Nom du médicament..."/>
+                                    <field name="dosage" placeholder="Dosage..."/>
+                                    <field name="posologie" placeholder="Posologie..."/>
+                                    <field name="duree" placeholder="Durée..."/>
+                                    <field name="instructions_speciales" placeholder="Instructions spéciales..."/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Instructions générales">
+                            <h4><i class="fa fa-info-circle mr-2" title="Instructions"/>Instructions générales</h4>
+                            <field name="instructions" nolabel="1" placeholder="Instructions générales pour le patient..." readonly="state == 'signed'"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button string="✍️ Signer l'ordonnance" name="action_open_sign_wizard" type="object" class="btn-success" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>
+                    <button string="💾 Enregistrer l'ordonnance" name="action_save_prescription" type="object" class="btn-primary" invisible="state == 'signed'" close="1"/>
+                    <button string="✖ Fermer" special="cancel" class="btn-secondary" close="1"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_prescription_list" model="ir.ui.view">
+        <field name="name">cabinet.prescription.list</field>
+        <field name="model">cabinet.prescription</field>
+        <field name="arch" type="xml">
+            <tree string="Ordonnances" decoration-info="date_prescription == context_today()" decoration-success="state == 'signed'" export_xlsx="1">
+                <field name="date_prescription" widget="date" string="Date de prescription" width="150"/>
+                <field name="patient_id" string="Patient" width="200"/>
+                <field name="medicaments_resume" string="Médicaments (Résumé)" width="350"/>
+                <field name="state" widget="badge" decoration-success="state == 'signed'" decoration-muted="state == 'draft'" string="Statut" width="120"/>
+                <field name="medecin_signataire_id" string="Signataire" optional="show" width="150"/>
+                <field name="instructions" string="Instructions générales" width="250" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_prescription" model="ir.actions.act_window">
+        <field name="name">💊 Liste des Ordonnances</field>
+        <field name="res_model">cabinet.prescription</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
+
+

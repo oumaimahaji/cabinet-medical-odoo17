@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue Liste pour Médecin -->
+    <record id="view_appointment_list_medecin" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.list.medecin</field>
+        <field name="model">cabinet.rendezvous</field>
+        <field name="arch" type="xml">
+            <tree default_order="date asc, heure asc" create="0" delete="0" edit="0" export_xlsx="1" limit="10">
+                <field name="date" widget="date" string="Date"/>
+                <field name="heure" widget="float_time" string="Heure"/>
+                <field name="display_patient_name" string="Patient"/>
+                <field name="motif_rapide" string="Motif"/>
+                <field name="state"
+                       widget="badge"
+                       decoration-warning="state=='en_attente'"
+                       decoration-success="state=='present'"
+                       decoration-info="state=='en_consultation'"
+                       decoration-muted="state=='termine'"
+                       decoration-danger="state in ('annule', 'absent')"
+                       string="Statut"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour Médecin -->
+    <record id="view_appointment_form_medecin" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.form.medecin</field>
+        <field name="model">cabinet.rendezvous</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <field name="id" invisible="1"/>
+                    <button name="action_demarrer_consultation" 
+                            string="Démarrer consultation" 
+                            type="object" 
+                            class="btn-info"
+                            icon="fa-stethoscope"
+                            invisible="state != 'present'"/>
+                    <button name="action_ouvrir_consultation" 
+                            string="Ouvrir consultation" 
+                            type="object" 
+                            class="btn-primary"
+                            icon="fa-folder-open"
+                            invisible="state not in ('en_consultation', 'termine')"/>
+                    <button name="action_termine" 
+                            string="Terminé" 
+                            type="object" 
+                            class="btn-success"
+                            icon="fa-check-circle"
+                            invisible="state != 'en_consultation'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="en_attente,present,en_consultation,termine,annule,absent"/>
+                </header>
+                <sheet>
+                    <div class="oe_title" invisible="not patient_name and not patient_id">
+                        <h2><field name="display_patient_name" readonly="1" nolabel="1"/></h2>
+                    </div>
+                    <group>
+                        <group string="Patient">
+                            <field name="patient_name"
+                                   string="Nouveau patient (Nom)"
+                                   readonly="1"
+                                   invisible="patient_id"/>
+                            <field name="patient_id"
+                                   string="Patient existant"
+                                   readonly="1"
+                                   invisible="patient_name"/>
+                        </group>
+                        <group string="Rendez-vous">
+                            <field name="date" widget="date" readonly="1"/>
+                            <field name="heure" widget="float_time" readonly="1"/>
+                            <field name="is_urgence" readonly="1"/>
+                            <field name="state" readonly="1" widget="badge"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire Simplifiée pour Planifier un Suivi (Médecin) -->
+    <record id="view_appointment_form_suivi_medecin" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.form.suivi.medecin</field>
+        <field name="model">cabinet.rendezvous</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Planification du prochain rendez-vous de suivi.
+                    </div>
+                    <group>
+                        <field name="id" invisible="1"/>
+                        <field name="patient_id" readonly="1"/>
+                        <field name="date" widget="date" readonly="id"/>
+                        <field name="heure" widget="float_time" readonly="id"/>
+                        <field name="is_urgence" readonly="id"/>
+                    </group>
+                    <field name="slot_availability_status" widget="html" readonly="1" nolabel="1"/>
+                    <footer>
+                        <button string="Enregistrer le rendez-vous" special="save" class="btn-primary" icon="fa-save"/>
+                        <button string="Annuler" special="cancel" class="btn-secondary"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue Recherche pour Médecin -->
+    <record id="view_appointment_search_medecin" model="ir.ui.view">
+        <field name="name">cabinet.rendezvous.search.medecin</field>
+        <field name="model">cabinet.rendezvous</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id" string="Patient"/>
+                <field name="date" string="Date"/>
+                <separator/>
+                <filter string="Aujourd'hui" name="today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="À venir" name="upcoming" domain="[('date', '&gt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="À traiter" name="to_treat" domain="[('state', 'in', ['en_attente', 'present', 'en_consultation'])]"/>
+                <filter string="Présent" name="filter_present" domain="[('state', '=', 'present')]"/>
+                <filter string="En attente" name="filter_en_attente" domain="[('state', '=', 'en_attente')]"/>
+                <filter string="En consultation" name="filter_en_consultation" domain="[('state', '=', 'en_consultation')]"/>
+                <filter string="Terminé" name="filter_termine" domain="[('state', '=', 'termine')]"/>
+                <separator/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action pour Médecin -->
+    <record id="action_appointment_medecin" model="ir.actions.act_window">
+        <field name="name">📅 Liste des Rendez-vous</field>
+        <field name="res_model">cabinet.rendezvous</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,calendar,form</field>
+        <field name="domain">[('state', 'in', ['en_attente', 'present', 'en_consultation', 'termine'])]</field>
+        <field name="search_view_id" ref="view_appointment_search_medecin"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_appointment_list_medecin')}),
+            (0, 0, {'view_mode': 'calendar', 'view_id': ref('cabinet_medical.view_appointment_calendar')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_appointment_form_medecin')})]"/>
+        <field name="context">{'create': False, 'search_default_today': 1}</field>
+    </record>
+
+</odoo>
+
+

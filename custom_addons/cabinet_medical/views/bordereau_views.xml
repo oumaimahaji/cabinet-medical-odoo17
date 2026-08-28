@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Tree Bordereau -->
+    <record id="view_cabinet_bordereau_tree" model="ir.ui.view">
+        <field name="name">cabinet.bordereau.tree</field>
+        <field name="model">cabinet.bordereau</field>
+        <field name="arch" type="xml">
+            <tree string="Bordereaux CNAM" default_order="date_creation desc" decoration-info="state == 'draft'" decoration-success="state == 'paid'" decoration-warning="state == 'sent'">
+                <field name="name"/>
+                <field name="periode_label" string="Période"/>
+                <field name="date_creation"/>
+                <field name="date_debut"/>
+                <field name="date_fin"/>
+                <field name="nb_factures"/>
+                <field name="montant_cnam_demande" sum="Total Demandé"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'paid'" decoration-warning="state == 'sent'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Form Bordereau -->
+    <record id="view_cabinet_bordereau_form" model="ir.ui.view">
+        <field name="name">cabinet.bordereau.form</field>
+        <field name="model">cabinet.bordereau</field>
+        <field name="arch" type="xml">
+            <form string="Bordereau CNAM">
+                <header>
+                    <button name="action_recuperer_factures" string="Récupérer les factures" type="object" class="btn-primary" invisible="state != 'draft'" groups="cabinet_medical.group_secretaire"/>
+                    <button name="action_valider" string="Valider le bordereau" type="object" class="btn-success" invisible="state != 'draft' or nb_factures == 0" groups="cabinet_medical.group_secretaire"/>
+                    <button name="action_envoyer" string="Marquer comme Envoyé" type="object" class="btn-warning" invisible="state != 'done'" groups="cabinet_medical.group_secretaire"/>
+                    <button name="action_marquer_partiellement_paye" string="Partiellement payé" type="object" class="btn-info" invisible="state != 'sent'" groups="cabinet_medical.group_secretaire"/>
+                    <button name="action_marquer_paye" string="Marquer comme Payé" type="object" class="btn-success" invisible="state not in ('sent', 'partially_paid')" groups="cabinet_medical.group_secretaire"/>
+                    <button name="action_rejeter" string="Rejeter" type="object" class="btn-danger" invisible="state not in ('sent', 'partially_paid')" groups="cabinet_medical.group_secretaire"/>
+                    <button name="%(cabinet_medical.action_report_bordereau)d" string="Imprimer Bordereau" type="action" class="btn-secondary" icon="fa-print" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done,sent,partially_paid,paid,rejected"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Période">
+                            <field name="periode_label" readonly="1" string="Période"/>
+                            <field name="date_debut" readonly="state != 'draft'"/>
+                            <field name="date_fin" readonly="state != 'draft'"/>
+                            <field name="date_creation" readonly="1"/>
+                            <field name="date_envoi" readonly="1" invisible="state in ('draft', 'done')"/>
+                            <field name="motif_rejet" invisible="state != 'rejected'" required="state == 'rejected'" readonly="0"/>
+                        </group>
+                        <group string="Résumé">
+                            <field name="nb_factures" readonly="1"/>
+                            <field name="montant_total" widget="monetary" readonly="1"/>
+                            <field name="montant_cnam_demande" widget="monetary" readonly="1" style="font-weight: bold; font-size: 1.2em; color: #28a745;"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Factures CNAM/APCI">
+                            <field name="facture_ids" readonly="state != 'draft'">
+                                <tree string="Factures" editable="bottom">
+                                    <field name="name" readonly="1"/>
+                                    <field name="date_facture" readonly="1"/>
+                                    <field name="patient_id" readonly="1"/>
+                                    <field name="scenario" readonly="1"/>
+                                    <field name="montant_total" sum="Total" readonly="1"/>
+                                    <field name="montant_cnam_cabinet" sum="Total CNAM" readonly="1"/>
+                                    <field name="statut_cnam" readonly="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_cabinet_bordereau" model="ir.actions.act_window">
+        <field name="name">Bordereaux d'envoi CNAM</field>
+        <field name="res_model">cabinet.bordereau</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer un nouveau bordereau d'envoi CNAM
+            </p>
+            <p>
+                Sélectionnez une période pour récupérer automatiquement toutes les factures validées contenant une part CNAM ou APCI.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_cabinet_cnam"
+              name="CNAM"
+              parent="menu_cabinet_root"
+              sequence="50"/>
+
+    <menuitem id="menu_cabinet_cnam_dashboard"
+              name="Suivi &amp; Recouvrement CNAM"
+              parent="menu_cabinet_cnam"
+              action="action_cabinet_medical_cnam_dashboard"
+              groups="cabinet_medical.group_secretaire,cabinet_medical.group_medecin"
+              sequence="5"/>
+
+    <menuitem id="menu_cabinet_bordereaux"
+              name="Bordereaux d'envoi"
+              parent="menu_cabinet_cnam"
+              action="action_cabinet_bordereau"
+              groups="cabinet_medical.group_secretaire,cabinet_medical.group_medecin"
+              sequence="10"/>
+</odoo>

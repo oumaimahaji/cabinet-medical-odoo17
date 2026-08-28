@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+   
+    <!-- Configuration Parent Menu (défini en premier pour éviter les erreurs d'ID externe parent non trouvé) -->
+    <menuitem id="menu_cabinet_configuration"
+              name="Configuration"
+              parent="menu_cabinet_root"
+              groups="cabinet_medical.group_medecin,cabinet_medical.group_secretaire"
+              sequence="100"/>
+
+    <!-- Rendez-vous pour Secrétaire (Planning / Accueil) -->
+    <menuitem id="menu_appointments_secretaire"
+              name="Rendez-vous"
+              parent="menu_cabinet_root"
+              action="action_appointment_secretaire"
+              groups="cabinet_medical.group_secretaire"
+              sequence="1"/>
+
+    <!-- Patients pour Secrétaire (Gestion administrative des dossiers) -->
+    <menuitem id="menu_patients_secretaire"
+              name="Patients"
+              parent="menu_cabinet_root"
+              action="action_patient_secretaire"
+              groups="cabinet_medical.group_secretaire"
+              sequence="2"/>
+
+    <!-- Assurances pour Secrétaire (dans Configuration) -->
+    <menuitem id="menu_assurances_secretaire"
+              name="Assurances"
+              parent="menu_cabinet_configuration"
+              action="action_assurance_secretaire"
+              groups="cabinet_medical.group_secretaire"
+              sequence="20"/>
+
+    <!-- Rendez-vous pour Médecin (Salle d'attente / Planning) -->
+    <menuitem id="menu_appointments_medecin"
+              name="Mes Rendez-vous"
+              parent="menu_cabinet_root"
+              action="action_appointment_medecin"
+              groups="cabinet_medical.group_medecin"
+              sequence="1"/>
+
+    <!-- Consultations pour Médecin (peut créer) -->
+    <menuitem id="menu_consultations_medecin"
+              name="Consultations"
+              parent="menu_cabinet_root"
+              action="action_consultation"
+              groups="cabinet_medical.group_medecin"
+              sequence="2"/>
+
+    <!-- Patients pour Médecin (lecture seule) -->
+    <menuitem id="menu_patients_medecin"
+              name="Patients"
+              parent="menu_cabinet_root"
+              action="action_patient_medecin"
+              groups="cabinet_medical.group_medecin"
+              sequence="3"/>
+
+    <!-- Consultations pour Secrétaire (lecture seule — facturation) -->
+    <menuitem id="menu_consultations_secretaire"
+              name="Consultations"
+              parent="menu_cabinet_root"
+              action="action_consultation_readonly"
+              groups="cabinet_medical.group_secretaire"
+              sequence="3"/>
+
+    <!-- Facturations pour Secrétaire -->
+    <menuitem id="menu_facturations_secretaire"
+              name="Facturations"
+              parent="menu_cabinet_root"
+              action="action_cabinet_facture"
+              groups="cabinet_medical.group_secretaire"
+              sequence="4"/>
+
+    <!-- Factures pour Médecin (lecture seule) -->
+    <menuitem id="menu_factures_medecin"
+              name="Facturations"
+              parent="menu_cabinet_root"
+              action="action_cabinet_facture_medecin"
+              groups="cabinet_medical.group_medecin"
+              sequence="4"/>
+
+    <!-- Statistiques (Médecin & Secrétaire) -->
+    <menuitem id="menu_statistiques_medecin"
+              name="Tableau de bord"
+              parent="menu_cabinet_root"
+              action="action_cabinet_medical_dashboard"
+              groups="cabinet_medical.group_medecin,cabinet_medical.group_secretaire"
+              sequence="10"/>
+
+    <!-- (Sous-menus statistiques supprimés pour un dashboard unique IA) -->
+
+    <!-- Configuration -->
+
+    <menuitem id="menu_cabinet_doctor_profile"
+              name="✍️ Signature et PIN Médecin"
+              parent="menu_cabinet_configuration"
+              action="action_cabinet_doctor_profile_wizard"
+              groups="cabinet_medical.group_medecin"
+              sequence="5"/>
+
+    <menuitem id="menu_cabinet_settings"
+              name="Paramètres du cabinet"
+              parent="menu_cabinet_configuration"
+              action="action_cabinet_medical_configuration"
+              groups="cabinet_medical.group_medecin"
+              sequence="10"/>
+
+    <menuitem id="menu_cabinet_tarifs_cnam"
+              name="Tarifs CNAM"
+              parent="menu_cabinet_configuration"
+              action="action_acte_parametrage"
+              groups="cabinet_medical.group_medecin"
+              sequence="30"/>
+
+</odoo>

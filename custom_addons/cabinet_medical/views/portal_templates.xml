@@ -1,0 +1,1472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Raccourcis sur l'accueil du portail (/my) -->
+    <template id="portal_my_home" inherit_id="portal.portal_my_home" customize_show="True" name="Mon Cabinet Médical">
+        <!-- 1. Insertion du bandeau de bienvenue, statistiques et cartes spéciales avant les documents -->
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-if="patient">
+                <!-- SECTION 1 — CARTE DE BIENVENUE -->
+                <div class="card border shadow-sm p-4 mb-4 bg-white" style="border-radius: 16px; border: 1px solid var(--border-color) !important;">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-primary" 
+                                 style="width: 56px; height: 56px; background-color: rgba(44, 90, 160, 0.08); font-size: 26px; flex-shrink: 0;">
+                                <i class="fa fa-user-circle-o"/>
+                            </div>
+                            <div>
+                                <h2 class="fw-bold mb-1 text-primary" style="font-size: 1.7rem;">
+                                    Bonjour, <t t-out="patient_firstname or patient.name"/> !
+                                </h2>
+                                <p class="mb-0 text-muted" style="font-size: 0.95rem;">Bienvenue dans votre espace santé personnel.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge bg-light text-primary border border-primary-subtle fw-bold px-3 py-2 rounded-pill" style="font-size: 0.85rem;">
+                                <i class="fa fa-user me-1"/> Patient
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3 — ALERTE CNAM (SI EXPIRÉE) -->
+                <t t-if="patient.is_cnam and patient.is_cnam_expired">
+                    <div class="alert alert-warning p-3 mb-4 rounded-3 shadow-sm border-0 d-flex align-items-center gap-3" role="alert" style="background-color: #fff8e6; color: #92400e; border-left: 4px solid #f59e0b !important;">
+                        <i class="fa fa-id-card-o" style="font-size: 24px; color: #f59e0b;"/>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #92400e;">Renouvellement des droits CNAM</h6>
+                            <p class="mb-0 text-muted" style="font-size: 0.88rem;">Votre couverture CNAM est arrivée à échéance le <strong t-field="patient.date_validite_cnam"/>. Pensez à fournir votre attestation de renouvellement au secrétariat au <strong><t t-esc="request.env.company.phone or 'notre numéro'"/></strong>.</p>
+                        </div>
+                    </div>
+                </t>
+                <!-- Alerte d'expiration CNAM imminente -->
+                <t t-elif="cnam_expiring_soon">
+                    <div class="alert alert-warning p-3 mb-4 rounded-3 shadow-sm border-0 d-flex align-items-center gap-3" role="alert" style="background-color: #fef7e0; color: #b06000; border-left: 4px solid #f29900 !important;">
+                        <i class="fa fa-exclamation-circle" style="font-size: 24px;"/>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #b06000;">Votre couverture CNAM expire bientôt</h6>
+                            <p class="mb-0 text-muted" style="font-size: 0.88rem;">Votre couverture prend fin le <span t-field="patient.date_validite_cnam"/>. Pensez à renouveler vos droits.</p>
+                        </div>
+                    </div>
+                </t>
+
+                <!-- SECTION 2 — KPI CARDS (4 CARTES MODERNES BLANCHES) -->
+                <div class="row g-3 mb-4">
+                    <!-- Carte 1 : Prochain RDV -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="card h-100 bg-white border shadow-sm transition-hover" style="border-radius: 12px; border-left: 4px solid var(--medical-blue) !important;">
+                            <div class="card-body p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-primary" style="width: 44px; height: 44px; background-color: rgba(44, 90, 160, 0.08); flex-shrink: 0;">
+                                    <i class="fa fa-calendar" style="font-size: 20px;"/>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <span class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Prochain RDV</span>
+                                    <t t-if="next_rdv">
+                                        <div class="fw-bold text-dark text-truncate mb-0" style="font-size: 0.88rem;" t-out="next_rdv.date_fr"/>
+                                        <div class="text-muted text-truncate" style="font-size: 0.8rem;">
+                                            à <t t-esc="next_rdv.heure" t-options="{'widget': 'float_time'}"/>
+                                        </div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.78rem;" t-out="request.env.company.medecin_nom"/>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="text-muted fst-italic" style="font-size: 0.85rem;">Aucun</div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Carte 2 : Consultations -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="card h-100 bg-white border shadow-sm transition-hover" style="border-radius: 12px; border-left: 4px solid #06b6d4 !important;">
+                            <div class="card-body p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-info" style="width: 44px; height: 44px; background-color: rgba(6, 182, 212, 0.08); flex-shrink: 0; color: #06b6d4 !important;">
+                                    <i class="fa fa-stethoscope" style="font-size: 20px;"/>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Consultations</span>
+                                    <div class="fw-bold text-dark mb-0" style="font-size: 1.4rem;" t-out="consultation_count or 0"/>
+                                    <small class="text-muted">Total effectués</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Carte 3 : Ordonnances -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="card h-100 bg-white border shadow-sm transition-hover" style="border-radius: 12px; border-left: 4px solid #10b981 !important;">
+                            <div class="card-body p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-success" style="width: 44px; height: 44px; background-color: rgba(16, 185, 129, 0.08); flex-shrink: 0; color: #10b981 !important;">
+                                    <i class="fa fa-medkit" style="font-size: 20px;"/>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Ordonnances</span>
+                                    <div class="fw-bold text-dark mb-0" style="font-size: 1.4rem;" t-out="ordonnance_count or 0"/>
+                                    <small class="text-muted">Prescriptions</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Carte 4 : Factures -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="card h-100 bg-white border shadow-sm transition-hover" style="border-radius: 12px; border-left: 4px solid #f59e0b !important;">
+                            <div class="card-body p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-warning" style="width: 44px; height: 44px; background-color: rgba(245, 158, 11, 0.08); flex-shrink: 0; color: #f59e0b !important;">
+                                    <i class="fa fa-credit-card" style="font-size: 20px;"/>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Factures</span>
+                                    <div class="fw-bold text-dark mb-0" style="font-size: 1.4rem;" t-out="facture_count or 0"/>
+                                    <t t-if="facture_total_du">
+                                        <small class="text-danger fw-semibold"><t t-out="facture_total_du"/> DT dû</small>
+                                    </t>
+                                    <t t-else="">
+                                        <small class="text-muted">À jour</small>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 4 — DETAIL PROCHAIN RENDEZ-VOUS (GRANDE CARTE MISE EN AVANT) -->
+                <t t-if="next_rdv">
+                    <div class="card border shadow-sm p-4 mb-4 bg-white" style="border-radius: 16px;">
+                        <h5 class="fw-bold text-primary mb-3" style="font-size: 1.1rem;">
+                            <i class="fa fa-calendar-check-o me-2"/> Votre prochain rendez-vous
+                        </h5>
+                        <div class="row align-items-center g-3">
+                            <div class="col-12 col-md-8">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center text-primary" style="width: 50px; height: 50px; background-color: rgba(44, 90, 160, 0.08); font-size: 24px; flex-shrink: 0;">
+                                        <i class="fa fa-user-md"/>
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1" t-out="request.env.company.medecin_nom"/>
+                                        <p class="text-muted mb-2" style="font-size: 0.9rem;">Médecin du cabinet</p>
+                                        <div class="d-flex align-items-center gap-3 flex-wrap text-muted" style="font-size: 0.88rem;">
+                                            <span><i class="fa fa-calendar me-1"/> Le <strong t-out="next_rdv.date_fr"/></span>
+                                            <span><i class="fa fa-clock-o me-1"/> à <strong><t t-esc="next_rdv.heure" t-options="{'widget': 'float_time'}"/></strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4 text-md-end">
+                                <t t-set="status_class" t-value="'bg-warning text-dark'"/>
+                                <t t-set="status_label" t-value="'En attente'"/>
+                                <t t-if="next_rdv.state in ('present', 'en_consultation')">
+                                    <t t-set="status_class" t-value="'bg-success text-white'"/>
+                                    <t t-set="status_label" t-value="'Confirmé'"/>
+                                </t>
+                                <t t-elif="next_rdv.state == 'termine'">
+                                    <t t-set="status_class" t-value="'bg-primary text-white'"/>
+                                    <t t-set="status_label" t-value="'Terminé'"/>
+                                </t>
+                                <t t-elif="next_rdv.state in ('annule', 'absent')">
+                                    <t t-set="status_class" t-value="'bg-danger text-white'"/>
+                                    <t t-set="status_label" t-value="'Annulé'"/>
+                                </t>
+                                
+                                <span t-attf-class="badge {{ status_class }} px-3 py-2 rounded-pill fw-bold" style="font-size: 0.85rem;">
+                                    <t t-out="status_label"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <!-- Belle carte d'état vide pour le rendez-vous -->
+                    <div class="card border shadow-sm p-4 mb-4 bg-white text-center" style="border-radius: 16px;">
+                        <div class="text-muted mb-2" style="font-size: 2rem;">
+                            <i class="fa fa-calendar-o"/>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Aucun rendez-vous à venir</h6>
+                        <p class="text-muted mb-0 mx-auto" style="max-width: 500px; font-size: 0.85rem;">
+                            Vous n'avez pas de rendez-vous programmé. Vous pouvez contacter le secrétariat pour planifier votre prochaine visite.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </xpath>
+
+        <!-- 2. Remplacement complet de la section des raccourcis d'Odoo -->
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="replace">
+            <div class="o_portal_docs row g-2">
+                <!-- Spinner requis par le JS d'Odoo portal.js pour éviter un crash console -->
+                <div class="o_portal_doc_spinner d-none"/>
+                
+                <t t-if="patient">
+                    <!-- TIMELINE D'ACTIVITÉ RÉCENTE -->
+                    <t t-if="recent_activities">
+                        <h5 class="doctolib-section-title mb-3">
+                            <i class="fa fa-history text-primary"/> Activité récente
+                        </h5>
+                        <div class="card border shadow-sm p-4 mb-4 bg-white" style="border-radius: 16px;">
+                            <div class="doctolib-timeline">
+                                <t t-foreach="recent_activities" t-as="activity">
+                                    <div class="doctolib-timeline-item">
+                                        <div class="doctolib-timeline-badge" t-attf-style="background-color: {{ activity['color'] }}; color: {{ activity['text_color'] }}; border-color: {{ activity['text_color'] }};">
+                                            <i t-attf-class="fa {{ activity['icon'] }}"/>
+                                        </div>
+                                        <div class="doctolib-timeline-content border shadow-sm bg-light">
+                                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                <h6 class="doctolib-timeline-title mb-0 fw-bold" style="font-size: 0.88rem; color: var(--medical-blue-dark);"><t t-esc="activity['title']"/></h6>
+                                                <span class="doctolib-timeline-date fw-bold" style="font-size: 0.78rem;" t-out="activity['date_formatted']"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+                <t t-else="">
+                    <!-- Comportement par défaut si non connecté en tant que patient -->
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                        <t t-set="title">Connection &amp; Security</t>
+                        <t t-set="text">Configure your connection parameters</t>
+                        <t t-set="url" t-value="'/my/security'"/>
+                        <t t-set="config_card" t-value="True"/>
+                    </t>
+                </t>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- SURCHARGE DE LA SIDEBAR DU PROFIL PATIENT -->
+    <template id="portal_my_home_sidebar" inherit_id="portal.side_content" name="Portal Sidebar Doctolib Custom">
+        <xpath expr="//div[hasclass('d-flex','justify-content-start','align-items-center')]" position="replace">
+            <t t-if="patient">
+                <!-- Fiche profil patient supprimée -->
+            </t>
+            <t t-else="">
+                <div class="d-flex justify-content-start align-items-center gap-3 mb-4">
+                    <img class="o_portal_contact_img rounded o_object_fit_cover" t-att-src="image_data_uri(user_id.partner_id.avatar_128)" alt="Contact" width="50"/>
+                    <div class="d-flex flex-column justify-content-center">
+                        <h5 class="mb-0" t-out="user_id.name"/>
+                        <p class="mb-0 text-muted" t-out="user_id.company_name"/>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+        <xpath expr="//div[hasclass('o_portal_my_details')]" position="replace">
+            <t t-if="patient">
+                <div class="card border shadow-sm p-3 mb-4 bg-white" style="border-radius: 16px;">
+                    <h6 class="fw-bold text-muted mb-3" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
+                        <i class="fa fa-id-card-o me-2 text-primary"/> Coordonnées
+                    </h6>
+                    <!-- Email -->
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="text-primary" style="width: 24px;"><i class="fa fa-envelope"/></div>
+                        <div class="text-truncate">
+                            <small class="text-muted d-block" style="font-size: 0.72rem; text-transform: uppercase;">Email</small>
+                            <t t-if="patient.email">
+                                <span class="fw-bold text-dark" style="font-size: 0.88rem;" t-out="patient.email"/>
+                            </t>
+                            <t t-else="">
+                                <span class="fw-bold text-muted fst-italic" style="font-size: 0.88rem;">Non renseigné</span>
+                            </t>
+                        </div>
+                    </div>
+                    <!-- Téléphone -->
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="text-primary" style="width: 24px;"><i class="fa fa-phone"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.72rem; text-transform: uppercase;">Téléphone</small>
+                            <t t-if="patient.telephone">
+                                <span class="fw-bold text-dark" style="font-size: 0.88rem;" t-out="patient.telephone"/>
+                            </t>
+                            <t t-else="">
+                                <span class="fw-bold text-muted fst-italic" style="font-size: 0.88rem;">Non renseigné</span>
+                            </t>
+                        </div>
+                    </div>
+                    <!-- CIN -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-primary" style="width: 24px;"><i class="fa fa-id-card"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.72rem; text-transform: uppercase;">CIN</small>
+                            <t t-if="patient.cin">
+                                <span class="fw-bold text-dark" style="font-size: 0.88rem;" t-out="patient.cin"/>
+                            </t>
+                            <t t-else="">
+                                <span class="fw-bold text-muted fst-italic" style="font-size: 0.88rem;">Non renseigné</span>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="o_portal_my_details">
+                    <div t-field="user_id.partner_id" t-options='{"widget": "contact", "fields": ["email", "phone", "address"]}'/>
+                </div>
+            </t>
+        </xpath>
+        <xpath expr="//a[hasclass('btn-link')]" position="replace">
+            <t t-if="patient">
+                <!-- Bouton modifier les informations -->
+                <a role="button" href="/my/account" class="btn btn-primary w-100 fw-bold mb-4 shadow-sm" style="border-radius: 8px; padding: 10px 16px;">
+                    <i class="fa fa-pencil me-1"/> Modifier les informations
+                </a>
+                
+                <!-- CARTE COORDONNÉES DU CABINET MÉDICAL -->
+                <div class="card border shadow-sm p-3 bg-white" style="border-radius: 16px;">
+                    <h6 class="fw-bold text-muted mb-3" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
+                        <i class="fa fa-hospital-o me-2 text-primary"/> Le cabinet
+                    </h6>
+                    
+                    <!-- Nom du cabinet -->
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <div class="text-primary" style="width: 20px; text-align: center;"><i class="fa fa-building-o"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Cabinet</small>
+                            <span class="fw-bold text-dark" style="font-size: 0.85rem;" t-out="request.env.company.name"/>
+                        </div>
+                    </div>
+                    
+                    <!-- Médecin principal -->
+                    <div class="d-flex align-items-start gap-2 mb-2" t-if="request.env.company.medecin_nom">
+                        <div class="text-primary" style="width: 20px; text-align: center;"><i class="fa fa-user-md"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Médecin principal</small>
+                            <span class="fw-bold text-dark" style="font-size: 0.85rem;" t-out="request.env.company.medecin_nom"/>
+                        </div>
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <div class="text-primary" style="width: 20px; text-align: center;"><i class="fa fa-phone"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Téléphone</small>
+                            <span class="fw-bold text-dark" style="font-size: 0.85rem;" t-out="request.env.company.phone or 'Non renseigné'"/>
+                        </div>
+                    </div>
+
+                    <!-- E-mail -->
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <div class="text-primary" style="width: 20px; text-align: center;"><i class="fa fa-envelope-o"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Email</small>
+                            <span class="fw-bold text-dark" style="font-size: 0.85rem; word-break: break-all;" t-out="request.env.company.email or 'Non renseigné'"/>
+                        </div>
+                    </div>
+
+                    <!-- Adresse complète -->
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <div class="text-primary" style="width: 20px; text-align: center;"><i class="fa fa-map-marker"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Adresse</small>
+                            <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                <t t-if="request.env.company.street"><span t-field="request.env.company.street"/>, </t>
+                                <t t-if="request.env.company.city"><span t-field="request.env.company.city"/></t>
+                                <t t-if="not request.env.company.street and not request.env.company.city">Non renseignée</t>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Horaires d'ouverture -->
+                    <t t-set="h_debut" t-value="request.env['ir.config_parameter'].sudo().get_param('cabinet.heure_debut')"/>
+                    <t t-set="h_fin" t-value="request.env['ir.config_parameter'].sudo().get_param('cabinet.heure_fin')"/>
+                    <div class="d-flex align-items-start gap-2" t-if="h_debut and h_fin">
+                        <div class="text-primary" style="width: 20px; text-align: center;"><i class="fa fa-clock-o"/></div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Horaires</small>
+                            <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                <t t-out="'%02d:00 - %02d:00' % (int(float(h_debut)), int(float(h_fin)))"/>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            <t t-else="">
+                <a role="button" href="/my/account" class="btn btn-link p-0 mt-3"><i class="fa fa-pencil"/> Edit information</a>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Layout pour le breadcrumb -->
+    <template id="portal_layout" name="Portal layout: medical menu entries" inherit_id="portal.portal_breadcrumbs" priority="40">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'rendezvous' or rendezvous" class="breadcrumb-item">
+                <a t-if="rendezvous" t-attf-href="/my/rendezvous?{{ keep_query() }}">Rendez-vous</a>
+                <t t-else="">Rendez-vous</t>
+            </li>
+            <li t-if="page_name == 'ordonnances' or ordonnances" class="breadcrumb-item">
+                <a t-if="ordonnances" t-attf-href="/my/ordonnances?{{ keep_query() }}">Ordonnances</a>
+                <t t-else="">Ordonnances</t>
+            </li>
+            <li t-if="page_name == 'factures' or factures" class="breadcrumb-item">
+                <a t-if="factures" t-attf-href="/my/factures?{{ keep_query() }}">Factures</a>
+                <t t-else="">Factures</t>
+            </li>
+            <li t-if="page_name == 'couverture'" class="breadcrumb-item active">
+                Ma Couverture
+            </li>
+            <li t-if="page_name == 'notifications'" class="breadcrumb-item active">
+                Notifications
+            </li>
+            <li t-if="page_name == 'dossier'" class="breadcrumb-item active">
+                Mes informations médicales
+            </li>
+            <li t-if="page_name == 'my_details'" class="breadcrumb-item active">
+                Modifier mon profil
+            </li>
+        </xpath>
+    </template>
+
+    <!-- ============================================================
+         Page : Modification des coordonnées du patient (/my/account)
+         Formulaire adapté médical : Nom, Email, Téléphone, CIN, Adresse
+    ============================================================ -->
+    <template id="portal_my_patient_details" name="Modifier mon profil patient">
+        <t t-call="portal.portal_layout">
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+
+            <div class="card border shadow-sm p-4 bg-white mb-4" style="border-radius: 16px;">
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 48px; height: 48px; background-color: rgba(44, 90, 160, 0.08); font-size: 22px; flex-shrink: 0;">
+                        <i class="fa fa-user-circle-o"/>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-primary mb-1">Modifier mes informations personnelles</h4>
+                        <p class="text-muted mb-0" style="font-size: 0.88rem;">Vos modifications mettent à jour directement vos coordonnées auprès du secrétariat et de votre médecin.</p>
+                    </div>
+                </div>
+
+                <form action="/my/account" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" t-att-value="redirect"/>
+
+                    <!-- Messages d'erreur -->
+                    <div t-if="error_message" class="alert alert-danger p-3 mb-4 rounded-3" role="alert">
+                        <h6 class="fw-bold mb-1"><i class="fa fa-exclamation-circle me-1"/> Veuillez corriger les erreurs suivantes :</h6>
+                        <ul class="mb-0 ps-3" style="font-size: 0.9rem;">
+                            <t t-foreach="error_message" t-as="err">
+                                <li><t t-esc="err"/></li>
+                            </t>
+                        </ul>
+                    </div>
+
+                    <!-- FORMULAIRE DES INFORMATIONS PERSONNELLES -->
+                    <div class="row g-3">
+                        <!-- Nom complet -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="name">
+                                Nom complet <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-user"/></span>
+                                <input type="text" name="name" id="name" required="required" 
+                                       t-attf-class="form-control border-start-0 #{error.get('name') and 'is-invalid' or ''}" 
+                                       t-att-value="name or patient.name or partner.name" 
+                                       placeholder="ex: BECHIR BEN SALEM" style="border-radius: 0 8px 8px 0; text-transform: uppercase;"/>
+                            </div>
+                        </div>
+
+                        <!-- Date de naissance (Lecture seule côté patient) -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="date_naissance">
+                                Date de naissance <span class="badge bg-light text-muted border ms-1" style="font-size: 0.72rem;">Fixe</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-birthday-cake"/></span>
+                                <input type="text" name="date_naissance_display" id="date_naissance" 
+                                       class="form-control border-start-0 bg-light text-muted" readonly="readonly"
+                                       t-att-value="(patient.date_naissance and patient.date_naissance.strftime('%d/%m/%Y')) or 'Non renseignée'" 
+                                       style="border-radius: 0 8px 8px 0; cursor: not-allowed;"/>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Modifiable uniquement par le secrétariat.</small>
+                        </div>
+
+                        <!-- Genre (Lecture seule côté patient) -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="genre">
+                                Genre <span class="badge bg-light text-muted border ms-1" style="font-size: 0.72rem;">Fixe</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-venus-mars"/></span>
+                                <input type="text" name="genre_display" id="genre" 
+                                       class="form-control border-start-0 bg-light text-muted" readonly="readonly"
+                                       t-att-value="'Homme' if patient.genre == 'homme' else ('Femme' if patient.genre == 'femme' else 'Non spécifié')" 
+                                       style="border-radius: 0 8px 8px 0; cursor: not-allowed;"/>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Modifiable uniquement par le secrétariat.</small>
+                        </div>
+
+                        <!-- CIN -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="cin">
+                                Numéro de CIN (8 chiffres)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-id-card"/></span>
+                                <input type="text" name="cin" id="cin" maxlength="8"
+                                       t-attf-class="form-control border-start-0 #{error.get('cin') and 'is-invalid' or ''}" 
+                                       t-att-value="cin or patient.cin" 
+                                       placeholder="ex: 08123456" style="border-radius: 0 8px 8px 0;"/>
+                            </div>
+                        </div>
+
+                        <!-- Téléphone -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="phone">
+                                Téléphone (8 chiffres)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-phone"/></span>
+                                <input type="tel" name="phone" id="phone" maxlength="8"
+                                       t-attf-class="form-control border-start-0 #{error.get('phone') and 'is-invalid' or ''}" 
+                                       t-att-value="phone or patient.telephone or partner.phone" 
+                                       placeholder="ex: 20123456" style="border-radius: 0 8px 8px 0;"/>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Numéro tunisien (ex: 20123456, 98123456...).</small>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="email">
+                                Email <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-envelope"/></span>
+                                <input type="email" name="email" id="email" required="required" 
+                                       t-attf-class="form-control border-start-0 #{error.get('email') and 'is-invalid' or ''}" 
+                                       t-att-value="email or patient.email or partner.email" 
+                                       placeholder="ex: patient@email.com" style="border-radius: 0 8px 8px 0;"/>
+                            </div>
+                        </div>
+
+                        <!-- Adresse -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark" style="font-size: 0.88rem;" for="street">
+                                Adresse de résidence
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa fa-map-marker"/></span>
+                                <textarea name="street" id="street" rows="2" 
+                                          t-attf-class="form-control border-start-0 #{error.get('street') and 'is-invalid' or ''}" 
+                                          placeholder="ex: 15 Rue Habib Bourguiba, Tunis" style="border-radius: 0 8px 8px 0;"><t t-esc="street or patient.adresse or partner.street"/></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Note d'information médicale -->
+                    <div class="alert alert-light border d-flex align-items-center gap-2 mt-4 p-3 rounded-3" style="font-size: 0.85rem;">
+                        <i class="fa fa-info-circle text-primary" style="font-size: 16px;"/>
+                        <span class="text-muted">Pour mettre à jour vos antécédents médicaux, allergies ou affiliation CNAM, veuillez contacter le secrétariat du cabinet.</span>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-end align-items-center gap-2 mt-4 pt-3 border-top">
+                        <a href="/my" class="btn btn-outline-secondary fw-semibold px-4" style="border-radius: 8px;">
+                            Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary fw-bold px-4" style="border-radius: 8px;">
+                            <i class="fa fa-check me-1"/> Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================
+         Page : Mes informations médicales (/my/dossier)
+         Données déclaratives uniquement — aucun champ IA exposé
+    ============================================================ -->
+    <template id="portal_my_dossier" name="Mes informations médicales">
+        <t t-call="portal.portal_layout">
+            <t t-set="o_portal_fullwidth_alert" groups="base.group_public"/>
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+            <div id="portal_dossier_main" class="o_portal_my_doc_table">
+
+                <!-- Titre de la page -->
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: rgba(239,68,68,0.08); font-size: 24px; color: #ef4444; flex-shrink: 0;">
+                        <i class="fa fa-heartbeat"/>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0" style="color: var(--medical-blue-dark, #1e3a5f);">Mes informations médicales</h3>
+                        <p class="text-muted mb-0" style="font-size: 0.88rem;">Données déclarées à votre médecin — en lecture seule.</p>
+                    </div>
+                </div>
+
+                <!-- Section Allergies -->
+                <div class="card border shadow-sm mb-4" style="border-radius: 14px; border-left: 4px solid #ef4444 !important;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: #ef4444;">
+                            <i class="fa fa-exclamation-triangle"/>
+                            Allergies déclarées
+                        </h5>
+                        <t t-if="allergies">
+                            <p class="mb-0" style="white-space: pre-line; line-height: 1.7; font-size: 0.95rem;" t-out="allergies"/>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted fst-italic mb-0" style="font-size: 0.9rem;">
+                                <i class="fa fa-check-circle me-1" style="color: #10b981;"/>
+                                Aucune allergie déclarée à ce jour.
+                            </p>
+                        </t>
+                    </div>
+                </div>
+
+                <!-- Section Antécédents médicaux -->
+                <div class="card border shadow-sm mb-4" style="border-radius: 14px; border-left: 4px solid #3b82f6 !important;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: #3b82f6;">
+                            <i class="fa fa-history"/>
+                            Antécédents médicaux
+                        </h5>
+                        <t t-if="antecedents">
+                            <p class="mb-0" style="white-space: pre-line; line-height: 1.7; font-size: 0.95rem;" t-out="antecedents"/>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted fst-italic mb-0" style="font-size: 0.9rem;">
+                                <i class="fa fa-minus-circle me-1"/>
+                                Aucun antécédent médical renseigné.
+                            </p>
+                        </t>
+                    </div>
+                </div>
+
+                <!-- Section Traitements chroniques -->
+                <div class="card border shadow-sm mb-4" style="border-radius: 14px; border-left: 4px solid #8b5cf6 !important;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: #8b5cf6;">
+                            <i class="fa fa-medkit"/>
+                            Traitements chroniques
+                        </h5>
+                        <t t-if="traitements_chroniques">
+                            <p class="mb-0" style="white-space: pre-line; line-height: 1.7; font-size: 0.95rem;" t-out="traitements_chroniques"/>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted fst-italic mb-0" style="font-size: 0.9rem;">
+                                <i class="fa fa-minus-circle me-1"/>
+                                Aucun traitement chronique déclaré.
+                            </p>
+                        </t>
+                    </div>
+                </div>
+
+                <!-- Message d'information discret (sans mention d'IA ni note clinique) -->
+                <div class="alert alert-light border shadow-sm d-flex align-items-start gap-3 p-3" role="note" style="border-radius: 12px; border-left: 3px solid #94a3b8 !important;">
+                    <i class="fa fa-info-circle mt-1" style="font-size: 18px; color: #64748b; flex-shrink: 0;"/>
+                    <p class="mb-0 text-muted" style="font-size: 0.85rem; line-height: 1.6;">
+                        Ces informations sont <strong>déclaratives</strong> et consultables par votre médecin.
+                        Pour toute modification, mise à jour ou signalement d'un nouveau traitement, veuillez contacter directement le secrétariat médical.
+                    </p>
+                </div>
+
+            </div>
+        </t>
+    </template>
+
+    <!-- Template Liste des Rendez-vous -->
+    <template id="portal_my_rendezvous" name="Mes Rendez-vous">
+        <t t-call="portal.portal_layout">
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mes Rendez-vous</t>
+            </t>
+            <t t-if="not rendezvous">
+                <div class="card border shadow-sm p-5 text-center bg-white my-4" style="border-radius: 16px;">
+                    <div class="text-muted mb-3" style="font-size: 3rem;">
+                        <i class="fa fa-calendar-times-o" style="color: var(--medical-gray-dark);"/>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucun rendez-vous disponible</h5>
+                    <p class="text-muted mb-0 mx-auto" style="max-width: 400px; font-size: 0.9rem;">
+                        Il n'y a aucun rendez-vous associé à votre compte. Pour planifier votre visite, veuillez contacter le secrétariat.
+                    </p>
+                </div>
+            </t>
+            <t t-if="rendezvous" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Urgence</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="rendezvous" t-as="rdv">
+                        <tr>
+                            <td><span t-field="rdv.date_fr"/></td>
+                            <td><span t-field="rdv.heure" t-options="{'widget': 'float_time'}"/></td>
+                            <td>
+                                <t t-if="rdv.is_urgence">
+                                    <span class="badge text-bg-danger">Urgence</span>
+                                </t>
+                            </td>
+                            <td>
+                                <span t-attf-class="badge {{ rdv.portal_state_badge_class }}" t-out="rdv.portal_state_label"/>
+                            </td>
+                        </tr>
+                    </t>
+                </tbody>
+            </t>
+        </t>
+    </template>
+
+    <template id="portal_my_ordonnances" name="Mes Ordonnances">
+        <t t-call="portal.portal_layout">
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mes Ordonnances</t>
+            </t>
+            <t t-if="not ordonnances">
+                <div class="card border shadow-sm p-5 text-center bg-white my-4" style="border-radius: 16px;">
+                    <div class="text-muted mb-3" style="font-size: 3rem;">
+                        <i class="fa fa-file-text-o" style="color: var(--medical-gray-dark);"/>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucune ordonnance disponible</h5>
+                    <p class="text-muted mb-0 mx-auto" style="max-width: 400px; font-size: 0.9rem;">
+                        Aucune ordonnance ou prescription médicale n'est disponible pour le moment.
+                    </p>
+                </div>
+            </t>
+            <div class="row" t-if="ordonnances">
+                <!-- Bandeau d'information pharmacie & délivrance numérique -->
+                <div class="col-12 mb-3">
+                    <div class="alert alert-info border shadow-sm d-flex align-items-center gap-3 p-3 bg-white" style="border-radius: 12px; border-left: 4px solid var(--medical-blue, #2C5AA0) !important;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 40px; height: 40px; background-color: rgba(44, 90, 160, 0.08); font-size: 18px; flex-shrink: 0;">
+                            <i class="fa fa-mobile"/>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0 text-primary" style="font-size: 0.9rem;">Délivrance en pharmacie</h6>
+                            <p class="mb-0 text-muted" style="font-size: 0.85rem;">
+                                Vous pouvez présenter directement vos ordonnances <strong>signées</strong> au pharmacien sur votre smartphone ou les télécharger en PDF officiel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <t t-foreach="ordonnances" t-as="ordo">
+                    <div class="col-12 mb-4">
+                        <div class="card shadow-sm border bg-white" style="border-radius: 16px; overflow: hidden;">
+                            <!-- En-tête de la carte ordonnance -->
+                            <div class="card-header bg-white border-bottom p-4">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                    <div>
+                                        <h5 class="fw-bold text-primary mb-1 d-flex align-items-center gap-2">
+                                            <i class="fa fa-file-text-o"/>
+                                            <span>Ordonnance du <span t-field="ordo.date_prescription" t-options='{"widget": "date"}'/></span>
+                                        </h5>
+                                        <div class="d-flex flex-wrap align-items-center gap-3 text-muted" style="font-size: 0.88rem;">
+                                            <t t-if="ordo.medecin_signataire_id">
+                                                <span>
+                                                    <i class="fa fa-user-md text-primary me-1"/>
+                                                    <strong>Médecin prescripteur :</strong> Dr. <span t-field="ordo.medecin_signataire_id.name"/>
+                                                </span>
+                                            </t>
+                                            <t t-elif="request.env.company.medecin_nom">
+                                                <span>
+                                                    <i class="fa fa-user-md text-primary me-1"/>
+                                                    <strong>Médecin :</strong> <span t-out="request.env.company.medecin_nom"/>
+                                                </span>
+                                            </t>
+                                            <t t-if="request.env.company.name">
+                                                <span>
+                                                    <i class="fa fa-hospital-o text-muted me-1"/>
+                                                    <span t-out="request.env.company.name"/>
+                                                </span>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <t t-if="ordo.state == 'signed'">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-bold" style="font-size: 0.82rem;">
+                                                <i class="fa fa-check-circle me-1"/> Ordonnance signée
+                                            </span>
+                                            <a t-attf-href="/my/ordonnances/download/#{ordo.id}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm" style="border-radius: 8px;">
+                                                <i class="fa fa-download me-1"/> Télécharger le PDF
+                                            </a>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill fw-bold" style="font-size: 0.82rem;">
+                                                <i class="fa fa-clock-o me-1"/> En cours de délivrance
+                                            </span>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Corps de la carte : Liste des médicaments prescrits -->
+                            <div class="card-body p-4">
+                                <h6 class="fw-bold text-dark mb-3 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                                    <i class="fa fa-medkit text-primary me-2"/> Médicaments prescrits
+                                </h6>
+
+                                <div class="row g-3">
+                                    <t t-foreach="ordo.ordonnance_line_ids" t-as="line">
+                                        <div class="col-12">
+                                            <div class="p-3 rounded-3 border" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                                                    <!-- Nom du médicament & Dosage -->
+                                                    <div>
+                                                        <span class="fw-bold text-dark" style="font-size: 1rem;" t-field="line.medicament"/>
+                                                        <t t-if="line.dosage">
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2 fw-semibold" style="font-size: 0.78rem;">
+                                                                <span t-field="line.dosage"/>
+                                                            </span>
+                                                        </t>
+                                                    </div>
+
+                                                    <!-- Durée du traitement -->
+                                                    <t t-if="line.duree">
+                                                        <div class="text-muted" style="font-size: 0.85rem;">
+                                                            <i class="fa fa-clock-o text-warning me-1"/>
+                                                            <strong>Durée :</strong> <span class="fw-semibold text-dark" t-field="line.duree"/>
+                                                        </div>
+                                                    </t>
+                                                </div>
+
+                                                <!-- Posologie -->
+                                                <div class="mb-2" t-if="line.posologie">
+                                                    <div class="d-flex align-items-start gap-2" style="font-size: 0.9rem;">
+                                                        <i class="fa fa-check text-success mt-1" style="font-size: 0.8rem; flex-shrink: 0;"/>
+                                                        <div>
+                                                            <span class="text-muted">Posologie : </span>
+                                                            <span class="fw-bold text-dark" t-field="line.posologie"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Instructions spéciales médicament -->
+                                                <t t-if="line.instructions_speciales">
+                                                    <div class="p-2 rounded-2 bg-white border border-info-subtle text-info-emphasis d-flex align-items-start gap-2 mt-2" style="font-size: 0.85rem;">
+                                                        <i class="fa fa-info-circle text-info mt-1" style="flex-shrink: 0;"/>
+                                                        <div>
+                                                            <strong>Instructions :</strong> <span t-field="line.instructions_speciales"/>
+                                                        </div>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+
+                                <!-- Instructions générales de l'ordonnance -->
+                                <t t-if="ordo.instructions">
+                                    <div class="mt-4 p-3 rounded-3 border" style="background-color: rgba(44, 90, 160, 0.04); border-color: rgba(44, 90, 160, 0.15) !important;">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <i class="fa fa-clipboard text-primary mt-1" style="font-size: 1rem; flex-shrink: 0;"/>
+                                            <div>
+                                                <h6 class="fw-bold text-primary mb-1" style="font-size: 0.85rem; text-transform: uppercase;">Instructions générales du médecin</h6>
+                                                <p class="mb-0 text-dark" style="font-size: 0.9rem; white-space: pre-line;" t-field="ordo.instructions"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </t>
+
+                                <!-- Signature info si signée -->
+                                <t t-if="ordo.state == 'signed'">
+                                    <div class="mt-3 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center text-muted" style="font-size: 0.82rem;">
+                                        <div>
+                                            <i class="fa fa-pencil text-success me-1"/> 
+                                            Signée par <strong>Dr. <span t-field="ordo.medecin_signataire_id.name"/></strong>
+                                            <t t-if="ordo.date_signature">
+                                                le <span t-field="ordo.date_signature" t-options='{"widget": "datetime", "format": "dd/MM/yyyy à HH:mm"}'/>
+                                            </t>
+                                        </div>
+                                        <div>
+                                            <a t-attf-href="/my/ordonnances/download/#{ordo.id}" class="text-primary fw-bold text-decoration-none">
+                                                <i class="fa fa-file-pdf-o me-1"/> Télécharger le document PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+            <div class="alert alert-light border text-muted p-3 mt-3 d-flex align-items-center gap-2" t-if="ordonnances" role="status" style="border-radius: 12px; font-size: 0.88rem;">
+                <i class="fa fa-info-circle text-primary" style="font-size: 18px;"/>
+                <span>Vos ordonnances originales signées sont remises en consultation ou disponibles au secrétariat.</span>
+            </div>
+            <div t-if="pager" class="o_portal_pager text-center">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_my_factures" name="Mes Factures">
+        <t t-call="portal.portal_layout">
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mes Factures</t>
+            </t>
+            <t t-if="not factures">
+                <div class="card border shadow-sm p-5 text-center bg-white my-4" style="border-radius: 16px;">
+                    <div class="text-muted mb-3" style="font-size: 3rem;">
+                        <i class="fa fa-credit-card" style="color: var(--medical-gray-dark);"/>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucun document disponible</h5>
+                    <p class="text-muted mb-0 mx-auto" style="max-width: 400px; font-size: 0.9rem;">
+                        Vous n'avez aucune facture ou document de règlement disponible dans votre espace personnel.
+                    </p>
+                </div>
+            </t>
+            <div class="row" t-if="factures">
+                <t t-foreach="factures" t-as="facture">
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm border-0 h-100" style="border-radius: 12px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div class="card-header bg-white border-bottom-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
+                                <h5 class="card-title text-primary mb-0 fw-bold">
+                                    <i class="fa fa-file-text-o me-2"/> <span t-field="facture.name"/>
+                                </h5>
+                                <t t-if="facture.state == 'draft'">
+                                    <span class="badge text-bg-warning px-3 py-2 rounded-pill">À régler</span>
+                                </t>
+                                <t t-elif="facture.state == 'validated'">
+                                    <t t-if="facture.montant_paye_cabinet == 0">
+                                        <span class="badge text-bg-success px-3 py-2 rounded-pill">Prise en charge complète</span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="badge text-bg-success px-3 py-2 rounded-pill">Payée</span>
+                                    </t>
+                                </t>
+                            </div>
+                            
+                            <div class="card-body bg-light rounded m-2 p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                    <span class="text-muted"><i class="fa fa-calendar me-1"/> Date</span>
+                                    <span class="fw-bold"><span t-field="facture.date_facture"/></span>
+                                </div>
+                                
+                                <div class="alert alert-info py-2 px-3 mb-3 text-center" style="font-size: 0.85rem;">
+                                    <strong><span t-field="facture.scenario"/></strong>
+                                </div>
+
+                                <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
+                                    <!-- 1. Montant total -->
+                                    <li class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Montant total</span>
+                                        <span class="fw-bold"><span t-field="facture.montant_total"/> DT</span>
+                                    </li>
+                                    
+                                    <!-- 2. Part CNAM -->
+                                    <t t-if="facture.scenario in ('cnam_remboursement', 'cnam_remb_assur')">
+                                        <li class="d-flex justify-content-between mb-2 text-info">
+                                            <span>Part CNAM (remboursée au patient)</span>
+                                            <span class="fw-bold"><span t-field="facture.part_cnam_display"/> DT</span>
+                                        </li>
+                                    </t>
+                                    <t t-if="facture.scenario in ('cnam_tiers_payant', 'cnam_tp_assur')">
+                                        <li class="d-flex justify-content-between mb-2 text-info">
+                                            <span>Part CNAM (payée au cabinet)</span>
+                                            <span class="fw-bold"><span t-field="facture.part_cnam_display"/> DT</span>
+                                        </li>
+                                    </t>
+                                    <t t-if="facture.scenario == 'apci_tiers_payant'">
+                                        <li class="d-flex justify-content-between mb-2 text-info">
+                                            <span>Part CNAM = 100 %</span>
+                                            <span class="fw-bold"><span t-field="facture.part_cnam_display"/> DT</span>
+                                        </li>
+                                    </t>
+                                    <t t-if="facture.scenario == 'apci_remboursement'">
+                                        <li class="d-flex justify-content-between mb-2 text-info">
+                                            <span>Part CNAM = 100 % (remboursée au patient)</span>
+                                            <span class="fw-bold"><span t-field="facture.part_cnam_display"/> DT</span>
+                                        </li>
+                                    </t>
+                                    
+                                    <!-- 3. Part Assurance -->
+                                    <t t-if="facture.scenario in ('cnam_remb_assur', 'cnam_tp_assur', 'sans_cnam_assur')">
+                                        <li class="d-flex justify-content-between mb-2 text-primary">
+                                            <span>Part Assurance</span>
+                                            <span class="fw-bold"><span t-field="facture.part_assurance_display"/> DT</span>
+                                        </li>
+                                    </t>
+
+                                    <!-- 4. Patient paie au cabinet -->
+                                    <t t-if="facture.scenario in ('cnam_tiers_payant', 'cnam_tp_assur')">
+                                        <li class="d-flex justify-content-between mb-2 text-success">
+                                            <span>Patient paie au cabinet (ticket modérateur)</span>
+                                            <span class="fw-bold"><span t-field="facture.montant_paye_cabinet"/> DT</span>
+                                        </li>
+                                    </t>
+                                    <t t-else="">
+                                        <li class="d-flex justify-content-between mb-2 text-success">
+                                            <span>Patient paie au cabinet</span>
+                                            <span class="fw-bold"><span t-field="facture.montant_paye_cabinet"/> DT</span>
+                                        </li>
+                                    </t>
+
+                                    <!-- 5. Reste à charge final -->
+                                    <li class="d-flex justify-content-between mt-3 pt-2 border-top text-warning">
+                                        <span class="fw-bold">Reste à charge final patient</span>
+                                        <span class="fw-bold fs-6"><span t-field="facture.reste_a_charge_final"/> DT</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div class="card-footer bg-light border-top-0 py-2 text-center" style="border-radius: 0 0 12px 12px;">
+                                <small class="text-muted" style="font-size: 0.8rem;">
+                                    <i class="fa fa-info-circle text-primary me-1"/> Vos factures et reçus officiels sont délivrés et disponibles au secrétariat.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- Template Couverture (Fiche Patient) -->
+    <template id="portal_my_couverture" name="Ma Couverture Médicale">
+        <t t-call="portal.portal_layout">
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-white pt-4 pb-3">
+                    <h3 class="text-primary mb-0"><i class="fa fa-shield me-2"/> Ma Couverture Médicale</h3>
+                </div>
+                <div class="card-body">
+                    <t t-if="not patient.is_cnam">
+                        <div class="alert alert-info" role="status">
+                            Vous n'êtes pas déclaré comme affilié à la CNAM dans notre système.
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <h5 class="text-secondary border-bottom pb-2">Informations CNAM</h5>
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <th class="w-50">Matricule CNAM</th>
+                                            <td><strong><span t-field="patient.numero_cnam"/></strong> - <span t-field="patient.code_beneficiaire_cnam"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Régime</th>
+                                            <td><span t-field="patient.regime_cnam"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Filière</th>
+                                            <td><span t-field="patient.filiere_cnam"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Validité</th>
+                                            <td>
+                                                <span t-field="patient.date_validite_cnam"/>
+                                                <t t-if="patient.is_cnam_expired">
+                                                    <span class="badge bg-warning text-dark ms-2">Expirée</span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="badge text-bg-success ms-2">Active</span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <t t-if="patient.is_apci">
+                                    <h5 class="text-secondary border-bottom pb-2">Détails APCI</h5>
+                                    <table class="table table-borderless">
+                                        <tbody>
+                                            <tr>
+                                                <th class="w-50">Numéro de décision</th>
+                                                <td><span t-field="patient.numero_decision_apci"/></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Pathologie</th>
+                                                <td><span t-field="patient.apci_pathologie"/></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Validité</th>
+                                                <td>
+                                                    Du <span t-field="patient.date_debut_apci"/> au <span t-field="patient.date_fin_apci"/>
+                                                    <t t-if="patient.is_apci_expired">
+                                                        <span class="badge bg-warning text-dark ms-2">Expirée</span>
+                                                    </t>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+
+                    <t t-if="patient.has_assurance">
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <h5 class="text-secondary border-bottom pb-2">Assurance Privée</h5>
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <th class="w-50">Assurance</th>
+                                            <td><span t-field="patient.assurance_id"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Numéro</th>
+                                            <td><span t-field="patient.assurance_numero"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- SURCHARGE DU LAYOUT GÉNÉRAL POUR LE HEADER ET LE FOOTER SPÉCIFIQUES -->
+    <template id="portal_layout_header_footer" inherit_id="portal.portal_layout" priority="20">
+        <!-- 1. Injection du Header personnalisé en haut du wrap -->
+        <xpath expr="//div[@id='wrap']" position="before">
+            <t t-if="patient">
+                <!-- HEADER SPÉCIFIQUE AU PORTAIL PATIENT (DESIGN IDENTIQUE NAVBAR SECRÉTAIRE / MÉDECIN) -->
+                <header class="patient-portal-header o_navbar o_main_navbar text-white d-flex align-items-center justify-content-between px-3" style="background-color: #2c5aa0 !important; min-height: 48px; border-bottom: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                    
+                    <!-- Section Gauche : Logo Stéthoscope / Nom Cabinet + Menus de navigation -->
+                    <div class="d-flex align-items-center h-100 flex-wrap">
+                        <!-- Brand Cabinet Médical (identique à l'interface Médecin / Secrétaire) -->
+                        <a href="/my" class="o_menu_brand text-decoration-none text-white fw-bold d-flex align-items-center me-3" style="font-size: 15px; letter-spacing: 0.3px; white-space: nowrap;">
+                            Cabinet Médical
+                        </a>
+
+                        <!-- Liens du Menu (Même style que backend Odoo) -->
+                        <nav class="d-flex align-items-center h-100 flex-wrap">
+                            <a href="/my/rendezvous" t-attf-class="o_nav_link text-decoration-none px-3 py-2 text-white fw-normal d-flex align-items-center {{ 'active' if page_name == 'rendezvous' else '' }}" style="font-size: 14px; white-space: nowrap; border-radius: 4px; transition: background 0.15s ease;">
+                                Mes Rendez-vous
+                            </a>
+                            <a href="/my/ordonnances" t-attf-class="o_nav_link text-decoration-none px-3 py-2 text-white fw-normal d-flex align-items-center {{ 'active' if page_name == 'ordonnances' else '' }}" style="font-size: 14px; white-space: nowrap; border-radius: 4px; transition: background 0.15s ease;">
+                                Ordonnances
+                            </a>
+                            <a href="/my/factures" t-attf-class="o_nav_link text-decoration-none px-3 py-2 text-white fw-normal d-flex align-items-center {{ 'active' if page_name == 'factures' else '' }}" style="font-size: 14px; white-space: nowrap; border-radius: 4px; transition: background 0.15s ease;">
+                                Facturations
+                            </a>
+                            <a href="/my/dossier" t-attf-class="o_nav_link text-decoration-none px-3 py-2 text-white fw-normal d-flex align-items-center {{ 'active' if page_name == 'dossier' else '' }}" style="font-size: 14px; white-space: nowrap; border-radius: 4px; transition: background 0.15s ease;">
+                                Dossier Médical
+                            </a>
+                            <t t-if="patient.is_cnam">
+                                <a href="/my/couverture" t-attf-class="o_nav_link text-decoration-none px-3 py-2 text-white fw-normal d-flex align-items-center {{ 'active' if page_name == 'couverture' else '' }}" style="font-size: 14px; white-space: nowrap; border-radius: 4px; transition: background 0.15s ease;">
+                                    CNAM
+                                </a>
+                            </t>
+                        </nav>
+                    </div>
+
+                    <!-- Section Droite : Systray (Notifications cloche + Carré Initiales Turquoise Odoo) -->
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Notifications Bell Systray -->
+                        <div class="dropdown">
+                            <a href="javascript:void(0)" id="notificationDropdown" role="button" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="text-white position-relative d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; border-radius: 4px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent'">
+                                <i class="fa fa-bell" style="font-size: 15px;"/>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem; padding: 2px 4px;" t-if="patient.unread_notification_count" t-out="patient.unread_notification_count"/>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow border-0 p-0 mt-2" aria-labelledby="notificationDropdown" style="width: 320px; border-radius: 8px; font-size: 0.9rem; z-index: 1050;">
+                                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.9rem;">Notifications</h6>
+                                    <a href="/my/notifications/read_all" class="text-decoration-none text-primary fw-semibold" style="font-size: 0.8rem;" t-if="patient.unread_notification_count">Tout lire</a>
+                                </div>
+                                <div class="list-group list-group-flush overflow-auto" style="max-height: 280px;">
+                                    <t t-if="patient.notification_ids">
+                                        <t t-foreach="patient.notification_ids.sorted('date', reverse=True)[:5]" t-as="notif">
+                                            <a t-attf-href="/my/notifications/read/{{ notif.id }}" class="list-group-item list-group-item-action p-3 border-bottom d-flex align-items-start gap-3">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center" t-attf-style="width: 32px; height: 32px; font-size: 0.9rem; background-color: {{ notif.bg_color }}; color: {{ notif.icon_color }} !important; flex-shrink: 0;">
+                                                    <i t-attf-class="fa {{ notif.icon }}"/>
+                                                </div>
+                                                <div class="flex-grow-1 min-w-0">
+                                                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                                        <span t-attf-class="fw-bold text-truncate {{ 'text-dark' if not notif.is_read else 'text-muted' }}" style="font-size: 0.85rem;" t-out="notif.title"/>
+                                                        <small class="text-muted ms-2" style="font-size: 0.7rem; flex-shrink: 0;"><span t-field="notif.date" t-options="{'widget': 'relative'}"/></small>
+                                                    </div>
+                                                    <p class="text-muted text-truncate mb-0" style="font-size: 0.78rem;" t-out="notif.message"/>
+                                                </div>
+                                            </a>
+                                        </t>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="p-4 text-center text-muted">
+                                            <i class="fa fa-bell-o d-block mb-2" style="font-size: 1.5rem;"/>
+                                            Aucune notification
+                                        </div>
+                                    </t>
+                                </div>
+                                <a href="/my/notifications" class="d-block text-center text-primary border-top p-2 fw-semibold text-decoration-none" style="font-size: 0.82rem; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; background-color: #f8f9fa;">
+                                    Voir toutes les notifications
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Carré Avatar / Initiales Style Odoo 17 Systray (Turquoise exactement comme backend) -->
+                        <div class="dropdown">
+                            <a href="#" role="button" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="d-flex align-items-center gap-2 text-decoration-none text-white p-1" style="border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent'">
+                                <div class="d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" 
+                                     style="width: 28px; height: 28px; background-color: #26a69a; border-radius: 4px; font-size: 13px; letter-spacing: 0.5px;">
+                                    <t t-out="patient.name[0].upper() if patient.name else 'P'"/>
+                                </div>
+                                <span class="d-none d-md-inline fw-semibold text-white" style="font-size: 13px;" t-out="patient.name"/>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="border-radius: 8px; font-size: 0.9rem; z-index: 1050;">
+                                <li>
+                                    <a class="dropdown-item py-2 d-flex align-items-center" href="/my/account">
+                                        <i class="fa fa-user-circle-o me-2 text-muted" style="width: 16px; text-align: center;"/> Mon profil
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"/></li>
+                                <li>
+                                    <a class="dropdown-item py-2 text-danger d-flex align-items-center" href="/web/session/logout?redirect=/web/login">
+                                        <i class="fa fa-sign-out me-2" style="width: 16px; text-align: center;"/> Déconnexion
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- CSS dédié à la navbar pour répliquer le comportement exact d'Odoo Backend -->
+                    <style>
+                        .patient-portal-header .o_nav_link:hover {
+                            background-color: rgba(255, 255, 255, 0.15) !important;
+                            color: #ffffff !important;
+                        }
+                        .patient-portal-header .o_nav_link.active {
+                            background-color: rgba(255, 255, 255, 0.22) !important;
+                            color: #ffffff !important;
+                            font-weight: 600 !important;
+                        }
+                        /* Cible le header standard d'Odoo 17 (qu'il ait l'id top ou non) */
+                        header:not(.patient-portal-header) { 
+                            display: none !important; 
+                        }
+                        /* Au cas où le menu serait dans un nav séparé (ex: o_main_nav du module website) */
+                        nav.navbar:not(.o_portal_navbar) {
+                            display: none !important;
+                        }
+                        #top_menu {
+                            display: none !important;
+                        }
+                    </style>
+                </header>
+                <!-- Global script to intercept notification reads and force POST -->
+                <script type="text/javascript">
+                    document.addEventListener("DOMContentLoaded", function() {
+                        document.body.addEventListener("click", function(e) {
+                            let target = e.target.closest('a');
+                            if (target &amp;&amp; target.getAttribute('href') &amp;&amp; target.getAttribute('href').startsWith('/my/notifications/read')) {
+                                // Skip the specific button handled in portal_my_notifications
+                                if (target.id === 'btn_mark_all_read') return;
+                                
+                                e.preventDefault();
+                                let formData = new FormData();
+                                if (typeof odoo !== 'undefined' &amp;&amp; odoo.csrf_token) {
+                                    formData.append('csrf_token', odoo.csrf_token);
+                                }
+                                fetch(target.getAttribute('href'), { method: 'POST', body: formData }).then(response => {
+                                    if (response.redirected) {
+                                        window.location.href = response.url;
+                                    } else {
+                                        window.location.reload();
+                                    }
+                                }).catch(() => {
+                                    window.location.reload();
+                                });
+                            }
+                        });
+                    });
+                </script>
+            </t>
+        </xpath>
+
+        <!-- 2. Injection du Footer personnalisé en bas du wrap -->
+        <xpath expr="//div[@id='wrap']" position="after">
+            <t t-if="patient">
+                <!-- FOOTER SPÉCIFIQUE AU PORTAIL PATIENT -->
+                <footer class="patient-portal-footer bg-light border-top mt-5 py-4" style="color: #555;">
+                    <div class="container">
+                        <div class="row g-4">
+                            <!-- Cabinet Infos à gauche -->
+                            <div class="col-12 col-md-5">
+                                <h6 class="fw-bold text-dark mb-2" style="font-size: 0.95rem;" t-out="request.env.company.name"/>
+                                <p class="mb-1" style="font-size: 0.85rem;"><i class="fa fa-map-marker text-primary me-2"/> <t t-esc="request.env.company.street or 'Adresse du cabinet'"/>, <t t-esc="request.env.company.city or ''"/></p>
+                                <p class="mb-0" style="font-size: 0.85rem;"><i class="fa fa-phone text-primary me-2"/> Téléphone : <strong><t t-esc="request.env.company.phone or 'Non renseigné'"/></strong></p>
+                            </div>
+                            <!-- Liens de navigation au milieu -->
+                            <div class="col-12 col-md-4">
+                                <h6 class="fw-bold text-dark mb-2" style="font-size: 0.95rem;">Accès rapide</h6>
+                                <div class="d-flex flex-column gap-1" style="font-size: 0.85rem;">
+                                    <a href="/my/rendezvous" class="text-decoration-none text-muted"><i class="fa fa-angle-right me-2 text-primary"/>Mes RDV</a>
+                                    <a href="/my/ordonnances" class="text-decoration-none text-muted"><i class="fa fa-angle-right me-2 text-primary"/>Mes Ordonnances</a>
+                                    <a href="/my/factures" class="text-decoration-none text-muted"><i class="fa fa-angle-right me-2 text-primary"/>Mes Factures</a>
+                                </div>
+                            </div>
+                            <!-- Copyright à droite -->
+                            <div class="col-12 col-md-3 text-md-end align-self-end">
+                                <small class="text-muted">Copyright &amp;copy; <t t-esc="request.env.company.name"/></small>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Template Liste des Notifications -->
+    <template id="portal_my_notifications" name="Mes Notifications">
+        <t t-call="portal.portal_layout">
+            <div class="mb-3 mt-2">
+                <a href="/my" class="text-decoration-none text-muted fw-bold" style="font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='var(--medical-blue, #2C5AA0)'" onmouseout="this.style.color='#6c757d'">
+                    <i class="fa fa-arrow-left me-1"/> Retour
+                </a>
+            </div>
+            <div class="card border shadow-sm p-4 bg-white mb-4" style="border-radius: 16px;">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 border-bottom pb-3">
+                    <div>
+                        <h4 class="fw-bold text-primary mb-1">
+                            <i class="fa fa-bell me-2"/> Mes Notifications
+                        </h4>
+                        <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                            Suivez en temps réel les mises à jour et événements importants de votre dossier médical.
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <t t-set="has_read" t-value="any(n.is_read for n in notifications)"/>
+                        <t t-set="has_unread" t-value="len(notifications.filtered(lambda n: not n.is_read)) > 0"/>
+                        <a href="/my/notifications/read_all" id="btn_mark_all_read" class="btn btn-outline-primary btn-sm fw-bold" t-if="has_unread or patient.unread_notification_count > 0" style="border-radius: 8px;">
+                            <i class="fa fa-check-square-o me-1"/> Tout marquer comme lu
+                        </a>
+                        <a href="/my/notifications/delete_read" class="btn btn-outline-danger btn-sm fw-bold" t-if="has_read" style="border-radius: 8px;">
+                            <i class="fa fa-trash-o me-1"/> Supprimer les lues
+                        </a>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener("DOMContentLoaded", function() {
+                            const btnMarkRead = document.getElementById('btn_mark_all_read');
+                            if (btnMarkRead) {
+                                btnMarkRead.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    let formData = new FormData();
+                                    if (typeof odoo !== 'undefined' &amp;&amp; odoo.csrf_token) {
+                                        formData.append('csrf_token', odoo.csrf_token);
+                                    }
+                                    fetch(btnMarkRead.getAttribute('href'), {
+                                        method: 'POST',
+                                        body: formData
+                                    }).then(() => {
+                                        // Remove header bell badges
+                                        const badges = document.querySelectorAll('.fa-bell + .badge');
+                                        badges.forEach(b => b.remove());
+                                        // Also remove from dropdown if present
+                                        const dropdownReadLink = document.querySelector('a[href="/my/notifications/read_all"]');
+                                        if (dropdownReadLink) {
+                                            if (dropdownReadLink.id !== 'btn_mark_all_read') {
+                                                dropdownReadLink.remove();
+                                            }
+                                        }
+                                        
+                                        // Update notification cards in the list
+                                        const unreadCards = document.querySelectorAll('.bg-white.border-primary-subtle');
+                                        unreadCards.forEach(c => {
+                                            c.classList.remove('bg-white', 'border-primary-subtle');
+                                            c.classList.add('bg-light', 'border-light');
+                                            
+                                            // Remove 'Nouveau' badge
+                                            const newBadge = c.querySelector('.badge.bg-danger');
+                                            if (newBadge) newBadge.remove();
+                                            
+                                            // Make title text-muted
+                                            const title = c.querySelector('h6.text-dark');
+                                            if (title) {
+                                                title.classList.remove('text-dark');
+                                                title.classList.add('text-muted');
+                                            }
+                                        });
+                                        
+                                        // Hide the mark all read button
+                                        btnMarkRead.remove();
+                                    });
+                                });
+                            }
+                        });
+                    </script>
+                </div>
+
+                <t t-if="not notifications">
+                    <div class="text-center p-5">
+                        <div class="text-muted mb-3" style="font-size: 3.5rem;">
+                            <i class="fa fa-bell-o" style="color: var(--medical-gray-dark);"/>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">Aucune notification</h5>
+                        <p class="text-muted mb-0 mx-auto" style="max-width: 400px; font-size: 0.9rem;">
+                            Vous n'avez reçu aucune notification pour le moment. Nous vous tiendrons informé dès qu'une action concernera votre dossier.
+                        </p>
+                    </div>
+                </t>
+
+                <t t-if="notifications">
+                    <div class="d-flex flex-column gap-3">
+                        <t t-foreach="notifications" t-as="notif">
+                            <div t-attf-class="card border transition-hover p-3 {{ 'bg-light border-light' if notif.is_read else 'bg-white border-primary-subtle' }}" style="border-radius: 12px; border-width: 1px; transition: all 0.2s;">
+                                <div class="d-flex align-items-start gap-3 justify-content-between">
+                                    <!-- Dynamic redirect link for title and icon -->
+                                    <a t-attf-href="/my/notifications/read/{{ notif.id }}" class="d-flex align-items-start gap-3 text-decoration-none flex-grow-1 min-w-0">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center" t-attf-style="width: 40px; height: 40px; background-color: {{ notif.bg_color }}; color: {{ notif.icon_color }} !important; font-size: 1.15rem; flex-shrink: 0;">
+                                            <i t-attf-class="fa {{ notif.icon }}"/>
+                                        </div>
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="d-flex align-items-baseline gap-2 mb-1 flex-wrap">
+                                                <h6 t-attf-class="fw-bold mb-0 {{ 'text-dark' if not notif.is_read else 'text-muted' }}" style="font-size: 0.95rem;" t-out="notif.title"/>
+                                                <span class="badge bg-danger text-white rounded-pill" style="font-size: 0.65rem;" t-if="not notif.is_read">Nouveau</span>
+                                            </div>
+                                            <p class="text-muted mb-1" style="font-size: 0.85rem;" t-out="notif.message"/>
+                                            <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                                <i class="fa fa-clock-o me-1"/> <span t-field="notif.date" t-options="{'widget': 'relative'}"/>
+                                            </small>
+                                        </div>
+                                    </a>
+                                    <!-- Delete button -->
+                                    <div class="flex-shrink-0 align-self-center">
+                                        <a t-attf-href="/my/notifications/delete/{{ notif.id }}" class="btn btn-link text-danger p-2" title="Supprimer cette notification" style="font-size: 1.1rem; border-radius: 8px; transition: color 0.2s;" onmouseover="this.style.color='#a82e2e'" onmouseout="this.style.color='#dc3545'">
+                                            <i class="fa fa-trash-o"/>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div t-if="pager" class="o_portal_pager text-center mt-4">
+                        <t t-call="portal.pager"/>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+</odoo>

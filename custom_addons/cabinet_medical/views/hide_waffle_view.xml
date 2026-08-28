@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        ╔══════════════════════════════════════════════════════════════════╗
+        ║  MASQUAGE DU MENU WAFFLE — Solution Serveur (QWeb) pour Odoo 17 ║
+        ╠══════════════════════════════════════════════════════════════════╣
+        ║  Stratégie : injection d'une classe CSS sur <body> côté SERVEUR ║
+        ║  lors du rendu initial de web.webclient_bootstrap.              ║
+        ║                                                                  ║
+        ║  Groupes concernés (XML IDs confirmés dans security/security.xml)║
+        ║    • cabinet_medical.group_medecin                              ║
+        ║    • cabinet_medical.group_secretaire                           ║
+        ║                                                                  ║
+        ║  Fonctionnement :                                                ║
+        ║  1. On AJOUTE nos t-set AVANT le t-set d'origine (position=before)
+        ║  2. On REMPLACE la valeur de body_classname avec position=replace
+        ║     sur le nœud exact qui porte t-value="'o_web_client'"        ║
+        ║                                                                  ║
+        ║  ⚠ NOTE DE SÉCURITÉ :                                            ║
+        ║  Le CSS côté client (hide_apps_menu.css) masque visuellement.   ║
+        ║  Ce template QWeb garantit que la classe est posée dès le       ║
+        ║  premier octet HTML renvoyé par le serveur, avant tout JS.      ║
+        ║  Pour une sécurité réelle (accès aux menus), combiné avec les   ║
+        ║  règles d'accès ir.model.access.csv et les groupes de menus.    ║
+        ╚══════════════════════════════════════════════════════════════════╝
+    -->
+
+    <template id="hide_waffle_menu_bootstrap" inherit_id="web.webclient_bootstrap" priority="20">
+        <!--
+            XPATH STRATEGY pour Odoo 17 :
+            ─────────────────────────────
+            Dans webclient_templates.xml (ligne 281), le nœud cible est :
+                <t t-set="body_classname" t-value="'o_web_client'"/>
+
+            On utilise position="attributes" pour modifier uniquement la valeur
+            de t-value sans remplacer le nœud entier (plus robuste que "replace").
+
+            Mais comme t-value doit devenir une expression dynamique, on doit
+            utiliser "replace" avec précaution. On cible via @t-value exact.
+        -->
+        <xpath expr="//t[@t-set='body_classname' and @t-value=&quot;'o_web_client'&quot;]" position="replace">
+            <!--
+                Étape 1 : Évaluation des groupes côté serveur.
+                Ces variables sont disponibles dans le scope QWeb du template.
+                has_group() est sûr même si l'utilisateur n'est pas connecté
+                (retourne False pour les utilisateurs publics/portal).
+            -->
+            <t t-set="is_admin"      t-value="request.env.user.has_group('base.group_system')"/>
+            <t t-set="is_medecin"    t-value="request.env.user.has_group('cabinet_medical.group_medecin')"/>
+            <t t-set="is_secretaire" t-value="request.env.user.has_group('cabinet_medical.group_secretaire')"/>
+
+            <!--
+                Étape 2 : Choix de la classe CSS à injecter dans <body>.
+
+                Règle :
+                  - Médecin OU Secrétaire (non admin) → 'o_web_client o_cabinet_restricted'
+                    → body.o_cabinet_restricted .o_navbar_apps_menu { display: none !important }
+                  - Tout autre utilisateur (admin, autre rôle) → 'o_web_client' (comportement Odoo normal)
+
+                L'admin n'est JAMAIS restreint même s'il appartient aux deux groupes.
+            -->
+            <t t-if="not is_admin and (is_medecin or is_secretaire)">
+                <t t-set="body_classname" t-value="'o_web_client o_cabinet_restricted'"/>
+            </t>
+            <t t-else="">
+                <t t-set="body_classname" t-value="'o_web_client'"/>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>

@@ -1,0 +1,76 @@
+name: CI - Vérification du module Odoo
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verifier-syntaxe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Vérifier la syntaxe Python
+        run: |
+          python -m py_compile $(find . -name "*.py" -not -path "./.git/*")
+
+      - name: Vérifier la présence du manifest
+        run: |
+          if [ ! -f "__manifest__.py" ]; then
+            echo "Erreur : __manifest__.py manquant !"
+            exit 1
+          fi
+          echo "Manifest trouvé ✓"
+
+  test-installation-module:
+    runs-on: ubuntu-latest
+    needs: verifier-syntaxe
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Récupérer le code du module
+        uses: actions/checkout@v4
+        with:
+          path: custom_addons/cabinet_medical
+
+      - name: Cloner Odoo 17
+        run: |
+          git clone --depth 1 --branch 17.0 https://github.com/odoo/odoo.git odoo
+
+      - name: Installer les dépendances système
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip libpq-dev libldap2-dev libsasl2-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev
+
+      - name: Installer les dépendances Python d'Odoo
+        run: |
+          pip install -r odoo/requirements.txt
+
+      - name: Installer le module cabinet_medical
+        run: |
+          python odoo/odoo-bin -c /dev/null \
+            --addons-path=odoo/addons,custom_addons \
+            --db_host=localhost --db_port=5432 --db_user=odoo --db_password=odoo \
+            -d test_ci_db -i cabinet_medical --stop-after-init --without-demo=all

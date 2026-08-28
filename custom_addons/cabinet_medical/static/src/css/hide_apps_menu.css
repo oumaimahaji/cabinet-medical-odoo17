@@ -1,0 +1,43 @@
+/*
+ * ============================================================
+ *  MASQUAGE DU MENU WAFFLE — Cabinet Médical
+ * ============================================================
+ *
+ *  La classe "o_cabinet_restricted" est ajoutée au <body> par
+ *  le template QWeb serveur (hide_waffle_view.xml) UNIQUEMENT
+ *  pour les profils Médecin et Secrétaire.
+ *
+ *  L'administrateur conserve la classe "o_web_client" normale
+ *  et voit le menu Waffle (comportement Odoo standard).
+ *
+ *  ⚠ Ce CSS est UNE COUCHE DE RENDU, pas une barrière de sécurité.
+ *    La vraie sécurité = groupes Odoo + ir.model.access.csv
+ * ============================================================
+ */
+
+/* ── Masquage du bouton Waffle (grille 9 apps) ─────────────── */
+body.o_cabinet_restricted .o_navbar_apps_menu {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+
+body.o_cabinet_restricted .o_navbar_apps_menu,
+body.o_cabinet_restricted .o_navbar_apps_menu * {
+    display: none !important;
+}
+
+/* ── Icône .oi-apps (Odoo 17 icon font) ────────────────────── */
+body.o_cabinet_restricted .oi-apps {
+    display: none !important;
+}
+
+/* ── Premier élément dropdown de la navbar (fallback sélecteur) */
+body.o_cabinet_restricted nav.o_main_navbar > .dropdown:first-child {
+    display: none !important;
+}

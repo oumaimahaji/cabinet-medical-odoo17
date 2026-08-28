@@ -1,0 +1,98 @@
+/* ============================================================
+   PREMIUM UI OVERHAUL (SaaS Style)
+   ============================================================ */
+
+/* --- 1. FONT AWESOME DANS LES EN-TÊTES DE COLONNES (TREE VIEWS) --- */
+th[data-name="name"] span::before,
+th[data-name="display_patient_name"] span::before {
+    font-family: FontAwesome; content: "\f007"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="telephone"] span::before {
+    font-family: FontAwesome; content: "\f095"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="date"] span::before,
+th[data-name="heure"] span::before,
+th[data-name="date_consultation"] span::before,
+th[data-name="date_naissance"] span::before {
+    font-family: FontAwesome; content: "\f073"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="state"] span::before,
+th[data-name="dossier_status"] span::before {
+    font-family: FontAwesome; content: "\f05a"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="appointment_type"] span::before {
+    font-family: FontAwesome; content: "\f02b"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="cin"] span::before {
+    font-family: FontAwesome; content: "\f2c2"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="genre"] span::before {
+    font-family: FontAwesome; content: "\f228"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="montant"] span::before,
+th[data-name="total_actes"] span::before {
+    font-family: FontAwesome; content: "\f0d6"; margin-right: 6px; color: #2c5aa0;
+}
+
+/* --- 2. OMBRES DOUCES ET ARRONDI (DESIGN PREMIUM) --- */
+
+/* Cartes (Formulaires) */
+.o_form_sheet {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06) !important;
+    border: 1px solid rgba(0,0,0,0.03) !important;
+}
+
+/* Tableaux (Vues Liste) */
+.o_list_view .o_list_table {
+    background-color: white !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+.o_list_view .table-responsive {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+    background-color: white !important;
+    border: none !important;
+}
+
+/* En-têtes de tableau esthétiques */
+.o_list_view thead {
+    background-color: #f8f9fa !important;
+}
+.o_list_view thead th {
+    border-bottom: 2px solid #2c5aa0 !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 0.5px !important;
+    color: #495057 !important;
+}
+
+/* Lignes de tableau au survol */
+.o_list_table tbody tr:hover {
+    background-color: #f1f6fc !important;
+    transition: background-color 0.2s ease !important;
+}
+
+/* --- 3. AMÉLIORATION DES CHAMPS DE SAISIE --- */
+.o_input {
+    border-radius: 6px !important;
+    border: 1px solid #e0e4e8 !important;
+    padding-left: 8px !important;
+    transition: all 0.2s ease !important;
+}
+.o_input:focus {
+    border-color: #2c5aa0 !important;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.15) !important;
+}
+
+/* --- 4. BADGES STYLISÉS --- */
+.badge {
+    border-radius: 20px !important;
+    padding: 5px 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+}

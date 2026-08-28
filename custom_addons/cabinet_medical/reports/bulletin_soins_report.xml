@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action Report Bulletin de Soins -->
+    <record id="action_report_bulletin_soins" model="ir.actions.report">
+        <field name="name">Bulletin de Soins CNAM</field>
+        <field name="model">cabinet.facture</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">cabinet_medical.report_bulletin_soins_template</field>
+        <field name="report_file">cabinet_medical.report_bulletin_soins_template</field>
+        <field name="print_report_name">'Bulletin Soins - %s' % (object.patient_id.name)</field>
+        <field name="binding_model_id" ref="model_cabinet_facture"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Template QWeb Bulletin de Soins -->
+    <template id="report_bulletin_soins_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <t t-set="p" t-value="doc.patient_id"/>
+                    <div class="page">
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <h3 style="border: 2px solid black; padding: 10px; display: inline-block;">BULLETIN DE SOINS</h3>
+                            </div>
+                        </div>
+
+                        <div class="row mt32" style="border: 1px solid black; padding: 10px;">
+                            <div class="col-12">
+                                <strong>Nom Prénom de l'Assuré : </strong> <span t-field="p.name"/><br/>
+                                <strong>Matricule CNAM : </strong> 
+                                <span t-if="p.numero_cnam" t-field="p.numero_cnam"/> <span t-if="p.code_beneficiaire_cnam"> - <span t-field="p.code_beneficiaire_cnam"/></span><br/>
+                                <strong>Qualité (APCI) : </strong> 
+                                <t t-if="p.is_apci">
+                                    OUI (Décision N° <span t-field="p.numero_decision_apci"/>)
+                                </t>
+                                <t t-else="">NON</t>
+                            </div>
+                        </div>
+
+                        <div class="row mt16" style="border: 1px solid black; padding: 10px;">
+                            <div class="col-12">
+                                <strong>Médecin Traitant : </strong> <span t-esc="env.company.medecin_nom or env.company.name"/><br/>
+                                <strong>INPE : </strong> <span t-esc="env.company.medecin_inpe"/><br/>
+                                <strong>Code Convention : </strong> <span t-esc="env.company.medecin_code_convention"/>
+                            </div>
+                        </div>
+
+                        <br/>
+                        <h4>Détail des Actes (Consultation du <span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/>)</h4>
+                        <table class="table table-bordered table-sm mt16">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Code Acte CNAM</th>
+                                    <th>Description de l'acte</th>
+                                    <th class="text-right">Montant (DT)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="doc.consultation_id.acte_ids">
+                                    <t t-foreach="doc.consultation_id.acte_ids" t-as="acte">
+                                        <tr>
+                                            <td><span t-field="acte.date_acte" t-options='{"widget": "date"}'/></td>
+                                            <td>
+                                                <t t-if="acte.parametrage_id">
+                                                    <strong><span t-field="acte.parametrage_id.code_cnam"/></strong>
+                                                </t>
+                                                <t t-else="">
+                                                    <span t-field="acte.type_acte"/>
+                                                </t>
+                                            </td>
+                                            <td><span t-field="acte.description"/></td>
+                                            <td class="text-right"><span t-field="acte.montant"/></td>
+                                        </tr>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <tr>
+                                        <td><span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/></td>
+                                        <td><strong>C</strong></td>
+                                        <td><span>Consultation médicale standard</span></td>
+                                        <td class="text-right"><span t-field="doc.montant_total"/></td>
+                                    </tr>
+                                </t>
+                                <tr class="bg-light">
+                                    <td colspan="3" class="text-right"><strong>Total Honoraires</strong></td>
+                                    <td class="text-right"><strong><span t-field="doc.montant_total"/> DT</strong></td>
+                                </tr>
+                                <tr t-if="doc.part_cnam_display &gt; 0">
+                                    <td colspan="3" class="text-right">
+                                        <strong>
+                                            <t t-if="doc.scenario in ('cnam_tiers_payant', 'cnam_tp_assur', 'apci_tiers_payant')">
+                                                Part CNAM (prise en charge cabinet)
+                                            </t>
+                                            <t t-else="">
+                                                Part CNAM remboursable
+                                            </t>
+                                        </strong>
+                                    </td>
+                                    <td class="text-right"><strong><span t-field="doc.part_cnam_display"/> DT</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-right">
+                                        <strong>
+                                            <t t-if="doc.scenario in ('cnam_tiers_payant', 'cnam_tp_assur', 'apci_tiers_payant')">
+                                                Ticket Modérateur (payé par le patient)
+                                            </t>
+                                            <t t-else="">
+                                                Part restant à la charge du patient
+                                            </t>
+                                        </strong>
+                                    </td>
+                                    <td class="text-right">
+                                        <strong>
+                                            <span t-field="doc.reste_apres_cnam_seule"/> DT
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="row mt64">
+                            <div class="col-6">
+                                <div style="border: 1px dashed black; height: 150px; width: 100%; text-align: center; padding-top: 60px;">
+                                    <span class="text-muted">Espace Réservé aux Vignettes</span>
+                                </div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <strong>Signature et Cachet du Médecin</strong>
+                                <div style="height: 100px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

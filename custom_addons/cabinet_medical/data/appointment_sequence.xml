@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Séquence pour les références automatiques des rendez-vous -->
+    <record id="sequence_appointment" model="ir.sequence">
+        <field name="name">Rendez-vous</field>
+        <field name="code">cabinet.appointment</field>
+        <field name="prefix">RDV</field>
+        <field name="padding">4</field>
+        <field name="number_next">1</field>
+        <field name="number_increment">1</field>
+    </record>
+</odoo>

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- 1. Personnalisation du Layout Général de Connexion (Logo, Baseline, Taille Carte et Retrait du Pied de Page) -->
+    <template id="login_layout_custom_logo" inherit_id="web.login_layout">
+        <!-- Remplacer le logo de l'écran de connexion par notre logo et ajouter la baseline agrandie -->
+        <xpath expr="//div[hasclass('card-body')]/div[1]/img" position="replace">
+            <img src="/cabinet_medical/static/src/img/login_logo.png" alt="Logo" style="max-height: 90px; max-width: 100%; width: auto; border-radius: 8px; margin: 10px auto 8px auto; display: block;"/>
+            
+            <!-- Baseline du Cabinet -->
+            <div class="logo-baseline mt-1" style="font-size: 0.85rem !important; font-weight: 700; color: #1a3a6e !important; letter-spacing: 2px; text-transform: uppercase; text-align: center; opacity: 0.95;">
+                SOINS · SANTÉ · CONFIANCE
+            </div>
+        </xpath>
+        
+        <!-- Rendre la carte de connexion parfaitement responsive (width 100%, max-width 380px) -->
+        <xpath expr="//div[hasclass('container')]/div[1]" position="attributes">
+            <attribute name="style">width: 100% !important; max-width: 380px !important; border-radius: 16px !important; border: 1px solid rgba(26, 58, 110, 0.08) !important; box-shadow: 0 15px 35px rgba(26, 58, 110, 0.1) !important; background: #ffffff !important; overflow: hidden; padding: 25px 15px !important;</attribute>
+        </xpath>
+
+        <!-- Supprimer complètement le pied de page (Gestion des bases de données et logo Odoo) -->
+        <xpath expr="//div[hasclass('card-body')]/div[last()]" position="attributes">
+            <attribute name="style">display: none !important;</attribute>
+        </xpath>
+    </template>
+
+    <!-- 2. Personnalisation du Formulaire de Connexion (Champs épurés, Masquage DB, Retrait Superutilisateur) -->
+    <template id="login_custom_fields" inherit_id="web.login">
+        <!-- Masquer complètement la sélection de la base de données et la transmettre automatiquement (ciblage par label pour éviter l'usage de t-if) -->
+        <xpath expr="//label[@for='db']/.." position="replace">
+            <input type="hidden" name="db" t-att-value="request.db or db"/>
+        </xpath>
+
+        <!-- Remplacement du champ Email (Login) avec icône enveloppe et hauteur réduite -->
+        <xpath expr="//div[hasclass('field-login')]" position="replace">
+            <div class="mb-3 field-login">
+                <label for="login" class="form-label text-primary" style="font-weight: 700; color: #1a3a6e !important; font-size: 0.82rem; margin-bottom: 6px;">Adresse E-mail</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
+                        <i class="fa fa-envelope" style="color: #1a3a6e !important; opacity: 0.8; font-size: 0.9rem;"></i>
+                    </span>
+                    <input type="text" placeholder="Ex: secretaire@cabinet.com" name="login" t-att-value="login" id="login" t-attf-class="form-control border-start-0 #{'form-control-sm' if form_small else ''}" required="required" autocomplete="username" autofocus="autofocus" autocapitalize="off" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px;"/>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- Remplacement du champ Password avec icône cadenas, bouton oeil et hauteur réduite -->
+        <xpath expr="//input[@id='password']/.." position="replace">
+            <div class="mb-3 field-password">
+                <label for="password" class="form-label text-primary" style="font-weight: 700; color: #1a3a6e !important; font-size: 0.82rem; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span>Mot de passe</span>
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
+                        <i class="fa fa-lock" style="color: #1a3a6e !important; opacity: 0.8; font-size: 0.95rem;"></i>
+                    </span>
+                    <input type="password" placeholder="Saisir votre mot de passe" name="password" id="password" t-attf-class="form-control border-start-0 border-end-0 #{'form-control-sm' if form_small else ''}" required="required" autocomplete="current-password" t-att-autofocus="'autofocus' if login else None" maxlength="4096" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-radius: 0;"/>
+                    <button class="btn btn-outline-secondary bg-white border-start-0" type="button" id="toggle-password" style="border-color: #dee2e6; color: #1a3a6e !important; border-top-right-radius: 8px; border-bottom-right-radius: 8px; padding: 0.375rem 0.75rem; z-index: 4;">
+                        <i class="fa fa-eye" id="toggle-password-icon" style="opacity: 0.8; font-size: 0.9rem;"></i>
+                    </button>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- Supprimer le lien de connexion en tant que superutilisateur (ciblé par la classe btn-link) -->
+        <xpath expr="//button[hasclass('btn-link')]" position="attributes">
+            <attribute name="style">display: none !important;</attribute>
+        </xpath>
+
+        <!-- Supprimer le lien d'inscription (Créer un compte) et centrer le lien "Mot de passe oublié" -->
+        <xpath expr="//div[hasclass('justify-content-between')]/a[1]" position="attributes">
+            <attribute name="style">display: none !important;</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('justify-content-between')]" position="attributes">
+            <attribute name="class">text-center mt-2 d-block small</attribute>
+        </xpath>
+
+        <!-- Insertion du script JavaScript de toggle password et d'animations subtiles -->
+        <xpath expr="//form" position="inside">
+            <script type="text/javascript">
+                (function() {
+                    var interval = setInterval(function() {
+                        var toggleBtn = document.getElementById('toggle-password');
+                        var passwordInput = document.getElementById('password');
+                        var icon = document.getElementById('toggle-password-icon');
+                        if (toggleBtn &amp;&amp; passwordInput &amp;&amp; icon) {
+                            clearInterval(interval);
+                            
+                            // Événement pour basculer le mot de passe
+                            toggleBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (passwordInput.type === 'password') {
+                                    passwordInput.type = 'text';
+                                    icon.className = 'fa fa-eye-slash';
+                                    icon.style.color = '#4a90e2';
+                                } else {
+                                    passwordInput.type = 'password';
+                                    icon.className = 'fa fa-eye';
+                                    icon.style.color = '#1a3a6e';
+                                }
+                            });
+                        }
+                    }, 50);
+                    setTimeout(function() { clearInterval(interval); }, 4000);
+                })();
+            </script>
+        </xpath>
+    </template>
+
+    <!-- 3. Personnalisation des champs de Signup/ResetPassword (Icônes, Toggles de mot de passe) -->
+    <template id="auth_signup_fields_custom" inherit_id="auth_signup.fields">
+        <!-- Rendre le label et l'input email conformes au design épuré -->
+        <xpath expr="//div[hasclass('field-login')]" position="replace">
+            <div class="mb-3 field-login">
+                <label for="login" class="form-label text-primary" style="font-weight: 700; color: #1a3a6e !important; font-size: 0.82rem; margin-bottom: 6px;">Votre e-mail</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
+                        <i class="fa fa-envelope" style="color: #1a3a6e !important; opacity: 0.5; font-size: 0.9rem;"></i>
+                    </span>
+                    <input type="text" name="login" t-att-value="login" id="login" class="form-control border-start-0 bg-light" autofocus="autofocus" autocapitalize="off" required="required" t-att-readonly="'readonly' if only_passwords else None" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px; color: #6c757d;"/>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- Rendre le label et l'input name conformes au design épuré -->
+        <xpath expr="//div[hasclass('field-name')]" position="replace">
+            <div class="mb-3 field-name">
+                <label for="name" class="form-label text-primary" style="font-weight: 700; color: #1a3a6e !important; font-size: 0.82rem; margin-bottom: 6px;">Votre nom</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
+                        <i class="fa fa-user" style="color: #1a3a6e !important; opacity: 0.5; font-size: 0.9rem;"></i>
+                    </span>
+                    <input type="text" name="name" t-att-value="name" id="name" class="form-control border-start-0 bg-light" placeholder="e.g. John Doe" required="required" t-att-readonly="'readonly' if only_passwords else None" t-att-autofocus="'autofocus' if login and not only_passwords else None" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px; color: #6c757d;"/>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- Remplacement du champ Mot de passe avec bouton œil pour toggle -->
+        <xpath expr="//div[hasclass('field-password')]" position="replace">
+            <div class="mb-3 field-password">
+                <label for="password" class="form-label text-primary" style="font-weight: 700; color: #1a3a6e !important; font-size: 0.82rem; margin-bottom: 6px;">Mot de passe</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
+                        <i class="fa fa-lock" style="color: #1a3a6e !important; opacity: 0.8; font-size: 0.95rem;"></i>
+                    </span>
+                    <input type="password" name="password" id="password" class="form-control border-start-0 border-end-0" required="required" t-att-autofocus="'autofocus' if only_passwords else None" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-radius: 0;"/>
+                    <button class="btn btn-outline-secondary bg-white border-start-0" type="button" id="toggle-password-reset" style="border-color: #dee2e6; color: #1a3a6e !important; border-top-right-radius: 8px; border-bottom-right-radius: 8px; padding: 0.375rem 0.75rem; z-index: 4;">
+                        <i class="fa fa-eye" id="toggle-password-reset-icon" style="opacity: 0.8; font-size: 0.9rem;"></i>
+                    </button>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- Remplacement du champ Confirmer le mot de passe avec bouton œil pour toggle -->
+        <xpath expr="//div[hasclass('field-confirm_password')]" position="replace">
+            <div class="mb-3 field-confirm_password">
+                <label for="confirm_password" class="form-label text-primary" style="font-weight: 700; color: #1a3a6e !important; font-size: 0.82rem; margin-bottom: 6px;">Confirmer le mot de passe</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
+                        <i class="fa fa-lock" style="color: #1a3a6e !important; opacity: 0.8; font-size: 0.95rem;"></i>
+                    </span>
+                    <input type="password" name="confirm_password" id="confirm_password" class="form-control border-start-0 border-end-0" required="required" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-radius: 0;"/>
+                    <button class="btn btn-outline-secondary bg-white border-start-0" type="button" id="toggle-confirm-password-reset" style="border-color: #dee2e6; color: #1a3a6e !important; border-top-right-radius: 8px; border-bottom-right-radius: 8px; padding: 0.375rem 0.75rem; z-index: 4;">
+                        <i class="fa fa-eye" id="toggle-confirm-password-reset-icon" style="opacity: 0.8; font-size: 0.9rem;"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Script JS de contrôle de masquage/visibilité pour les deux nouveaux boutons -->
+            <script type="text/javascript">
+                (function() {
+                    var interval = setInterval(function() {
+                        var togglePass = document.getElementById('toggle-password-reset');
+                        var passInput = document.getElementById('password');
+                        var passIcon = document.getElementById('toggle-password-reset-icon');
+                        
+                        var toggleConfirm = document.getElementById('toggle-confirm-password-reset');
+                        var confirmInput = document.getElementById('confirm_password');
+                        var confirmIcon = document.getElementById('toggle-confirm-password-reset-icon');
+                        
+                        if (togglePass &amp;&amp; passInput &amp;&amp; passIcon &amp;&amp; toggleConfirm &amp;&amp; confirmInput &amp;&amp; confirmIcon) {
+                            clearInterval(interval);
+                            
+                            // Événement pour le champ Mot de passe
+                            togglePass.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (passInput.type === 'password') {
+                                    passInput.type = 'text';
+                                    passIcon.className = 'fa fa-eye-slash';
+                                    passIcon.style.color = '#4a90e2';
+                                } else {
+                                    passInput.type = 'password';
+                                    passIcon.className = 'fa fa-eye';
+                                    passIcon.style.color = '#1a3a6e';
+                                }
+                            });
+                            
+                            // Événement pour le champ Confirmer mot de passe
+                            toggleConfirm.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (confirmInput.type === 'password') {
+                                    confirmInput.type = 'text';
+                                    confirmIcon.className = 'fa fa-eye-slash';
+                                    confirmIcon.style.color = '#4a90e2';
+                                } else {
+                                    confirmInput.type = 'password';
+                                    confirmIcon.className = 'fa fa-eye';
+                                    confirmIcon.style.color = '#1a3a6e';
+                                }
+                            });
+                        }
+                    }, 50);
+                    setTimeout(function() { clearInterval(interval); }, 4000);
+                })();
+            </script>
+        </xpath>
+    </template>
+
+</odoo>

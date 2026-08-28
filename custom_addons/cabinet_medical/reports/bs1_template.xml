@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action Report BS1 -->
+    <record id="action_report_bs1" model="ir.actions.report">
+        <field name="name">Formulaire BS1 (CNAM)</field>
+        <field name="model">cabinet.facture</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">cabinet_medical.report_bs1_template</field>
+        <field name="report_file">cabinet_medical.report_bs1_template</field>
+        <field name="print_report_name">'BS1 - %s' % (object.patient_id.name)</field>
+        <field name="binding_model_id" ref="model_cabinet_facture"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Template QWeb BS1 -->
+    <template id="report_bs1_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <t t-set="p" t-value="doc.patient_id"/>
+                    <div class="page" style="font-family: Arial, sans-serif;">
+                        <h2 class="text-center">CAISSE NATIONALE D'ASSURANCE MALADIE (CNAM)</h2>
+                        <h3 class="text-center" style="border: 1px solid black; padding: 5px;">BULLETIN DE SOINS (BS1) - REMBOURSEMENT INTÉGRAL</h3>
+                        
+                        <!-- En-tête : nom + cachet du médecin -->
+                        <div class="row mt-4">
+                            <div class="col-12" style="border: 1px solid #000; padding: 10px;">
+                                <strong>Médecin Traitant : </strong> <span t-esc="env.company.medecin_nom or env.company.name"/><br/>
+                                <strong>INPE : </strong> <span t-esc="env.company.medecin_inpe"/><br/>
+                                <strong>Code Convention : </strong> <span t-esc="env.company.medecin_code_convention"/>
+                            </div>
+                        </div>
+
+                        <!-- Nom + prénom + numéro CNAM du patient -->
+                        <div class="row mt-3">
+                            <div class="col-12" style="border: 1px solid #000; padding: 10px;">
+                                <h4>Informations de l'Assuré</h4>
+                                <strong>Nom et Prénom : </strong> <span t-field="p.name"/><br/>
+                                <strong>Numéro CNAM : </strong> <span t-field="p.numero_cnam"/> <span t-if="p.code_beneficiaire_cnam"> - <span t-field="p.code_beneficiaire_cnam"/></span><br/>
+                                <t t-if="p.is_apci">
+                                    <strong>Qualité (APCI) : OUI (Décision N° </strong> <span t-field="p.numero_decision_apci"/><strong>)</strong><br/>
+                                </t>
+                            </div>
+                        </div>
+                        
+                        <!-- Attestation officielle -->
+                        <div class="row mt-4">
+                            <div class="col-12" style="border: 1px solid #000; padding: 10px; background-color: #f9f9f9;">
+                                <h4>Attestation de règlement</h4>
+                                <p>
+                                    Je soussigné, certifie avoir dispensé une consultation (et soins éventuels) au patient susmentionné en date du <strong><span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/></strong>.
+                                </p>
+                                <p style="font-size: 1.1em; padding: 10px; border-left: 4px solid #17a2b8;">
+                                    <strong>J'atteste par la présente que l'assuré a réglé la totalité des honoraires médicaux d'un montant de : <span t-field="doc.montant_paye_cabinet"/> DT.</strong>
+                                </p>
+                                
+                                <p style="margin-top: 15px;">
+                                    <strong>Part CNAM estimée à rembourser à l'assuré : </strong> 
+                                    <span t-field="doc.part_cnam_display"/> DT 
+                                    <em>(Remboursement à 100% si APCI, sinon selon les taux en vigueur)</em>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Signature -->
+                        <div class="row mt-5">
+                            <div class="col-6 offset-6 text-center">
+                                <strong>Signature et Cachet du Médecin</strong>
+                                <div style="height: 100px; border-bottom: 1px dotted black; margin-top: 20px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

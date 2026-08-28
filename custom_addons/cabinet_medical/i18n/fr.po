@@ -1,0 +1,366 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* cabinet_medical
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-19 14:00+0000\n"
+"PO-Revision-Date: 2026-04-19 14:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__name
+msgid "Nom complet"
+msgstr "Nom complet"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__date_naissance
+msgid "Date de naissance"
+msgstr "Date de naissance"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__genre
+msgid "Genre"
+msgstr "Genre"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_patient__genre__homme
+msgid "Homme"
+msgstr "Homme"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_patient__genre__femme
+msgid "Femme"
+msgstr "Femme"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__telephone
+msgid "Téléphone"
+msgstr "Téléphone"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__cin
+msgid "CIN"
+msgstr "CIN"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__adresse
+msgid "Adresse"
+msgstr "Adresse"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__is_cnam
+msgid "Assuré CNAM"
+msgstr "Assuré CNAM"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__numero_cnam
+msgid "Numéro CNAM"
+msgstr "Numéro CNAM"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__regime_cnam
+msgid "Régime CNAM"
+msgstr "Régime CNAM"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_patient__regime_cnam__apci
+msgid "APCI"
+msgstr "APCI"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_patient__regime_cnam__public
+msgid "Public"
+msgstr "Public"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_patient__regime_cnam__prive
+msgid "Privé"
+msgstr "Privé"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_patient__regime_cnam__salarie
+msgid "Salarié"
+msgstr "Salarié"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__has_assurance
+msgid "Assurance privée"
+msgstr "Assurance privée"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__assurance_id
+msgid "Assurance"
+msgstr "Assurance"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__assurance_numero
+msgid "Numéro d'affiliation"
+msgstr "Numéro d'affiliation"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__assurance_taux
+msgid "Taux de couverture (%)"
+msgstr "Taux de couverture (%)"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__consultation_ids
+msgid "Consultations"
+msgstr "Consultations"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_patient__nb_consultations
+msgid "Nombre de consultations"
+msgstr "Nombre de consultations"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__patient_id
+msgid "Patient"
+msgstr "Patient"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__patient_name
+msgid "Nom du patient"
+msgstr "Nom du patient"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__display_patient_name
+msgid "Nom du patient affiché"
+msgstr "Nom du patient affiché"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__date
+msgid "Date du RDV"
+msgstr "Date du RDV"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__heure
+msgid "Heure du RDV"
+msgstr "Heure du RDV"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__state
+msgid "État"
+msgstr "État"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_rendezvous__state__en_attente
+msgid "En attente"
+msgstr "En attente"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_rendezvous__state__termine
+msgid "Terminé"
+msgstr "Terminé"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_rendezvous__state__annule
+msgid "Annulé"
+msgstr "Annulé"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__today_appointments_count
+msgid "RDV aujourd'hui"
+msgstr "RDV aujourd'hui"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_rendezvous__remaining_slots
+msgid "Places restantes"
+msgstr "Places restantes"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__patient_id
+msgid "Patient"
+msgstr "Patient"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__date_consultation
+msgid "Date de consultation"
+msgstr "Date de consultation"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__motif
+msgid "Motif de la consultation"
+msgstr "Motif de la consultation"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__diagnostic
+msgid "Diagnostic"
+msgstr "Diagnostic"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__notes_medicales
+msgid "Notes médicales"
+msgstr "Notes médicales"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__acte_ids
+msgid "Actes médicaux"
+msgstr "Actes médicaux"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__prescription_ids
+msgid "Prescriptions"
+msgstr "Prescriptions"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_consultation__total_actes
+msgid "Nombre d'actes"
+msgstr "Nombre d'actes"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_acte__type_acte
+msgid "Type d'acte"
+msgstr "Type d'acte"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__consultation
+msgid "Consultation"
+msgstr "Consultation"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__injection
+msgid "Injection"
+msgstr "Injection"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__pansement
+msgid "Pansement"
+msgstr "Pansement"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__suture
+msgid "Suture"
+msgstr "Suture"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__vaccination
+msgid "Vaccination"
+msgstr "Vaccination"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__examen
+msgid "Examen clinique"
+msgstr "Examen clinique"
+
+#. module: cabinet_medical
+#: model:ir.model.fields.selection,name:cabinet_medical.selection__cabinet_acte__type_acte__autre
+msgid "Autre"
+msgstr "Autre"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_acte__description
+msgid "Description de l'acte"
+msgstr "Description de l'acte"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_acte__date_acte
+msgid "Date de l'acte"
+msgstr "Date de l'acte"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_acte__code_acte
+msgid "Code acte"
+msgstr "Code acte"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_acte__montant
+msgid "Montant (DT)"
+msgstr "Montant (DT)"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription__date_prescription
+msgid "Date de prescription"
+msgstr "Date de prescription"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription__instructions
+msgid "Instructions générales"
+msgstr "Instructions générales"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription_line__medicament
+msgid "Médicament"
+msgstr "Médicament"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription_line__dosage
+msgid "Dosage"
+msgstr "Dosage"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription_line__posologie
+msgid "Posologie"
+msgstr "Posologie"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription_line__duree
+msgid "Durée"
+msgstr "Durée"
+
+#. module: cabinet_medical
+#: model:ir.model.fields,field_description:cabinet_medical.field_cabinet_prescription_line__instructions_speciales
+msgid "Instructions spéciales"
+msgstr "Instructions spéciales"
+
+#. module: cabinet_medical
+#: model:ir.actions.act_window,name:cabinet_medical.action_patient_secretaire
+msgid "Patients"
+msgstr "Patients"
+
+#. module: cabinet_medical
+#: model:ir.actions.act_window,name:cabinet_medical.action_patient_medecin
+msgid "Patients"
+msgstr "Patients"
+
+#. module: cabinet_medical
+#: model:ir.actions.act_window,name:cabinet_medical.action_consultation
+msgid "Consultations"
+msgstr "Consultations"
+
+#. module: cabinet_medical
+#: model:ir.actions.act_window,name:cabinet_medical.action_rendezvous_secretaire
+msgid "Rendez-vous"
+msgstr "Rendez-vous"
+
+#. module: cabinet_medical
+#: model:ir.actions.act_window,name:cabinet_medical.action_rendezvous_medecin
+msgid "Rendez-vous"
+msgstr "Rendez-vous"
+
+#. module: cabinet_medical
+#: model:ir.ui.menu,name:cabinet_medical.menu_cabinet_medical
+msgid "Cabinet Médical"
+msgstr "Cabinet Médical"
+
+#. module: cabinet_medical
+#: model:ir.ui.menu,name:cabinet_medical.menu_patients
+msgid "Patients"
+msgstr "Patients"
+
+#. module: cabinet_medical
+#: model:ir.ui.menu,name:cabinet_medical.menu_consultations
+msgid "Consultations"
+msgstr "Consultations"
+
+#. module: cabinet_medical
+#: model:ir.ui.menu,name:cabinet_medical.menu_rendezvous
+msgid "Rendez-vous"
+msgstr "Rendez-vous"
+
+#. module: cabinet_medical
+#: model:ir.ui.menu,name:cabinet_medical.menu_secretaire
+msgid "Secrétaire"
+msgstr "Secrétaire"
+
+#. module: cabinet_medical
+#: model:ir.ui.menu,name:cabinet_medical.menu_medecin
+msgid "Médecin"
+msgstr "Médecin"

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Formulaire du Wizard de Signature PIN -->
+    <record id="view_cabinet_prescription_sign_wizard_form" model="ir.ui.view">
+        <field name="name">cabinet.prescription.sign.wizard.form</field>
+        <field name="model">cabinet.prescription.sign.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Confirmation de Signature Sécurisée">
+                <div class="alert alert-info p-3 mb-3 d-flex align-items-center gap-3 rounded-3" role="status">
+                    <div class="text-primary" style="font-size: 28px; flex-shrink: 0;">
+                        <i class="fa fa-shield"/>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1 text-primary">Signature Sécurisée de l'Ordonnance</h6>
+                        <p class="mb-0 text-muted" style="font-size: 0.88rem;">
+                            En signant cette ordonnance, votre signature enregistrée y sera apposée de manière immuable et le dossier sera définitivement verrouillé.
+                        </p>
+                    </div>
+                </div>
+
+                <group>
+                    <field name="prescription_id" invisible="1"/>
+                    <field name="pin" string="Code PIN personnel" password="True" required="1" placeholder="Entrez votre PIN (4 à 8 chiffres)..."/>
+                </group>
+
+                <footer>
+                    <button string="✍️ Confirmer et Apposer la Signature" name="action_confirm_signature" type="object" class="btn-success"/>
+                    <button string="Annuler" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

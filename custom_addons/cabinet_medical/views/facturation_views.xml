@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Liste Facture -->
+    <record id="view_cabinet_facture_tree" model="ir.ui.view">
+        <field name="name">cabinet.facture.tree</field>
+        <field name="model">cabinet.facture</field>
+        <field name="arch" type="xml">
+            <tree create="0" decoration-info="state == 'draft'" decoration-success="state == 'validated'">
+                <field name="name"/>
+                <field name="date_facture"/>
+                <field name="patient_id"/>
+                <field name="scenario"/>
+                <field name="montant_total"/>
+                <field name="montant_paye_cabinet" string="À payer"/>
+                <field name="state" widget="badge" decoration-success="state == 'validated'" decoration-info="state == 'draft'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire Facture -->
+    <record id="view_cabinet_facture_form" model="ir.ui.view">
+        <field name="name">cabinet.facture.form</field>
+        <field name="model">cabinet.facture</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <button name="action_valider" string="Encaisser le paiement" type="object" class="btn-primary" invisible="state != 'draft'" groups="cabinet_medical.group_secretaire"/>
+                    
+                    <!-- Facture toujours visible si validée -->
+                    <button name="%(cabinet_medical.action_report_facture)d" string="Imprimer Facture" type="action" class="btn-secondary" icon="fa-print" invisible="state != 'validated'"/>
+                    
+                    <!-- Reçu visible SAUF SI le patient ne paie rien au cabinet (APCI Tiers-Payant) -->
+                    <button name="%(cabinet_medical.action_report_recu)d" string="Imprimer Reçu" type="action" class="btn-secondary" icon="fa-print" invisible="state != 'validated' or scenario in ('apci_tiers_payant')"/>
+                    
+                    <!-- Bulletin de Soins CNAM : usage différent selon la filière (conservé cabinet si tiers-payant, remis au patient si remboursement) -->
+                    <button name="%(cabinet_medical.action_report_bulletin_soins)d" string="Bulletin de Soins CNAM" type="action" class="btn-secondary" icon="fa-print" invisible="state != 'validated' or scenario not in ('cnam_tiers_payant', 'cnam_remboursement', 'cnam_tp_assur', 'cnam_remb_assur', 'apci_tiers_payant')"/>
+                    
+                    <!-- Formulaire de remboursement BS1 : remis au patient pour dépôt à la CNAM et obtention du remboursement -->
+                    <button name="%(cabinet_medical.action_report_bs1)d" string="Formulaire de remboursement (BS1)" type="action" class="btn-secondary" icon="fa-print" invisible="state != 'validated' or scenario not in ('cnam_remboursement', 'cnam_remb_assur', 'apci_remboursement')"/>
+                    
+                    <!-- Mutuelle (Jaune) : visible si assurance privée impliquée -->
+                    <button name="%(cabinet_medical.action_report_feuille_soins)d" string="Feuille de Soins (Mutuelle)" type="action" class="btn-secondary" icon="fa-print" invisible="state != 'validated' or scenario not in ('sans_cnam_assur', 'cnam_tp_assur', 'cnam_remb_assur')"/>
+                    
+                    <field name="state" widget="statusbar" statusbar_visible="draft,validated"/>
+                </header>
+                <sheet>
+                    <!-- Bandeau dynamique du scénario -->
+                    <div class="alert alert-info" role="alert" style="margin-bottom: 20px; font-size: 16px;">
+                        <strong><field name="scenario" readonly="1"/></strong>
+                    </div>
+ 
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="patient_id" readonly="state != 'draft'"/>
+                            <field name="consultation_id" readonly="state != 'draft'"/>
+                            <field name="date_facture" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <!-- 1. Montant total (Visible dans tous les scénarios) -->
+                            <field name="montant_total" readonly="1" decoration-bf="1"/>
+                            
+                            <!-- 2. Part CNAM -->
+                            <!-- Scénario 2 (cnam_remboursement) et Scénario 5 (cnam_remb_assur) -->
+                            <field name="part_cnam_display" string="Part CNAM (remboursée au patient)" readonly="1" decoration-info="1" invisible="scenario not in ('cnam_remboursement', 'cnam_remb_assur')"/>
+                            
+                            <!-- Scénario 3 (cnam_tiers_payant) et Scénario 6 (cnam_tp_assur) -->
+                            <field name="part_cnam_display" string="Part CNAM (payée au cabinet)" readonly="1" decoration-info="1" invisible="scenario not in ('cnam_tiers_payant', 'cnam_tp_assur')"/>
+                            
+                            <!-- Scénario 4a (apci_tiers_payant) -->
+                            <field name="part_cnam_display" string="Part CNAM = 100 %" readonly="1" decoration-info="1" invisible="scenario != 'apci_tiers_payant'"/>
+                            
+                            <!-- Scénario 4b (apci_remboursement) -->
+                            <field name="part_cnam_display" string="Part CNAM = 100 % (remboursée au patient)" readonly="1" decoration-info="1" invisible="scenario != 'apci_remboursement'"/>
+                            
+                            <!-- 3. Part Assurance (Visible pour Scénario 5, 6, 7) -->
+                            <field name="part_assurance_display" string="Part Assurance" readonly="1" decoration-primary="1" invisible="scenario not in ('cnam_remb_assur', 'cnam_tp_assur', 'sans_cnam_assur')"/>
+
+                            <!-- 4. Patient paie au cabinet -->
+                            <!-- Scénario 3 (cnam_tiers_payant) et Scénario 6 (cnam_tp_assur) -->
+                            <field name="montant_paye_cabinet" string="Patient paie au cabinet (ticket modérateur)" readonly="1" decoration-success="1" decoration-bf="1" invisible="scenario not in ('cnam_tiers_payant', 'cnam_tp_assur')"/>
+                            
+                            <!-- Autres scénarios -->
+                            <field name="montant_paye_cabinet" string="Patient paie au cabinet" readonly="1" decoration-success="1" decoration-bf="1" invisible="scenario in ('cnam_tiers_payant', 'cnam_tp_assur')"/>
+
+                            <!-- 5. Reste à charge final -->
+                            <field name="reste_a_charge_final" string="Reste à charge final patient" readonly="1" decoration-warning="1" decoration-bf="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+ 
+    <!-- Action Facture -->
+    <record id="action_cabinet_facture" model="ir.actions.act_window">
+        <field name="name">💳 Liste des Facturations</field>
+        <field name="res_model">cabinet.facture</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Action Facture pour Médecin (Lecture Seule) -->
+    <record id="action_cabinet_facture_medecin" model="ir.actions.act_window">
+        <field name="name">Facturations</field>
+        <field name="res_model">cabinet.facture</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
+
+

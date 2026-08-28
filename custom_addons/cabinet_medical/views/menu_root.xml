@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_cabinet_root"
+              name="Cabinet Médical"
+              sequence="10"/>
+</odoo>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Catégorie pour regrouper les rôles de ton module -->
+    <record id="module_category_cabinet_medical" model="ir.module.category">
+        <field name="name">Cabinet Médical</field>
+        <field name="sequence">1</field>
+    </record>
+
+    <!-- Groupe : Médecin -->
+    <record id="group_medecin" model="res.groups">
+        <field name="name">Médecin</field>
+        <field name="category_id" ref="module_category_cabinet_medical"/>
+        <field name="comment">Accès aux consultations, agenda, prescriptions et bordereau CNAM.</field>
+    </record>
+
+    <!-- Groupe : Secrétaire -->
+    <record id="group_secretaire" model="res.groups">
+        <field name="name">Secrétaire</field>
+        <field name="category_id" ref="module_category_cabinet_medical"/>
+        <field name="comment">Accès aux patients, rendez-vous, facturation et impressions.</field>
+    </record>
+
+    <!-- Règle de sécurité : La Secrétaire ne peut consulter que les consultations terminées ('done') -->
+    <record id="rule_cabinet_consultation_secretaire" model="ir.rule">
+        <field name="name">Consultations Secrétaire: Terminées uniquement</field>
+        <field name="model_id" ref="model_cabinet_consultation"/>
+        <field name="domain_force">[('state', '=', 'done')]</field>
+        <field name="groups" eval="[(4, ref('group_secretaire'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+</odoo>

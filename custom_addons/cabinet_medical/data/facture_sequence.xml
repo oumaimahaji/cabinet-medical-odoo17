@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_cabinet_facture" model="ir.sequence">
+        <field name="name">Facture Cabinet Médical</field>
+        <field name="code">cabinet.facture</field>
+        <field name="prefix">FAC/%(year)s/%(month)s/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

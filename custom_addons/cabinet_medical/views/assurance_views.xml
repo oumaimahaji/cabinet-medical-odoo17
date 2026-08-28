@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue Liste pour les Assurances -->
+    <record id="view_assurance_list" model="ir.ui.view">
+        <field name="name">cabinet.assurance.list</field>
+        <field name="model">cabinet.assurance</field>
+        <field name="arch" type="xml">
+            <tree class="o_assurance_tree" export_xlsx="1">
+                <field name="name" string="🛡️ Nom de l'assurance"/>
+                <field name="taux" column_invisible="True"/>
+                <field name="taux_affichage" string="📈 Taux" widget="badge"
+                       decoration-success="taux &gt;= 80"
+                       decoration-info="taux &lt; 80 and taux &gt;= 50"
+                       decoration-warning="taux &lt; 50"/>
+                <field name="active" string="🟢 Active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les Assurances -->
+    <record id="view_assurance_form" model="ir.ui.view">
+        <field name="name">cabinet.assurance.form</field>
+        <field name="model">cabinet.assurance</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <i class="fa fa-shield text-primary mr-3" style="color: #007bff; margin-right: 15px;" title="Assurance"/>
+                            <field name="name" placeholder="Nom de l'assurance..."/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Informations générales">
+                            <field name="taux" string="📈 Taux de couverture (%)"/>
+                            <field name="active" string="🟢 Active"/>
+                        </group>
+                        <group string="Description">
+                            <field name="description" nolabel="1" placeholder="Description détaillée de l'assurance..."/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue Recherche pour les Assurances -->
+    <record id="view_assurance_search" model="ir.ui.view">
+        <field name="name">cabinet.assurance.search</field>
+        <field name="model">cabinet.assurance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Nom"/>
+                <field name="taux" string="Taux"/>
+                <separator/>
+                <filter string="Actives" name="filter_active" domain="[('active', '=', True)]"/>
+                <filter string="Inactives" name="filter_inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+    
+            </search>
+        </field>
+    </record>
+
+    <!-- Action pour les Assurances -->
+    <record id="action_assurance_secretaire" model="ir.actions.act_window">
+        <field name="name">🛡️ Liste des Assurances</field>
+        <field name="res_model">cabinet.assurance</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5,0,0),
+            (0,0,{'view_mode':'tree','view_id':ref('view_assurance_list')}),
+            (0,0,{'view_mode':'form','view_id':ref('view_assurance_form')})]"/>
+        <field name="search_view_id" ref="view_assurance_search"/>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre première assurance privée !
+            </p>
+            <p>
+                Gérez la liste des assurances privées avec leurs taux de couverture.
+            </p>
+        </field>
+    </record>
+
+</odoo>
+
+

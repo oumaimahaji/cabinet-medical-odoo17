@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- US35 : Consultations par mois -->
+    <record id="view_consultation_graph" model="ir.ui.view">
+        <field name="name">cabinet.consultation.graph</field>
+        <field name="model">cabinet.consultation</field>
+        <field name="arch" type="xml">
+            <graph string="Consultations par mois" type="bar">
+                <field name="date_consultation" interval="month"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_stat_consultations" model="ir.actions.act_window">
+        <field name="name">Consultations par mois</field>
+        <field name="res_model">cabinet.consultation</field>
+        <field name="view_mode">graph,pivot,tree</field>
+    </record>
+
+    <!-- Nouveau Dashboard IA (Client Action OWL) -->
+    <record id="action_cabinet_medical_dashboard" model="ir.actions.client">
+        <field name="name">Tableau de Bord &amp; IA</field>
+        <field name="tag">cabinet_medical_dashboard</field>
+    </record>
+
+    <!-- Dashboard CNAM (Client Action OWL) -->
+    <record id="action_cabinet_medical_cnam_dashboard" model="ir.actions.client">
+        <field name="name">Tableau de Bord CNAM</field>
+        <field name="tag">cabinet_medical_cnam_dashboard</field>
+    </record>
+
+    <!-- US36 : CA par type de patient (scénario) -->
+    <record id="view_facture_graph" model="ir.ui.view">
+        <field name="name">cabinet.facture.graph</field>
+        <field name="model">cabinet.facture</field>
+        <field name="arch" type="xml">
+            <graph string="Chiffre d'Affaires par Profil" type="pie">
+                <field name="scenario"/>
+                <field name="montant_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_facture_pivot" model="ir.ui.view">
+        <field name="name">cabinet.facture.pivot</field>
+        <field name="model">cabinet.facture</field>
+        <field name="arch" type="xml">
+            <pivot string="Analyse du Chiffre d'Affaires">
+                <field name="date_facture" interval="month" type="row"/>
+                <field name="scenario" type="col"/>
+                <field name="montant_total" type="measure"/>
+                <field name="montant_paye_cabinet" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_stat_ca" model="ir.actions.act_window">
+        <field name="name">Chiffre d'Affaires par Type</field>
+        <field name="res_model">cabinet.facture</field>
+        <field name="view_mode">graph,pivot,tree</field>
+        <field name="domain">[('state', '=', 'validated')]</field>
+    </record>
+
+    <!-- US37 : Montants CNAM en attente (3, 4, 6) -->
+    <!-- On va réutiliser la vue Graph pour la facture, mais on force le graph bar via action_stat_cnam_attente ou un view id spécifique si besoin. Ici Odoo prendra par defaut le premier graph, mais on va le laisser tel quel ou creer une autre action. Créons une vue graph spécifique pour CNAM -->
+    
+    <record id="view_facture_cnam_graph" model="ir.ui.view">
+        <field name="name">cabinet.facture.cnam.graph</field>
+        <field name="model">cabinet.facture</field>
+        <field name="arch" type="xml">
+            <graph string="Montants CNAM en attente" type="bar">
+                <field name="date_facture" interval="month"/>
+                <field name="montant_cnam_cabinet" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_stat_cnam_attente" model="ir.actions.act_window">
+        <field name="name">Créances CNAM en attente</field>
+        <field name="res_model">cabinet.facture</field>
+        <field name="view_mode">graph,pivot,tree</field>
+        <field name="domain">[('state', '=', 'validated'), ('scenario', 'in', ['cnam_tiers_payant', 'apci_tiers_payant', 'cnam_tp_assur']), ('statut_cnam', '!=', 'paye')]</field>
+        <field name="view_id" ref="view_facture_cnam_graph"/>
+    </record>
+
+    <!-- US39 : Répartition des patients par couverture -->
+    <record id="view_patient_graph" model="ir.ui.view">
+        <field name="name">cabinet.patient.graph</field>
+        <field name="model">cabinet.patient</field>
+        <field name="arch" type="xml">
+            <graph string="Répartition des Patients" type="pie">
+                <field name="profil_couverture"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_stat_patients" model="ir.actions.act_window">
+        <field name="name">Répartition des Patients (Couverture)</field>
+        <field name="res_model">cabinet.patient</field>
+        <field name="view_mode">graph,tree</field>
+    </record>
+</odoo>

@@ -1,0 +1,58 @@
+{
+    "model_name": "RandomForestClassifier (Natural Calibrated Probabilities)",
+    "dataset_size": 1500,
+    "train_size": 1200,
+    "test_size": 300,
+    "base_noshow_rate_percent": 27.27,
+    "decision_threshold": 0.3,
+    "risk_thresholds": {
+        "faible": "< 25%",
+        "moyen": "25% - 45%",
+        "eleve": "> 45%"
+    },
+    "metrics": {
+        "accuracy": 0.6867,
+        "precision": 0.4434,
+        "recall": 0.5732,
+        "f1_score": 0.5,
+        "roc_auc": 0.684,
+        "cv_roc_auc_5fold_mean": 0.668,
+        "cv_roc_auc_5fold_std": 0.0222
+    },
+    "confusion_matrix": {
+        "true_negatives_venu_predit_venu": 159,
+        "false_positives_venu_predit_absent": 59,
+        "false_negatives_absent_predit_venu": 35,
+        "true_positives_absent_predit_absent": 47
+    },
+    "feature_importances": [
+        {
+            "feature": "lead_days",
+            "importance_percent": 30.55
+        },
+        {
+            "feature": "patient_historical_noshow_rate",
+            "importance_percent": 24.43
+        },
+        {
+            "feature": "patient_previous_rdv_count",
+            "importance_percent": 13.45
+        },
+        {
+            "feature": "is_urgence",
+            "importance_percent": 13.38
+        },
+        {
+            "feature": "day_of_week",
+            "importance_percent": 11.42
+        },
+        {
+            "feature": "is_afternoon",
+            "importance_percent": 3.41
+        },
+        {
+            "feature": "is_nouveau_patient",
+            "importance_percent": 3.37
+        }
+    ]
+}

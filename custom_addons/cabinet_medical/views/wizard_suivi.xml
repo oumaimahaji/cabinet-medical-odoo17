@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cabinet_suivi_wizard_form" model="ir.ui.view">
+        <field name="name">cabinet.suivi.wizard.form</field>
+        <field name="model">cabinet.suivi.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Planifier un Suivi">
+                <sheet>
+                    <field name="patient_id" invisible="1"/>
+                    <field name="calendar_html" widget="html" nolabel="1" readonly="1" colspan="2" sanitize="False"/>
+                </sheet>
+                <footer>
+                    <button string="Fermer" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
+
+

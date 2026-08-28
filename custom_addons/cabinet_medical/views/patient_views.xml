@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue liste Patients pour Secrétaire (peut créer uniquement via RDV) -->
+    <record id="view_patient_list_secretaire" model="ir.ui.view">
+        <field name="name">cabinet.patient.list.secretaire</field>
+        <field name="model">cabinet.patient</field>
+        <field name="arch" type="xml">
+            <tree export_xlsx="1"
+                default_order="name asc"
+                decoration-success="is_dossier_complet == True"
+                decoration-danger="is_dossier_complet == False"
+                delete="0"
+                create="0" limit="10">
+                <field name="is_dossier_complet" column_invisible="True"/>
+                <field name="name" string="Nom complet" decoration-bf="1"/>
+                <field name="cin" string="CIN"/>
+                <field name="telephone" string="Téléphone" widget="phone" options="{'enable_sms': False}"/>
+                <field name="genre" string="Genre"
+                       decoration-info="genre == 'femme'"
+                       decoration-primary="genre == 'homme'"/>
+                <field name="is_cnam" string="CNAM" widget="boolean_toggle" readonly="1"/>
+                <field name="has_assurance" string="Assurance" widget="boolean_toggle" readonly="1"/>
+                <field name="dossier_status" string="Statut dossier"
+                       widget="badge"
+                       decoration-success="dossier_status == 'Complet'"
+                       decoration-danger="dossier_status == 'Incomplet'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue liste Patients pour Médecin (lecture seule totale) -->
+    <record id="view_patient_list_medecin" model="ir.ui.view">
+        <field name="name">cabinet.patient.list.medecin</field>
+        <field name="model">cabinet.patient</field>
+        <field name="arch" type="xml">
+            <tree create="false" edit="false" delete="false" import="false"
+                  export_xlsx="1" default_order="name asc"
+                  decoration-danger="is_dossier_complet == False" limit="10">
+                <field name="is_dossier_complet" column_invisible="True"/>
+                <field name="name" string="Nom" decoration-bf="1"/>
+                <field name="date_naissance" string="Date de naissance"/>
+                <field name="genre" string="Genre" optional="hide"/>
+                <field name="telephone" string="Téléphone" optional="hide"/>
+                <field name="cin" string="CIN" optional="hide"/>
+                <field name="allergies_display" string="Allergies" decoration-muted="allergies_display == 'Aucune allergie connue'" optional="show"/>
+                <field name="is_cnam" string="CNAM" widget="boolean_toggle" readonly="1"/>
+                <field name="dossier_status" string="Statut"
+                       widget="badge"
+                       decoration-success="dossier_status == 'Complet'"
+                       decoration-danger="dossier_status == 'Incomplet'"/>
+                <field name="date_derniere_consultation" string="Dernière consultation" widget="datetime"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue liste originale (maintenant inutilisée) -->
+    <record id="view_patient_list" model="ir.ui.view">
+        <field name="name">cabinet.patient.list</field>
+        <field name="model">cabinet.patient</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="is_cnam == True" import="0" create="0" edit="0" export_xlsx="1">
+                <field name="name" string="Nom complet" decoration-bf="1"/>
+                <field name="telephone" widget="phone" options="{'enable_sms': False}"/>
+                <field name="genre"/>
+                <field name="is_cnam" widget="boolean_toggle" readonly="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue formulaire -->
+    <record id="view_patient_form" model="ir.ui.view">
+        <field name="name">cabinet.patient.form</field>
+        <field name="model">cabinet.patient</field>
+        <field name="arch" type="xml">
+            <form delete="0" create="0">
+                <header>
+                    <button name="action_create_portal_user" type="object" string="Créer Accès Portail" class="btn-primary" groups="cabinet_medical.group_secretaire" invisible="user_id != False" icon="fa-globe"/>
+                    <button name="action_resend_portal_invite" type="object" string="Renvoyer l'invitation" class="btn-secondary" groups="cabinet_medical.group_secretaire" invisible="user_id == False" icon="fa-envelope"/>
+                </header>
+                <sheet>
+                    <field name="is_cnam_expired" invisible="1"/>
+                    <field name="is_apci_expired" invisible="1"/>
+                    <field name="is_dossier_complet" invisible="1"/>
+                    <field name="dossier_status" invisible="1"/>
+                    <field name="user_id" invisible="1"/>
+
+                    <!-- Statut Accès Portail -->
+                    <div class="alert alert-success d-flex align-items-center" role="status" invisible="user_id == False" style="margin-bottom: 16px; border-left: 5px solid #28a745; padding: 10px 15px;">
+                        <i class="fa fa-check-circle mr-2" style="font-size: 16px; color: #28a745; margin-right: 8px;" title="Accès créé"/>
+                        <strong>✓ Accès portail créé</strong>
+                    </div>
+
+                    <!-- Alerte Droits CNAM / APCI expirés (visible immédiatement en haut de fiche) -->
+                    <div class="alert alert-danger d-flex align-items-center justify-content-between" role="alert" invisible="not is_cnam_expired and not is_apci_expired" style="margin-bottom: 16px; border-left: 5px solid #dc3545; padding: 10px 15px;">
+                        <div>
+                            <i class="fa fa-exclamation-triangle mr-2" style="font-size: 16px; color: #dc3545; margin-right: 8px;" title="Attention"/>
+                            <strong>Attention :</strong> Ce patient a des droits CNAM/APCI expirés — <em>voir onglet CNAM &amp; Assurance</em>
+                        </div>
+                        <button name="action_ia_conseil_global" type="object" string="✨ Conseil IA" class="btn btn-sm btn-outline-danger shadow-sm"/>
+                    </div>
+
+                    <!-- Boutons intelligents en haut -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_consultations" type="object" class="oe_stat_button position-relative" icon="fa-stethoscope" invisible="not id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Consultations</span>
+                            </div>
+                            <span class="position-absolute d-flex align-items-center justify-content-center" 
+                                  style="top: -5px; right: -5px; width: 18px; height: 18px; font-size: 11px; border-radius: 50%; background-color: #e2e8f0 !important; color: #334155 !important; font-weight: bold; border: 1px solid #cbd5e1;">
+                                <field name="nb_consultations" readonly="1"/>
+                            </span>
+                        </button>
+                        <button name="action_view_rendezvous" type="object" class="oe_stat_button position-relative" icon="fa-calendar" invisible="not id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Rendez-vous</span>
+                            </div>
+                            <span class="position-absolute d-flex align-items-center justify-content-center" 
+                                  style="top: -5px; right: -5px; width: 18px; height: 18px; font-size: 11px; border-radius: 50%; background-color: #e2e8f0 !important; color: #334155 !important; font-weight: bold; border: 1px solid #cbd5e1;">
+                                <field name="nb_rendezvous" readonly="1"/>
+                            </span>
+                        </button>
+                    </div>
+
+                    <widget name="web_ribbon" title="Dossier Complet" bg_color="text-bg-success" invisible="not is_dossier_complet"/>
+                    <widget name="web_ribbon" title="Incomplet" bg_color="text-bg-danger" invisible="is_dossier_complet"/>
+
+                    <div class="oe_title">
+                        <h1>
+                            <i class="fa fa-user-md text-primary mr-3" style="color: #007bff; margin-right: 15px;" title="Patient"/>
+                            <field name="name" placeholder="Nom complet..."/>
+                        </h1>
+                        <div invisible="not name_error" class="text-danger" style="margin-top: 5px; font-size: 14px; font-weight: bold;">
+                            <field name="name_error" nolabel="1" readonly="1"/>
+                        </div>
+                    </div>
+
+                    <!-- Alertes Médicales -->
+                    <div class="alert alert-danger" role="alert" invisible="not allergies and not antecedents" style="margin-top: 15px; margin-bottom: 15px; border-left: 5px solid #dc3545;">
+                        <h4 class="alert-heading" style="margin-bottom: 10px;" role="status"><i class="fa fa-exclamation-triangle mr-2" title="Alert"/> Alertes Médicales</h4>
+                        <div invisible="not allergies" style="margin-bottom: 5px;">
+                            <strong>Allergies :</strong> <field name="allergies" readonly="1"/>
+                        </div>
+                        <div invisible="not antecedents">
+                            <strong>Antécédents :</strong> <field name="antecedents" readonly="1"/>
+                        </div>
+                    </div>
+
+
+                    <notebook>
+                        <page string="👤 Infos Personnelles" name="personal_info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <group string="Informations civiles">
+                                        <field name="date_naissance"
+                                               widget="date"
+                                               placeholder="JJ/MM/AAAA"/>
+                                        <div colspan="2" invisible="not date_error" class="text-danger" style="margin-top: -15px; margin-bottom: 5px; font-size: 12px; text-align: right;">
+                                            <field name="date_error" nolabel="1" readonly="1"/>
+                                        </div>
+                                        <field name="genre"/>
+                                    </group>
+                                </div>
+                                <div class="col-md-6">
+                                    <group name="group_coordonnees" string="Coordonnées">
+                                        <field name="telephone" widget="phone" options="{'enable_sms': False}"/>
+                                        <div colspan="2" invisible="not telephone_error" class="text-danger" style="margin-top: -15px; margin-bottom: 5px; font-size: 12px; text-align: right;">
+                                            <field name="telephone_error" nolabel="1" readonly="1"/>
+                                        </div>
+                                        <field name="email" widget="email"/>
+                                        <field name="user_id" invisible="1"/>
+                                        <field name="cin"/>
+                                        <div colspan="2" invisible="not cin_error" class="text-danger" style="margin-top: -15px; margin-bottom: 5px; font-size: 12px; text-align: right;">
+                                            <field name="cin_error" nolabel="1" readonly="1"/>
+                                        </div>
+                                        <field name="adresse"/>
+                                    </group>
+                                </div>
+                            </div>
+                        </page>
+                        
+                        <page string="🩺 Dossier Médical" name="medical_info">
+                            <group>
+                                <group string="Alertes &amp; Risques">
+                                    <field name="allergies" placeholder="Ex: Pénicilline, Arachides..."/>
+                                    <field name="antecedents" placeholder="Ex: Diabète type 2, Asthme..."/>
+                                    <field name="traitements_chroniques" placeholder="Ex: Metformine 500mg, Bisoprolol 5mg..."/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="🛡️ CNAM &amp; Assurance" name="insurance">
+                            <!-- Alertes CNAM / APCI expirées -->
+                            <div invisible="not is_cnam_expired" class="alert alert-danger d-flex align-items-center justify-content-between" role="alert" style="margin-bottom: 15px; border-left: 5px solid #dc3545;">
+                                <div>
+                                    <i class="fa fa-exclamation-triangle mr-2" title="Attention"/> <strong>Attention :</strong> La date de validité de l'assuré CNAM est dépassée !
+                                </div>
+                                <button name="action_ia_conseil_cnam" type="object" string="✨ Conseil IA" class="btn btn-sm btn-outline-danger shadow-sm"/>
+                            </div>
+                            <div invisible="not is_apci_expired" class="alert alert-danger d-flex align-items-center justify-content-between" role="alert" style="margin-bottom: 15px; border-left: 5px solid #dc3545;">
+                                <div>
+                                    <i class="fa fa-exclamation-triangle mr-2" title="Attention"/> <strong>Attention :</strong> La date de fin de prise en charge APCI est dépassée !
+                                </div>
+                                <button name="action_ia_conseil_apci" type="object" string="✨ Conseil IA" class="btn btn-sm btn-outline-danger shadow-sm"/>
+                            </div>
+
+                            <group>
+                                <group string="CNAM">
+                                    <field name="is_cnam" widget="boolean_toggle"/>
+                                    <field name="carte_labes_active" invisible="not is_cnam" widget="boolean_toggle"/>
+                                    <field name="is_apci" invisible="not is_cnam" widget="boolean_toggle"/>
+                                    <label for="numero_cnam" invisible="not is_cnam" string="Matricule CNAM"/>
+                                    <div invisible="not is_cnam" class="d-flex">
+                                        <field name="numero_cnam" placeholder="10 chiffres..."/>
+                                        <span class="oe_inline mx-2">-</span>
+                                        <field name="code_beneficiaire_cnam"/>
+                                    </div>
+                                    <field name="regime_cnam" invisible="not is_cnam" placeholder="Sélectionner un régime..."/>
+                                    <field name="filiere_cnam" invisible="not is_cnam" placeholder="Sélectionner une filière..."/>
+                                    <field name="date_validite_cnam" invisible="not is_cnam"/>
+                                </group>
+
+                                <group string="Assurance privée">
+                                    <field name="has_assurance" widget="boolean_toggle"/>
+                                    <field name="assurance_id" invisible="not has_assurance"/>
+                                    <field name="assurance_numero" invisible="not has_assurance"/>
+                                    <field name="assurance_taux" invisible="not has_assurance" string="Taux de couverture (%)"/>
+                                </group>
+                            </group>
+
+                            <group string="Détails APCI" invisible="not is_apci">
+                                <group>
+                                    <field name="apci_pathologie" placeholder="Sélectionner la pathologie..."/>
+                                    <field name="numero_decision_apci" placeholder="Numéro de décision..."/>
+                                </group>
+                                <group>
+                                    <field name="date_debut_apci"/>
+                                    <field name="date_fin_apci"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Historique" name="medical_history">
+                            <separator string="Historique des Consultations"/>
+                            <field name="consultation_ids" readonly="1">
+                                <tree limit="10" default_order="date_consultation desc" no_open="1">
+                                    <field name="date_consultation" string="Date"/>
+                                    <field name="state" string="Statut" widget="badge" decoration-success="state == 'done'"/>
+                                </tree>
+                            </field>
+                            <div class="oe_clear">
+                                <p class="text-muted text-center">
+                                    <i class="fa fa-info-circle" title="Information"/> Affichage simplifié (Date et Statut). Le contenu médical est strictement confidentiel.
+                                </p>
+                            </div>
+
+                            <separator string="Historique des Rendez-vous" style="margin-top: 30px;"/>
+                            <field name="rendezvous_ids" readonly="1">
+                                <tree limit="10" default_order="date desc" decoration-warning="state == 'en_attente'" decoration-info="state == 'present'" decoration-primary="state == 'en_consultation'" decoration-success="state == 'termine'" decoration-danger="state == 'annule'">
+                                    <field name="date_fr" string="Date"/>
+                                    <field name="heure" widget="float_time"/>
+                                    <field name="is_urgence" string="Urgence" widget="boolean_toggle"/>
+                                    <field name="state" string="Statut"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire Patients pour Médecin (lecture seule totale et épurée) -->
+    <record id="view_patient_form_medecin" model="ir.ui.view">
+        <field name="name">cabinet.patient.form.medecin</field>
+        <field name="model">cabinet.patient</field>
+        <field name="inherit_id" ref="view_patient_form"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="create">0</attribute>
+                <attribute name="delete">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_naissance']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='genre']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='telephone']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='cin']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='adresse']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <!-- Rendre l'onglet Assurance en lecture seule pour le médecin -->
+            <xpath expr="//field[@name='is_cnam']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='numero_cnam']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='regime_cnam']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='filiere_cnam']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_validite_cnam']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='is_apci']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='numero_decision_apci']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_debut_apci']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_fin_apci']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='apci_pathologie']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='has_assurance']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='assurance_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='assurance_numero']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='assurance_taux']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <!-- L'onglet Assurance est maintenant visible en lecture seule, pas besoin de le cacher -->
+            <!-- Restaurer la vue complète et détaillée des consultations pour le médecin -->
+            <xpath expr="//field[@name='consultation_ids']" position="replace">
+                <field name="consultation_ids" readonly="1">
+                    <tree limit="10" default_order="date_consultation desc">
+                        <field name="date_consultation" string="Date"/>
+                        <field name="state" string="Statut" widget="badge" decoration-success="state == 'done'"/>
+                        <field name="motif" string="Motif" widget="text" optional="show"/>
+                        <field name="diagnostic" string="Diagnostic" widget="text" optional="show"/>
+                        <field name="total_actes" string="Nb actes" widget="badge"/>
+                    </tree>
+                    <form create="0" edit="0" delete="0">
+                        <sheet>
+                            <group>
+                                <field name="date_consultation" readonly="1"/>
+                                <field name="state" readonly="1" widget="badge"/>
+                            </group>
+                            <notebook>
+                                <page string="Motif">
+                                    <field name="motif" nolabel="1" readonly="1"/>
+                                </page>
+                                <page string="Diagnostic">
+                                    <field name="diagnostic" nolabel="1" readonly="1"/>
+                                    <field name="notes_medicales" nolabel="1" readonly="1"/>
+                                </page>
+                                <page string="Actes">
+                                    <field name="acte_ids" readonly="1">
+                                        <tree limit="10">
+                                            <field name="type_acte"/>
+                                            <field name="description"/>
+                                            <field name="date_acte"/>
+                                        </tree>
+                                    </field>
+                                </page>
+                                <page string="Prescriptions">
+                                    <field name="prescription_ids" readonly="1">
+                                        <tree limit="10">
+                                            <field name="date_prescription"/>
+                                            <field name="ordonnance_line_ids" widget="many2many_tags"/>
+                                        </tree>
+                                    </field>
+                                </page>
+                            </notebook>
+                        </sheet>
+                    </form>
+                </field>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Vue Recherche Patients pour Secrétaire -->
+    <record id="view_patient_search" model="ir.ui.view">
+        <field name="name">cabinet.patient.search</field>
+        <field name="model">cabinet.patient</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher un patient">
+                <!-- Recherche combinée par nom ou CIN -->
+                <field name="name" string="Nom ou CIN"
+                       filter_domain="['|', ('name', 'ilike', self), ('cin', 'ilike', self)]"/>
+                <field name="cin" string="CIN"/>
+                <field name="telephone" string="Téléphone"/>
+                <separator/>
+                <!-- Filtres rapides dossier -->
+                <filter name="filter_complet"
+                        string="Dossier complet"
+                        domain="[('is_dossier_complet', '=', True)]"/>
+                <filter name="filter_incomplet"
+                        string="Dossier incomplet"
+                        domain="[('is_dossier_complet', '=', False)]"/>
+                <separator/>
+                <filter string="Assurés CNAM" name="filter_cnam" domain="[('is_cnam', '=', True)]"/>
+                <filter string="CNAM expirée" name="filter_cnam_expired" domain="[('is_cnam', '=', True), ('date_validite_cnam', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Patients APCI" name="filter_apci" domain="[('is_apci', '=', True)]"/>
+                <filter string="APCI expirée" name="filter_apci_expired" domain="[('is_apci', '=', True), ('date_fin_apci', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Non Assurés" name="filter_non_cnam" domain="[('is_cnam', '=', False)]"/>
+                <separator/>
+                <filter string="Assurance Privée" name="filter_assurance" domain="[('has_assurance', '=', True)]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Genre" name="group_genre" context="{'group_by':'genre'}"/>
+                    <filter string="Régime CNAM" name="group_regime" context="{'group_by':'regime_cnam'}"/>
+                    <filter string="Statut dossier" name="group_status" context="{'group_by':'dossier_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+<record id="view_patient_search_medecin" model="ir.ui.view">
+    <field name="name">cabinet.patient.search.medecin</field>
+    <field name="model">cabinet.patient</field>
+    <field name="arch" type="xml">
+        <search>
+            <field name="name" string="Nom"/>
+            <separator/>
+            <filter string="CNAM expirée" name="filter_cnam_expired" domain="[('is_cnam', '=', True), ('date_validite_cnam', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+            <filter string="APCI expirée" name="filter_apci_expired" domain="[('is_apci', '=', True), ('date_fin_apci', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+        </search>
+    </field>
+</record>
+
+    <!-- Action Patients pour Secrétaire -->
+    <record id="action_patient_secretaire" model="ir.actions.act_window">
+        <field name="name">👥 Liste des Patients</field>
+        <field name="res_model">cabinet.patient</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5,0,0),
+            (0,0,{'view_mode':'tree','view_id':ref('view_patient_list_secretaire')}),
+            (0,0,{'view_mode':'form','view_id':ref('view_patient_form')})]"/>
+        <field name="search_view_id" ref="view_patient_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre premier dossier patient !
+            </p>
+        </field>
+    </record>
+
+    <!-- Action Patients pour Médecin -->
+    <record id="action_patient_medecin" model="ir.actions.act_window">
+        <field name="name">👥 Liste des Patients</field>
+        <field name="res_model">cabinet.patient</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5,0,0),
+            (0,0,{'view_mode':'tree','view_id':ref('view_patient_list_medecin')}),
+            (0,0,{'view_mode':'form','view_id':ref('view_patient_form_medecin')})]"/>
+        <field name="search_view_id" ref="view_patient_search_medecin"/>
+
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Consultez les dossiers patients !
+            </p>
+        </field>
+    </record>
+
+    <!-- Action originale (maintenant inutilisée) -->
+    <record id="action_patient" model="ir.actions.act_window">
+        <field name="name">👥 Liste des Patients</field>
+        <field name="res_model">cabinet.patient</field>
+        <field name="limit">10</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_patient_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre premier dossier patient !
+            </p>
+        </field>
+    </record>
+
+</odoo>
+

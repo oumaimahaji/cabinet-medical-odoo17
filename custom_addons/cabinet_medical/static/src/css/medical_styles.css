@@ -1,0 +1,1628 @@
+/* ===== PALETTE MÉDICALE ===== */
+:root {
+    /* Couleurs principales */
+    --medical-blue: #2c5aa0;
+    --medical-blue-dark: #1a3a6e;
+    --medical-blue-light: #4a7ac8;
+    --medical-white: #ffffff;
+
+    /* Nuances de gris */
+    --medical-gray: #f5f7fa;
+    --medical-gray-light: #e8eef5;
+    --medical-gray-medium: #d1dae6;
+    --medical-gray-dark: #8896ab;
+
+    /* Couleurs fonctionnelles */
+    --primary-color: var(--medical-blue);
+    --primary-hover: var(--medical-blue-dark);
+    --secondary-color: var(--medical-gray-medium);
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: var(--medical-blue);
+    --light-color: var(--medical-gray);
+    --dark-color: var(--medical-gray-dark);
+
+    /* Bordures et ombres */
+    --border-color: var(--medical-gray-light);
+    --border-radius-sm: 6px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    --shadow-sm: 0 2px 8px rgba(44, 90, 160, 0.08);
+    --shadow: 0 2px 10px rgba(44, 90, 160, 0.1);
+    --shadow-hover: 0 4px 20px rgba(44, 90, 160, 0.15);
+    --shadow-lg: 0 8px 30px rgba(44, 90, 160, 0.2);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.3s ease;
+    --transition-slow: 0.5s ease;
+
+    /* Espacement */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+}
+
+/* ===== INTERFACE UNIFIÉE ===== */
+body,
+.o_web_client,
+.o_main {
+    background: var(--medical-gray);
+    min-height: 100vh;
+    overflow: hidden !important;
+}
+
+.o_content {
+    background: var(--medical-gray);
+}
+
+.o_control_panel {
+    background: var(--medical-blue) !important;
+    border-bottom: 3px solid var(--medical-blue) !important;
+    box-shadow: var(--shadow);
+    transition: background var(--transition-base);
+}
+
+/* ===== NAVBAR UNIFIÉE ===== */
+.o_main_navbar,
+.o_navbar {
+    background: var(--medical-blue) !important;
+    background-color: var(--medical-blue) !important;
+    border-bottom: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    min-height: 54px !important;
+    padding: 0 16px !important;
+    transition: background var(--transition-base);
+
+    /* Surcharge des variables CSS d'Odoo 17 pour neutraliser le mauve par défaut */
+    --NavBar-entry-backgroundColor: transparent !important;
+    --NavBar-entry-backgroundColor--hover: rgba(255, 255, 255, 0.15) !important;
+    --NavBar-entry-backgroundColor--focus: rgba(255, 255, 255, 0.15) !important;
+    --NavBar-entry-backgroundColor--active: rgba(255, 255, 255, 0.15) !important;
+    --NavBar-entry-color--active: white !important;
+}
+
+/* Rendre tous les conteneurs internes transparents pour hériter du bleu de la navbar */
+.o_main_navbar .o_menu_sections,
+.o_main_navbar .o_menu_sections_placeholder,
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .o_menu_systray,
+.o_main_navbar .o_menu_toggle,
+.o_main_navbar .o_menu_entry,
+.o_main_navbar .o_nav_entry,
+.o_main_navbar .o_menu_sections .o_menu_entry>a,
+.o_navbar .o_menu_sections .o_menu_entry>a,
+.o_main_navbar .o_menu_sections .o-dropdown,
+.o_navbar .o_menu_sections .o-dropdown {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.o_main_navbar .o_menu_brand,
+.o_navbar .o_menu_brand,
+.o_navbar .o_brand {
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 20px !important;
+    letter-spacing: 0.5px !important;
+    margin-right: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Ajouter une icône médicale devant le nom du cabinet */
+.o_main_navbar .o_menu_brand::before,
+.o_navbar .o_menu_brand::before,
+.o_navbar .o_brand::before {
+    content: "\f0f1"; /* fa-stethoscope */
+    font-family: "FontAwesome";
+    margin-right: 10px;
+    font-weight: normal;
+    font-size: 22px;
+}
+
+.o_main_navbar .o_menu_sections .o_menu_entry>a,
+.o_navbar .o_menu_sections .o_menu_entry>a,
+.o_navbar .o_nav_entry>a,
+.o_navbar .dropdown-item,
+.o_navbar .dropdown-toggle,
+.o_navbar button,
+.o_navbar a {
+    background: transparent;
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 15px !important;
+    padding: 8px 16px !important;
+    margin: 0 4px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+}
+
+.o_main_navbar .o_menu_sections .o_menu_entry:hover>a,
+.o_main_navbar .o_menu_sections .o_menu_entry.active>a,
+.o_main_navbar .o_menu_sections .o_menu_entry>a.active,
+.o_navbar .o_menu_sections .o_menu_entry:hover>a,
+.o_navbar .o_menu_sections .o_menu_entry.active>a,
+.o_navbar .o_menu_sections .o_menu_entry>a.active,
+.o_navbar .o_nav_entry:hover>a,
+.o_navbar .o_nav_entry.active>a,
+.o_navbar .o_nav_entry>a.active,
+.o_navbar .dropdown-toggle:hover,
+.o_navbar button:hover,
+.o_navbar a:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+/* ===== SUPPRESSION FOND MAUVE NAVBAR (tous les éléments actifs et dropdowns) ===== */
+
+/* Force transparent/semi-transparent sur TOUS les éléments actifs ou ouverts de la navbar */
+.o_main_navbar .active,
+.o_main_navbar .o_menu_sections .active,
+.o_main_navbar .o_menu_sections .o_menu_entry.active,
+.o_main_navbar .o_menu_sections .o_menu_entry.active > a,
+.o_main_navbar .o_menu_sections .o_menu_entry > a.active,
+.o_main_navbar .o_menu_sections .o_nav_entry.active,
+.o_main_navbar .o_menu_sections .o_nav_entry.active > a,
+.o_main_navbar .o_menu_sections .o_nav_entry > a.active,
+.o_main_navbar .o_menu_sections .dropdown.active > a,
+.o_main_navbar .o_menu_sections .dropdown > a.active,
+.o_main_navbar .o_menu_sections .dropdown-toggle.active,
+.o_main_navbar .o_menu_sections .dropdown.show > .dropdown-toggle,
+.o_main_navbar .o_menu_sections .o-dropdown.show > .dropdown-toggle,
+.o_main_navbar .nav-link.active,
+.o_main_navbar .nav-item.active > .nav-link,
+.o_navbar .active,
+.o_navbar .o_menu_sections .active,
+.o_navbar .o_menu_sections .o_menu_entry.active,
+.o_navbar .o_menu_sections .o_menu_entry.active > a,
+.o_navbar .o_menu_sections .o_menu_entry > a.active,
+.o_navbar .o_menu_sections .o_nav_entry.active,
+.o_navbar .o_menu_sections .o_nav_entry.active > a,
+.o_navbar .o_menu_sections .o_nav_entry > a.active,
+.o_navbar .o_menu_sections .dropdown.active > a,
+.o_navbar .o_menu_sections .dropdown > a.active,
+.o_navbar .o_menu_sections .dropdown-toggle.active,
+.o_navbar .o_menu_sections .dropdown.show > .dropdown-toggle,
+.o_navbar .o_menu_sections .o-dropdown.show > .dropdown-toggle,
+.o_navbar .nav-link.active,
+.o_navbar .nav-item.active > .nav-link,
+header.o_navbar .nav-link.active,
+header.o_navbar .nav-item.active > .nav-link {
+    background: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    background-image: none !important;
+}
+
+/* Cibler spécifiquement le menu de Configuration par son attribut XMLID pour éviter tout résidu mauve */
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"],
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] > a,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] .dropdown-toggle,
+.o_main_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"],
+.o_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"]:hover,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"].show,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"].active,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] > a:hover,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] > a.active,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] .dropdown-toggle:hover,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] .dropdown-toggle.show,
+[data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"] .dropdown-toggle.active,
+.o_main_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"]:hover,
+.o_main_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"].active,
+.o_main_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"].show,
+.o_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"]:hover,
+.o_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"].active,
+.o_navbar [data-menu-xmlid="cabinet_medical.menu_cabinet_configuration"].show {
+    background: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.o_navbar .o_menu_systray > a,
+.o_navbar .o_systray > a {
+    background: transparent;
+    color: white !important;
+    transition: background var(--transition-fast);
+}
+
+.o_main_navbar .o_menu_systray>a:hover,
+.o_navbar .o_menu_systray>a:hover,
+.o_navbar .o_systray>a:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+}
+
+/* ===== MASQUER LES ICÔNES MESSAGERIE ET ACTIVITÉS (Odoo par défaut) ===== */
+.o_menu_systray > div:has(.fa-comments),
+.o_menu_systray > div:has(.fa-clock-o),
+.o_menu_systray > div:has(.fa-bell),
+.o_menu_systray > li:has(.fa-comments),
+.o_menu_systray > li:has(.fa-clock-o),
+.o_menu_systray > li:has(.fa-bell) {
+    display: none !important;
+}
+
+/* ===== RESTAURATION DU SÉLECTEUR D'APPLICATIONS (Menu Gaufrier) ===== */
+.o_main_navbar .o_menu_toggle,
+.o_navbar .o_menu_toggle,
+.o_navbar_apps_menu {
+    display: flex !important;
+    color: white !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background-color 0.3s ease !important;
+}
+
+.o_main_navbar .o_menu_toggle:hover,
+.o_navbar .o_menu_toggle:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Cacher le sélecteur d'application pour les non-admins */
+body.hide_app_switcher .o_main_navbar .o_menu_toggle,
+body.hide_app_switcher .o_navbar .o_menu_toggle,
+body.hide_app_switcher .o_navbar_apps_menu {
+    display: none !important;
+}
+
+/* Fix dropdown menu item visibility (ensure links in dropdown menus are not white) */
+.o_navbar .dropdown-menu a,
+.o_navbar .dropdown-menu .dropdown-item {
+    color: var(--medical-gray-dark) !important;
+    background: transparent !important;
+}
+
+.o_navbar .dropdown-menu a:hover,
+.o_navbar .dropdown-menu .dropdown-item:hover {
+    color: var(--medical-blue) !important;
+    background: var(--medical-gray) !important;
+}
+
+/* ===== FORMULAIRES UNIFIÉS ===== */
+.o_form_view {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow);
+    margin: var(--spacing-md);
+    transition: box-shadow var(--transition-base);
+}
+
+.o_form_view:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+.o_form_view .o_form_sheet {
+    background: white;
+    padding: var(--spacing-lg);
+}
+
+.o_form_view .oe_title h1 {
+    color: var(--primary-color);
+    font-weight: 600;
+    transition: color var(--transition-fast);
+}
+
+.o_form_view .o_notebook .nav-tabs .nav-link {
+    color: var(--primary-color);
+    border-color: var(--border-color);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.o_form_view .o_notebook .nav-tabs .nav-link:hover {
+    background: var(--light-color);
+    color: var(--primary-color);
+}
+
+.o_form_view .o_notebook .nav-tabs .nav-link.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+}
+
+/* ===== TABLEAUX UNIFIÉS ===== */
+.o_list_view {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow);
+    margin: var(--spacing-md);
+    transition: box-shadow var(--transition-base);
+}
+
+.o_list_view:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+.o_list_table th {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: var(--spacing-md) var(--spacing-sm);
+}
+
+.o_list_view .o_data_row td {
+    color: #333;
+    font-weight: 500;
+    border-color: var(--border-color);
+    padding: var(--spacing-md) var(--spacing-sm);
+    transition: background var(--transition-fast);
+}
+
+.o_list_view .o_data_row:hover td {
+    background: var(--light-color);
+}
+
+.o_list_view .o_data_row:nth-child(even) td {
+    background: var(--light-color);
+}
+
+.o_list_view .o_data_row:nth-child(even):hover td {
+    background: #f0f0f0;
+}
+
+/* ===== BOUTONS UNIFIÉS ===== */
+.btn-primary {
+    background: var(--primary-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    padding: 10px 20px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    transition: all var(--transition-base);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+}
+
+.btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.3);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    color: white;
+    font-weight: 500;
+    transition: all var(--transition-base);
+}
+
+.btn-secondary:hover {
+    background: var(--medical-gray-dark);
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border: 2px solid var(--secondary-color);
+    color: var(--secondary-color);
+    border-radius: var(--border-radius-md);
+    font-weight: 500;
+    transition: all var(--transition-base);
+    background: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--secondary-color);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: var(--success-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    color: white;
+    font-weight: 600;
+    transition: all var(--transition-base);
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    color: white;
+    font-weight: 600;
+    transition: all var(--transition-base);
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-info {
+    background: var(--info-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    color: white;
+    font-weight: 600;
+    transition: all var(--transition-base);
+}
+
+.btn-info:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+/* ===== INTERFACE LOGIN MÉDICALE ===== */
+.oe_login {
+    background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-dark) 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.oe_login .oe_login_form {
+    background: var(--medical-white);
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-xl);
+    max-width: 400px;
+    width: 100%;
+    margin: var(--spacing-md);
+    transition: transform var(--transition-base);
+}
+
+.oe_login .oe_login_form:hover {
+    transform: translateY(-4px);
+}
+
+.oe_login .oe_login_logo {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.oe_login .oe_login_logo img {
+    max-height: 80px;
+    border-radius: var(--border-radius-md);
+}
+
+.oe_login .oe_login_header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.oe_login .oe_login_header h2 {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.oe_login .form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.oe_login .form-control {
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 12px 16px;
+    font-size: 14px;
+    background: var(--medical-white);
+    transition: all var(--transition-base);
+    color: var(--dark-color);
+}
+
+.oe_login .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    outline: none;
+    background: var(--medical-white);
+}
+
+.oe_login .btn-primary {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 10px;
+    background: var(--medical-blue);
+    border: none;
+    border-radius: var(--border-radius-md);
+    color: var(--medical-white);
+    transition: all var(--transition-base);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.oe_login .btn-primary:hover {
+    background: var(--medical-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+}
+
+.oe_login .oe_login_footer {
+    text-align: center;
+    margin-top: var(--spacing-lg);
+}
+
+.oe_login .oe_login_footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: color var(--transition-fast);
+}
+
+.oe_login .oe_login_footer a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.oe_login .alert {
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border: none;
+}
+
+.oe_login .alert-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.oe_login .fa-spinner {
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+/* ===== CHAMPS DE FORMULAIRE ===== */
+.o_form_view .o_field_widget input,
+.o_form_view .o_field_widget textarea,
+.o_form_view .o_field_widget select {
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: all var(--transition-base);
+    background: var(--medical-white);
+}
+
+.o_form_view .o_field_widget input:focus,
+.o_form_view .o_field_widget textarea:focus,
+.o_form_view .o_field_widget select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    outline: none;
+    background: var(--medical-white);
+}
+
+.o_form_view label {
+    color: var(--dark-color);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* ===== GROUPES ET SECTIONS ===== */
+
+/* Fix : sections CNAM & Assurance sur toute la largeur (évite la compression en 2 colonnes) */
+.o_page[name="insurance"] .o_group {
+    width: 100% !important;
+    display: block !important;
+}
+
+.o_page[name="insurance"] .o_group > tbody,
+.o_page[name="insurance"] .o_group > .o_wrap_field {
+    width: 100% !important;
+}
+
+/* ===== CORRECTIFS APCI ET DATES ===== */
+
+/* Empêcher les champs en bas d'être coupés */
+.o_form_view .o_group {
+    overflow: visible !important;
+}
+.o_form_view .o_inner_group {
+    overflow: visible !important;
+}
+.o_form_view .o_notebook {
+    overflow: visible !important;
+}
+.o_form_view .o_notebook .tab-content {
+    overflow: visible !important;
+}
+.o_form_view .o_form_sheet {
+    overflow: visible !important;
+    padding-bottom: 10px !important;
+}
+.o_content {
+    overflow-y: hidden !important;
+}
+
+/* ===== TOGGLES ET CASES À COCHER VERTS ===== */
+.form-check-input:checked,
+.o_field_boolean input:checked,
+.o_field_widget[name="is_cnam"] input:checked,
+.o_field_widget[name="has_assurance"] input:checked,
+.o_field_widget[name="is_apci"] input:checked {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+}
+
+/* ===== RESTAURATION DU BREADCRUMB (Patient) ===== */
+/* On laisse Odoo gérer le layout pour ne pas cacher le lien de retour */
+.o_control_panel .breadcrumb,
+.o_control_panel .o_breadcrumb {
+    background: transparent !important;
+}
+
+.o_control_panel .breadcrumb li,
+.o_control_panel .breadcrumb a,
+.o_control_panel .o_breadcrumb li,
+.o_control_panel .o_breadcrumb a,
+.o_control_panel .breadcrumb-item,
+.o_control_panel .breadcrumb-item a,
+.o_control_panel .o_cp_title,
+.o_control_panel .o_cp_title span,
+.o_control_panel .text-truncate,
+.o_control_panel h1,
+.o_control_panel h2,
+.o_control_panel h3 {
+    color: var(--medical-white) !important;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    background: transparent !important;
+}
+
+/* Masquer le 2ème élément du fil d'Ariane (ex: "Nouveau" ou nom du patient dans le formulaire)
+   MAIS garder le 1er élément ("Patients") visible pour la vue liste ! */
+.o_control_panel .breadcrumb-item:nth-child(n+2),
+.o_control_panel .breadcrumb li:nth-child(n+2),
+.o_control_panel .o_breadcrumb li:nth-child(n+2) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Masquer le séparateur "/" */
+.o_control_panel .breadcrumb-item + .breadcrumb-item::before,
+.o_control_panel .breadcrumb-item + .active::before {
+    display: none !important;
+}
+
+/* On supprime le fond blanc de la barre de recherche au cas où elle apparaîtrait */
+.o_control_panel .o_searchview,
+.o_control_panel .o_searchview_input_container {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Le bouton principal "Nouveau" pour la liste SEULEMENT */
+.o_control_panel .btn-primary,
+.o_control_panel .o_list_button_add,
+.o_control_panel .o_cp_buttons .btn {
+    color: var(--medical-white) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* MASQUER le bouton "Nouveau" dans la vue Formulaire */
+.o_control_panel .o_form_button_create {
+    display: none !important;
+}
+
+/* Les icônes et le texte des menus d'action, pager, et switch views */
+.o_control_panel .o_cp_action_menus button,
+.o_control_panel .o_cp_action_menus .fa,
+.o_control_panel .o_cp_action_menus .oi,
+.o_control_panel .o_cp_action_menus span,
+.o_control_panel .o_cp_switch_buttons button,
+.o_control_panel .o_cp_switch_buttons i,
+.o_control_panel .o_cp_switch_buttons .oi,
+.o_control_panel .o_pager,
+.o_control_panel .o_pager span,
+.o_control_panel .o_pager button,
+.o_control_panel .o_pager i {
+    color: var(--medical-white) !important;
+}
+
+/* MASQUER le menu Action (engrenage) dans TOUTE la vue Formulaire */
+.o_form_view .o_control_panel .o_cp_action_menus,
+.o_view_controller.o_form_view .o_control_panel .o_cp_action_menus {
+    display: none !important;
+}
+
+/* CORRECTION : Le contenu des menus déroulants (qui ont un fond blanc) doit rester sombre ! */
+.o_control_panel .dropdown-menu *,
+.o_control_panel .dropdown-menu a,
+.o_control_panel .dropdown-menu button,
+.o_control_panel .dropdown-menu span,
+.o_control_panel .dropdown-menu i,
+.o_control_panel .dropdown-menu .fa,
+.o_control_panel .dropdown-menu .oi,
+.o_control_panel .dropdown-menu .dropdown-item {
+    color: var(--medical-blue-dark) !important;
+}
+
+.o_control_panel .dropdown-menu a:hover,
+.o_control_panel .dropdown-menu button:hover,
+.o_control_panel .dropdown-menu .dropdown-item:hover {
+    background-color: var(--medical-gray-light) !important;
+    color: var(--primary-color) !important;
+}
+
+/* Les boutons Sauvegarder (nuage) / Annuler (flèche) */
+.o_control_panel .btn-light {
+    background-color: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: var(--medical-white) !important;
+}
+
+.o_control_panel .btn-light .fa,
+.o_control_panel .btn-light .oi,
+.o_control_panel .btn-light i {
+    color: var(--medical-white) !important;
+}
+
+/* TOUT LE TEXTE DE LA BARRE DE RECHERCHE DOIT ÊTRE BLANC */
+.o_control_panel .o_searchview_input_container span,
+.o_control_panel .o_searchview_facet span,
+.o_control_panel .o_searchview_input_container i,
+.o_control_panel .o_searchview_facet i,
+.o_control_panel .o_searchview_input,
+.o_control_panel .o_searchview_input::placeholder,
+.o_control_panel .o_searchview_icon {
+    color: var(--medical-white) !important;
+}
+
+/* Apparence des "Facets" (les filtres de recherche) */
+.o_control_panel .o_searchview_facet {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+.o_control_panel .o_searchview_facet .o_facet_remove {
+    color: var(--medical-white) !important;
+}
+
+/* Forcer la couleur du curseur de texte en blanc */
+.o_control_panel .o_searchview_input {
+    caret-color: white !important;
+}
+
+/* Fond de la page de connexion avec motif médical discret */
+body.bg-100 {
+    background-color: #f4f7fa !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 25v10M25 30h10' stroke='%231a3a6e' stroke-width='2' stroke-linecap='round' opacity='0.04'/%3E%3C/svg%3E") !important;
+    background-repeat: repeat !important;
+}
+
+/* Carte de connexion avec animation d'entrée fluide */
+body.bg-100 .card {
+    background-color: var(--medical-white) !important;
+    border-radius: 16px !important;
+    padding: 25px 15px !important;
+    animation: loginCardFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes loginCardFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Boutons de la page de login avec effets de survol et clic premium */
+body.bg-100 .btn-primary {
+    background-color: var(--medical-blue) !important;
+    border-color: var(--medical-blue) !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 10px 20px !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 4px 10px rgba(26, 58, 110, 0.15) !important;
+}
+
+body.bg-100 .btn-primary:hover {
+    background-color: var(--medical-blue-dark) !important;
+    border-color: var(--medical-blue-dark) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 15px rgba(26, 58, 110, 0.3) !important;
+}
+
+body.bg-100 .btn-primary:active {
+    transform: translateY(0) scale(0.98) !important;
+}
+
+/* Liens secondaires et Powered by */
+body.bg-100 a,
+body.bg-100 .small a {
+    color: var(--medical-blue) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+}
+
+body.bg-100 a:hover {
+    color: var(--medical-blue-dark) !important;
+}
+
+/* Amélioration visuelle des input-groups sur la page de connexion */
+body.bg-100 .input-group-text {
+    border-color: #dee2e6 !important;
+    background-color: #f8f9fa !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.bg-100 .form-control {
+    border-color: #dee2e6 !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.bg-100 .input-group:focus-within .input-group-text,
+body.bg-100 .input-group:focus-within .btn {
+    border-color: var(--medical-blue) !important;
+}
+
+body.bg-100 .input-group:focus-within .form-control {
+    border-color: var(--medical-blue) !important;
+    box-shadow: none !important;
+}
+
+body.bg-100 .form-control:focus {
+    box-shadow: none !important;
+}
+
+/* =========================================================================
+   ===== PORTAIL PATIENT DESIGN DOCTOLIB (CLASSE DE STYLAGE MODERNES) =====
+   ========================================================================= */
+
+/* En-tête / Welcome Banner */
+.doctolib-header {
+    background: linear-gradient(135deg, var(--medical-blue-dark) 0%, var(--medical-blue) 100%);
+    border-radius: 16px;
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(26, 58, 110, 0.08);
+}
+
+.doctolib-header-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #ffffff;
+}
+
+.doctolib-header-subtitle {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+    color: #ffffff;
+}
+
+/* Cartes statistiques */
+.doctolib-stat-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.doctolib-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.doctolib-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+
+.doctolib-stat-icon.icon-rdv {
+    background-color: rgba(44, 90, 160, 0.1);
+    color: var(--medical-blue);
+}
+
+.doctolib-stat-icon.icon-couv {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.doctolib-stat-icon.icon-ordo {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #b78a04;
+}
+
+.doctolib-stat-icon.icon-secu {
+    background-color: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+}
+
+.doctolib-stat-icon.icon-fact {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.doctolib-stat-data {
+    flex-grow: 1;
+}
+
+.doctolib-stat-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--medical-gray-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.doctolib-stat-number {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--medical-blue-dark);
+    margin-bottom: 0;
+}
+
+.doctolib-stat-text {
+    font-size: 0.78rem;
+    color: var(--medical-gray-dark);
+    margin-bottom: 0;
+}
+
+.doctolib-stat-empty {
+    color: var(--medical-gray-dark) !important;
+    opacity: 0.65;
+    font-style: italic;
+}
+
+/* Section Title */
+.doctolib-section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--medical-blue-dark);
+    margin-top: 24px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Cartes d'accès rapide */
+.doctolib-action-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+}
+
+.doctolib-action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--medical-blue);
+    text-decoration: none;
+}
+
+.doctolib-action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.doctolib-action-icon.icon-rdv {
+    background-color: rgba(44, 90, 160, 0.1);
+    color: var(--medical-blue);
+}
+
+.doctolib-action-icon.icon-couv {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.doctolib-action-icon.icon-ordo {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #b78a04;
+}
+
+.doctolib-action-icon.icon-fact {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.doctolib-action-icon.icon-secu {
+    background-color: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+}
+
+.doctolib-action-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--medical-blue-dark);
+    margin-bottom: 6px;
+}
+
+.doctolib-action-desc {
+    font-size: 0.78rem;
+    color: var(--medical-gray-dark);
+    margin-bottom: 0;
+    line-height: 1.3;
+}
+
+/* Carte mise en avant (Prochain RDV) - STYLE PREMIUM */
+.doctolib-highlight-rdv {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.08);
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.doctolib-highlight-rdv:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(44, 90, 160, 0.12);
+}
+
+.doctolib-highlight-rdv::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+}
+
+/* Couleurs des bordures gauches selon l'état réel */
+.doctolib-rdv-confirm::before { background-color: var(--success-color); }
+.doctolib-rdv-wait::before { background-color: var(--warning-color); }
+.doctolib-rdv-cancel::before { background-color: var(--danger-color); }
+.doctolib-rdv-termine::before { background-color: var(--medical-blue-light); }
+
+.doctolib-rdv-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+.doctolib-rdv-icon-box {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* Timeline verticale */
+.doctolib-timeline {
+    position: relative;
+    padding-left: 28px;
+    margin-top: 20px;
+}
+
+.doctolib-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12px;
+    width: 2px;
+    height: 100%;
+    background-color: var(--medical-gray-light);
+}
+
+.doctolib-timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.doctolib-timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.doctolib-timeline-badge {
+    position: absolute;
+    top: 0;
+    left: -28px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    background-color: #ffffff;
+    border: 2px solid var(--medical-gray-medium);
+    box-shadow: var(--shadow-sm);
+    z-index: 2;
+}
+
+.doctolib-timeline-content {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.doctolib-timeline-content:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-hover);
+}
+
+.doctolib-timeline-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--medical-blue-dark);
+    margin-bottom: 2px;
+}
+
+.doctolib-timeline-date {
+    font-size: 0.75rem;
+    color: var(--medical-gray-dark);
+}
+
+/* Sidebar Profil */
+.doctolib-profile-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.doctolib-profile-avatar {
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.12);
+}
+
+.doctolib-profile-btn {
+    background-color: var(--medical-blue);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    width: 100%;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.doctolib-profile-btn:hover {
+    background-color: var(--medical-blue-dark);
+    color: #ffffff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+/* Carte Informations Cabinet */
+.doctolib-cabinet-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+}
+
+.doctolib-cabinet-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--medical-blue-dark);
+    border-bottom: 2px solid var(--medical-gray-light);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.doctolib-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.doctolib-info-row:last-child {
+    margin-bottom: 0;
+}
+
+.doctolib-info-icon {
+    color: var(--medical-blue);
+    font-size: 0.9rem;
+    width: 18px;
+    text-align: center;
+    margin-top: 2px;
+}
+
+.doctolib-info-label {
+    font-size: 0.72rem;
+    color: var(--medical-gray-dark);
+    display: block;
+    line-height: 1.1;
+}
+
+.doctolib-info-val {
+    font-size: 0.85rem;
+    color: var(--medical-blue-dark);
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.doctolib-info-val-empty {
+    font-size: 0.82rem;
+    color: var(--medical-gray-dark);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+/* Transition de survol générique */
+.transition-hover {
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+.transition-hover:hover {
+    transform: translateY(-3px) scale(1.01);
+}
+
+/* ==========================================================================
+   ACTES MÉDICAUX - TABLEAU DES ACTES EFFECTUÉS (EN-TÊTES & LARGEURS OPTIMISÉES)
+   ========================================================================== */
+
+/* Conteneur principal du tableau des actes dans la consultation */
+.actes-table-wrapper,
+div[name="actes"] .consultation-card,
+.o_actes_medicaux_field {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    position: relative !important;
+    background: #ffffff;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+/* Renderer Odoo & responsive wrapper */
+.actes-table-wrapper .o_list_renderer,
+.actes-table-wrapper .table-responsive,
+div[name="actes"] .o_list_renderer,
+div[name="actes"] .table-responsive,
+.o_actes_medicaux_field .o_list_renderer,
+.o_actes_medicaux_field .table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    width: 100% !important;
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* Scrollbar moderne et discrète */
+.actes-table-wrapper .o_list_renderer::-webkit-scrollbar,
+.actes-table-wrapper::-webkit-scrollbar,
+div[name="actes"] .o_list_renderer::-webkit-scrollbar,
+.o_actes_medicaux_field .o_list_renderer::-webkit-scrollbar {
+    height: 8px;
+}
+
+.actes-table-wrapper .o_list_renderer::-webkit-scrollbar-track,
+.actes-table-wrapper::-webkit-scrollbar-track,
+div[name="actes"] .o_list_renderer::-webkit-scrollbar-track,
+.o_actes_medicaux_field .o_list_renderer::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.actes-table-wrapper .o_list_renderer::-webkit-scrollbar-thumb,
+.actes-table-wrapper::-webkit-scrollbar-thumb,
+div[name="actes"] .o_list_renderer::-webkit-scrollbar-thumb,
+.o_actes_medicaux_field .o_list_renderer::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 4px;
+}
+
+.actes-table-wrapper .o_list_renderer::-webkit-scrollbar-thumb:hover,
+.actes-table-wrapper::-webkit-scrollbar-thumb:hover,
+div[name="actes"] .o_list_renderer::-webkit-scrollbar-thumb:hover,
+.o_actes_medicaux_field .o_list_renderer::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Tableau Actes Médicaux */
+.actes-table-wrapper .o_list_table,
+div[name="actes"] .o_list_table,
+.o_actes_medicaux_table,
+.o_actes_medicaux_field .o_list_table {
+    table-layout: auto !important;
+    min-width: 1050px !important;
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+/* En-têtes (th) : Suppression de l'ellipsis, affichage complet et retour à la ligne si nécessaire */
+.actes-table-wrapper .o_list_table thead th,
+.actes-table-wrapper .o_list_table th,
+div[name="actes"] .o_list_table thead th,
+div[name="actes"] .o_list_table th,
+.o_actes_medicaux_table thead th,
+.o_actes_medicaux_table th,
+.o_actes_medicaux_field .o_list_table thead th,
+.o_actes_medicaux_field .o_list_table th {
+    text-overflow: clip !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    vertical-align: middle !important;
+    padding: 12px 14px !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.5px !important;
+    line-height: 1.35 !important;
+    background-color: var(--primary-color, #1a56db) !important;
+    color: #ffffff !important;
+}
+
+/* Neutraliser les classes utilitaires de troncature d'Odoo sur les titres d'en-tête */
+.actes-table-wrapper .o_list_table thead th *,
+.actes-table-wrapper .o_list_table thead th .text-truncate,
+.actes-table-wrapper .o_list_table thead th span,
+.actes-table-wrapper .o_list_table thead th div,
+.actes-table-wrapper .o_list_table thead th a,
+div[name="actes"] .o_list_table thead th *,
+div[name="actes"] .o_list_table thead th .text-truncate,
+div[name="actes"] .o_list_table thead th span,
+div[name="actes"] .o_list_table thead th div,
+div[name="actes"] .o_list_table thead th a,
+.o_actes_medicaux_table thead th *,
+.o_actes_medicaux_table thead th .text-truncate,
+.o_actes_medicaux_table thead th span,
+.o_actes_medicaux_table thead th div,
+.o_actes_medicaux_table thead th a,
+.o_actes_medicaux_field .o_list_table thead th *,
+.o_actes_medicaux_field .o_list_table thead th .text-truncate,
+.o_actes_medicaux_field .o_list_table thead th span,
+.o_actes_medicaux_field .o_list_table thead th div,
+.o_actes_medicaux_field .o_list_table thead th a {
+    text-overflow: unset !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    display: inline-block !important;
+    max-width: 100% !important;
+    color: inherit !important;
+}
+
+/* Cellules de données (td) */
+.actes-table-wrapper .o_list_table tbody td,
+div[name="actes"] .o_list_table tbody td,
+.o_actes_medicaux_table tbody td,
+.o_actes_medicaux_field .o_list_table tbody td {
+    vertical-align: middle !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+}
+
+/* 1. Colonne : Acte Conventionné */
+.actes-table-wrapper .o_list_table th[data-name="parametrage_id"],
+div[name="actes"] .o_list_table th[data-name="parametrage_id"],
+.o_actes_medicaux_field .o_list_table th[data-name="parametrage_id"],
+.actes-table-wrapper .o_list_table td[name="parametrage_id"],
+div[name="actes"] .o_list_table td[name="parametrage_id"],
+.o_actes_medicaux_field .o_list_table td[name="parametrage_id"],
+.actes-table-wrapper .o_list_table td[data-name="parametrage_id"],
+div[name="actes"] .o_list_table td[data-name="parametrage_id"],
+.o_actes_medicaux_field .o_list_table td[data-name="parametrage_id"] {
+    min-width: 230px !important;
+    width: 24% !important;
+    text-align: left !important;
+}
+
+/* 2. Colonne : Catégorie */
+.actes-table-wrapper .o_list_table th[data-name="type_acte"],
+div[name="actes"] .o_list_table th[data-name="type_acte"],
+.o_actes_medicaux_field .o_list_table th[data-name="type_acte"],
+.actes-table-wrapper .o_list_table td[name="type_acte"],
+div[name="actes"] .o_list_table td[name="type_acte"],
+.o_actes_medicaux_field .o_list_table td[name="type_acte"],
+.actes-table-wrapper .o_list_table td[data-name="type_acte"],
+div[name="actes"] .o_list_table td[data-name="type_acte"],
+.o_actes_medicaux_field .o_list_table td[data-name="type_acte"] {
+    min-width: 150px !important;
+    width: 15% !important;
+    text-align: left !important;
+}
+
+/* 3. Colonne : Description */
+.actes-table-wrapper .o_list_table th[data-name="description"],
+div[name="actes"] .o_list_table th[data-name="description"],
+.o_actes_medicaux_field .o_list_table th[data-name="description"],
+.actes-table-wrapper .o_list_table td[name="description"],
+div[name="actes"] .o_list_table td[name="description"],
+.o_actes_medicaux_field .o_list_table td[name="description"],
+.actes-table-wrapper .o_list_table td[data-name="description"],
+div[name="actes"] .o_list_table td[data-name="description"],
+.o_actes_medicaux_field .o_list_table td[data-name="description"] {
+    min-width: 220px !important;
+    width: 24% !important;
+    text-align: left !important;
+}
+
+/* 4. Colonne : Date */
+.actes-table-wrapper .o_list_table th[data-name="date_acte"],
+div[name="actes"] .o_list_table th[data-name="date_acte"],
+.o_actes_medicaux_field .o_list_table th[data-name="date_acte"],
+.actes-table-wrapper .o_list_table td[name="date_acte"],
+div[name="actes"] .o_list_table td[name="date_acte"],
+.o_actes_medicaux_field .o_list_table td[name="date_acte"],
+.actes-table-wrapper .o_list_table td[data-name="date_acte"],
+div[name="actes"] .o_list_table td[data-name="date_acte"],
+.o_actes_medicaux_field .o_list_table td[data-name="date_acte"] {
+    min-width: 160px !important;
+    width: 15% !important;
+    text-align: left !important;
+}
+
+/* 5. Colonne : Code */
+.actes-table-wrapper .o_list_table th[data-name="code_acte"],
+div[name="actes"] .o_list_table th[data-name="code_acte"],
+.o_actes_medicaux_field .o_list_table th[data-name="code_acte"],
+.actes-table-wrapper .o_list_table td[name="code_acte"],
+div[name="actes"] .o_list_table td[name="code_acte"],
+.o_actes_medicaux_field .o_list_table td[name="code_acte"],
+.actes-table-wrapper .o_list_table td[data-name="code_acte"],
+div[name="actes"] .o_list_table td[data-name="code_acte"],
+.o_actes_medicaux_field .o_list_table td[data-name="code_acte"] {
+    min-width: 90px !important;
+    width: 8% !important;
+    text-align: center !important;
+}
+
+/* 6. Colonne : Montant (DT) */
+.actes-table-wrapper .o_list_table th[data-name="montant"],
+div[name="actes"] .o_list_table th[data-name="montant"],
+.o_actes_medicaux_field .o_list_table th[data-name="montant"],
+.actes-table-wrapper .o_list_table td[name="montant"],
+div[name="actes"] .o_list_table td[name="montant"],
+.o_actes_medicaux_field .o_list_table td[name="montant"],
+.actes-table-wrapper .o_list_table td[data-name="montant"],
+div[name="actes"] .o_list_table td[data-name="montant"],
+.o_actes_medicaux_field .o_list_table td[data-name="montant"] {
+    min-width: 130px !important;
+    width: 12% !important;
+    text-align: right !important;
+}
+
+/* 7. Colonnes d'actions / suppression */
+.actes-table-wrapper .o_list_table th.o_list_actions_header,
+.actes-table-wrapper .o_list_table th.o_list_record_remove_header,
+.actes-table-wrapper .o_list_table th.o_list_button,
+div[name="actes"] .o_list_table th.o_list_actions_header,
+div[name="actes"] .o_list_table th.o_list_record_remove_header,
+div[name="actes"] .o_list_table th.o_list_button,
+.o_actes_medicaux_field .o_list_table th.o_list_actions_header,
+.o_actes_medicaux_field .o_list_table th.o_list_record_remove_header,
+.o_actes_medicaux_field .o_list_table th.o_list_button,
+.actes-table-wrapper .o_list_table td.o_list_record_remove,
+.actes-table-wrapper .o_list_table td.o_list_button,
+div[name="actes"] .o_list_table td.o_list_record_remove,
+div[name="actes"] .o_list_table td.o_list_button,
+.o_actes_medicaux_field .o_list_table td.o_list_record_remove,
+.o_actes_medicaux_field .o_list_table td.o_list_button {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 80px !important;
+    text-align: center !important;
+    padding: 6px 8px !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

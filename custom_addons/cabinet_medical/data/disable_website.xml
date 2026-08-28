@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Désactiver le module website -->
+        <record id="module_website" model="ir.module.module">
+            <field name="name">website</field>
+            <field name="state">uninstalled</field>
+        </record>
+    </data>
+</odoo>
