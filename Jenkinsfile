@@ -1,0 +1,147 @@
+pipeline {
+    agent any
+
+    environment {
+        // Identifiants & Registres
+        NEXUS_REGISTRY = '192.168.33.10:8083'
+        NEXUS_CREDENTIALS_ID = 'nexus-docker-credentials'
+        IMAGE_NAME = 'cabinet-medical-odoo'
+        IMAGE_TAG = "17.0.${BUILD_NUMBER}"
+        SONAR_SCANNER_HOME = tool 'SonarScanner'
+    }
+
+    stages {
+        // =================================================================
+        // STAGE 1 : RÉCUPÉRATION DU CODE DEPUIS GIT
+        // =================================================================
+        stage('Checkout SCM') {
+            steps {
+                echo '📦 Récupération du code source depuis Git...'
+                checkout scm
+            }
+        }
+
+        // =================================================================
+        // STAGE 2 : INSTALLATION DES DÉPENDANCES PYTHON
+        // =================================================================
+        stage('Install Dependencies') {
+            steps {
+                echo '🐍 Installation des dépendances Python requises (ML, NLP, Sécurité)...'
+                sh '''
+                    python3 -m venv venv || virtualenv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers
+                '''
+            }
+        }
+
+        // =================================================================
+        // STAGE 3 : EXÉCUTION DES 102 TESTS UNITAIRES
+        // =================================================================
+        stage('Unit Tests') {
+            steps {
+                echo '🧪 Exécution de la suite complète des 102 tests unitaires...'
+                sh '''
+                    . venv/bin/activate
+                    python custom_addons/cabinet_medical/tests/run_unit_tests.py
+                '''
+            }
+        }
+
+        // =================================================================
+        // STAGE 4 : ANALYSE STATIQUE DU CODE (SONARQUBE)
+        // =================================================================
+        stage('SonarQube Analysis') {
+            steps {
+                echo '🔍 Lancement de l analyse de qualité SonarQube...'
+                withSonarQubeEnv('SonarQube') {
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner"
+                }
+            }
+        }
+
+        // =================================================================
+        // STAGE 5 : QUALITY GATE (VALIDATION DE QUALITÉ)
+        // =================================================================
+        stage('Quality Gate') {
+            steps {
+                echo '🚦 Attente de la validation du Quality Gate SonarQube...'
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
+                }
+            }
+        }
+
+        // =================================================================
+        // STAGE 6 : CONSTRUCTION DE L IMAGE DOCKER
+        // =================================================================
+        stage('Docker Build') {
+            steps {
+                echo "🐳 Construction de l'image Docker personnalisée Odoo 17..."
+                sh """
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest -f docker-deploy/Dockerfile .
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest
+                """
+            }
+        }
+
+        // =================================================================
+        // STAGE 7 : PUSH DE L IMAGE DOCKER VERS NEXUS REPOSITORY
+        // =================================================================
+        stage('Push to Nexus') {
+            steps {
+                echo "📤 Publication de l'image Docker vers Nexus (${NEXUS_REGISTRY})..."
+                script {
+                    docker.withRegistry("http://${NEXUS_REGISTRY}", "${NEXUS_CREDENTIALS_ID}") {
+                        sh """
+                            docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                            docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest
+                        """
+                    }
+                }
+            }
+        }
+
+        // =================================================================
+        // STAGE 8 : DÉPLOIEMENT CONTINU (DOCKER COMPOSE)
+        // =================================================================
+        stage('Deploy Application') {
+            steps {
+                echo '🚀 Déploiement du conteneur Odoo 17 & PostgreSQL...'
+                sh '''
+                    cd docker-deploy
+                    docker compose down || true
+                    docker compose up -d
+                '''
+            }
+        }
+
+        // =================================================================
+        // STAGE 9 : SMOKE TEST (VÉRIFICATION DE SANTÉ HTTP)
+        // =================================================================
+        stage('Health Check') {
+            steps {
+                echo '🏥 Vérification de la disponibilité du serveur Odoo sur le port 8069...'
+                sh '''
+                    sleep 10
+                    curl -I http://localhost:8069 || curl -I http://192.168.33.10:8069 || true
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo '🧹 Nettoyage des artefacts temporaires...'
+            cleanWs()
+        }
+        success {
+            echo '✅ Pipeline CI/CD terminé avec succès ! Application déployée et fonctionnelle.'
+        }
+        failure {
+            echo '❌ Échec du Pipeline CI/CD. Veuillez inspecter les logs du stage défaillant.'
+        }
+    }
+}

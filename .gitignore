@@ -1,0 +1,14 @@
+# Python venv and caches
+venv/
+venv311/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# IDE & Logs
+.vscode/
+*.log
+inspection_output.txt
+rapports_generes/
+scratch/
