@@ -1,0 +1,10 @@
+{
+  "source_directories": [
+    "."
+  ],
+  "search_path": [
+    "odoo",
+    "venv311/Lib/site-packages",
+    "venv/Lib/site-packages"
+  ]
+}

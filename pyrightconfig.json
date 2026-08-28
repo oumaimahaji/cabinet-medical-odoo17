@@ -1,0 +1,8 @@
+{
+    "extraPaths": [
+        "odoo",
+        "odoo/addons",
+        "custom_addons",
+        "custom_addons/cabinet_medical"
+    ]
+}
