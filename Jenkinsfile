@@ -31,7 +31,8 @@ pipeline {
                     python3 -m venv venv || virtualenv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    pip install scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers
+                    pip install scikit-learn joblib pandas numpy passlib openpyxl
+                    pip install torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || pip install scikit-learn joblib pandas passlib openpyxl
                 '''
             }
         }
