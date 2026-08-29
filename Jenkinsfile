@@ -127,10 +127,14 @@ pipeline {
             steps {
                 echo '🚀 Déploiement propre du conteneur Odoo 17 & PostgreSQL...'
                 sh '''
-                    docker stop cabinet_odoo 2>/dev/null || true
-                    docker rm cabinet_odoo 2>/dev/null || true
+                    docker stop cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
+                    docker rm cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
                     cd docker-deploy
-                    docker compose up -d --force-recreate || docker-compose up -d --force-recreate
+                    if docker compose version >/dev/null 2>&1; then
+                        docker compose up -d --force-recreate
+                    else
+                        docker-compose up -d --force-recreate
+                    fi
                 '''
             }
         }
