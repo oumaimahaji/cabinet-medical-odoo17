@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Identifiants & Registres
         NEXUS_REGISTRY = '192.168.33.10:8083'
         NEXUS_CREDENTIALS_ID = 'nexus-docker-credentials'
         IMAGE_NAME = 'cabinet-medical-odoo'
@@ -58,14 +57,10 @@ pipeline {
             steps {
                 echo '🔍 Lancement de l analyse de qualité SonarQube...'
                 script {
-                    try {
-                        withSonarQubeEnv('SonarQube') {
-                            withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                                sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
-                            }
+                    withSonarQubeEnv('SonarQube') {
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                            sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
                         }
-                    } catch (Exception e) {
-                        echo "ℹ️ Analyse SonarQube effectuée (${e.message}). Passage aux étapes suivantes."
                     }
                 }
             }
@@ -79,11 +74,11 @@ pipeline {
                 echo '🚦 Validation du Quality Gate SonarQube...'
                 script {
                     try {
-                        timeout(time: 1, unit: 'MINUTES') {
-                            waitForQualityGate abortPipeline: false
+                        timeout(time: 2, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: true
                         }
                     } catch (Exception e) {
-                        echo "ℹ️ Quality Gate vérifié via SonarQube Server (${e.message}). Passage au build Docker."
+                        echo "ℹ️ Quality Gate statut : ${e.message}"
                     }
                 }
             }
@@ -111,14 +106,15 @@ pipeline {
                 echo '📤 Publication de l\'image Docker vers Nexus (192.168.33.10:8083)...'
                 script {
                     try {
-                        withDockerRegistry([credentialsId: 'nexus-admin-credentials', url: 'http://192.168.33.10:8083']) {
-                            sh '''
-                                docker push 192.168.33.10:8083/cabinet-medical-odoo:17.0.${BUILD_NUMBER} || true
-                                docker push 192.168.33.10:8083/cabinet-medical-odoo:latest || true
-                            '''
+                        withCredentials([usernamePassword(credentialsId: 'nexus-docker-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
+                            sh """
+                                echo "${NEXUS_PWD}" | docker login ${NEXUS_REGISTRY} -u "${NEXUS_USER}" --password-stdin
+                                docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                                docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest
+                            """
                         }
                     } catch (Exception e) {
-                        echo "⚠️ Avertissement Nexus Registry : ${e.getMessage()} - L'image Docker locale est prête et validée pour le déploiement."
+                        echo "⚠️ Erreur push Nexus : ${e.getMessage()}"
                     }
                 }
             }
@@ -129,11 +125,12 @@ pipeline {
         // =================================================================
         stage('Deploy Application') {
             steps {
-                echo '🚀 Déploiement du conteneur Odoo 17 & PostgreSQL...'
+                echo '🚀 Déploiement propre du conteneur Odoo 17 & PostgreSQL...'
                 sh '''
+                    docker stop cabinet_odoo 2>/dev/null || true
+                    docker rm cabinet_odoo 2>/dev/null || true
                     cd docker-deploy
-                    docker compose -f docker-compose.yml down 2>/dev/null || docker-compose -f docker-compose.yml down 2>/dev/null || true
-                    docker compose -f docker-compose.yml up -d || docker-compose -f docker-compose.yml up -d || true
+                    docker compose up -d --force-recreate || docker-compose up -d --force-recreate
                 '''
             }
         }
