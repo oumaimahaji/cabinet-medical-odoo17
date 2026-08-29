@@ -22,7 +22,7 @@ pipeline {
         }
 
         // =================================================================
-        // STAGE 2 : INSTALLATION DES DÉPENDANCES PYTHON
+        // STAGE 2 : PRÉPARATION ENVIRONNEMENT PYTHON
         // =================================================================
         stage('Install Dependencies') {
             steps {
@@ -32,20 +32,20 @@ pipeline {
                         python3 -m venv venv
                     fi
                     . venv/bin/activate
-                    pip install scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || true
+                    pip install -q scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || true
                 '''
             }
         }
 
         // =================================================================
-        // STAGE 3 : EXÉCUTION DES 102 TESTS UNITAIRES
+        // STAGE 3 : TESTS UNITAIRES MÉDICAUX & IA
         // =================================================================
         stage('Unit Tests') {
             steps {
                 echo '🧪 Exécution de la suite complète des 102 tests unitaires...'
                 sh '''
                     . venv/bin/activate
-                    python custom_addons/cabinet_medical/tests/run_unit_tests.py
+                    python3 -u custom_addons/cabinet_medical/tests/run_unit_tests.py
                 '''
             }
         }
