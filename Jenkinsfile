@@ -22,17 +22,18 @@ pipeline {
         }
 
         // =================================================================
-        // STAGE 2 : PRÉPARATION ENVIRONNEMENT PYTHON
+        // STAGE 2 : ENVIRONNEMENT PYTHON
         // =================================================================
         stage('Install Dependencies') {
             steps {
-                echo '🐍 Préparation de l environnement Python et dépendances...'
+                echo '🐍 Préparation de l environnement Python...'
                 sh '''
-                    if [ ! -d "venv" ]; then
-                        python3 -m venv venv
+                    if [ ! -d "/var/jenkins_home/shared_venv" ]; then
+                        python3 -m venv /var/jenkins_home/shared_venv
+                        . /var/jenkins_home/shared_venv/bin/activate
+                        pip install --no-cache-dir scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || true
                     fi
-                    . venv/bin/activate
-                    pip install -q scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || true
+                    echo "✅ Environnement virtuel prêt !"
                 '''
             }
         }
@@ -44,7 +45,7 @@ pipeline {
             steps {
                 echo '🧪 Exécution de la suite complète des 102 tests unitaires...'
                 sh '''
-                    . venv/bin/activate
+                    . /var/jenkins_home/shared_venv/bin/activate
                     python3 -u custom_addons/cabinet_medical/tests/run_unit_tests.py
                 '''
             }
