@@ -107,11 +107,11 @@ pipeline {
                 script {
                     try {
                         withCredentials([usernamePassword(credentialsId: 'nexus-docker-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
-                            sh """
-                                echo "${NEXUS_PWD}" | docker login ${NEXUS_REGISTRY} -u "${NEXUS_USER}" --password-stdin
-                                docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                                docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest
-                            """
+                            sh '''
+                                echo "$NEXUS_PWD" | docker login http://192.168.33.10:8083 -u "$NEXUS_USER" --password-stdin || true
+                                docker push 192.168.33.10:8083/cabinet-medical-odoo:latest || true
+                                docker push 192.168.33.10:8083/cabinet-medical-odoo:${IMAGE_TAG} || true
+                            '''
                         }
                     } catch (Exception e) {
                         echo "⚠️ Erreur push Nexus : ${e.getMessage()}"
