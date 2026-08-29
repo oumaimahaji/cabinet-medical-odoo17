@@ -11,4 +11,6 @@ __pycache__/
 *.log
 inspection_output.txt
 rapports_generes/
-scratch/
+# Private Soutenance Guides
+SOUTENANCE_DEVOPS.html
+GUIDE_DEVOPS_SOUTENANCE.md
