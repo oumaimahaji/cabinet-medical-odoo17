@@ -19,9 +19,7 @@ services:
   # 2. APPLICATION MÉDICALE : SERVEUR ODOO 17 (AVEC MODULE CABINET_MEDICAL)
   # =========================================================================
   odoo:
-    build:
-      context: ..
-      dockerfile: docker-deploy/Dockerfile
+    image: cabinet-medical-odoo:latest
     container_name: cabinet_odoo
     depends_on:
       - db
@@ -36,38 +34,6 @@ services:
       - ../custom_addons:/mnt/extra-addons
     restart: unless-stopped
 
-  # =========================================================================
-  # 3. MONITORING : PROMETHEUS (COLLECTE DES MÉTRIQUES JENKINS & SERVEUR)
-  # =========================================================================
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: cabinet_prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    restart: unless-stopped
-
-  # =========================================================================
-  # 4. MONITORING : GRAFANA (TABLEAUX DE BORD & DASHBOARDS CI/CD)
-  # =========================================================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: cabinet_grafana
-    depends_on:
-      - prometheus
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    restart: unless-stopped
-
 volumes:
   odoo-db-data:
   odoo-web-data:
-  prometheus-data:
-  grafana-data:
