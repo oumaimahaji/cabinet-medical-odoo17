@@ -125,15 +125,15 @@ pipeline {
         }
 
         // =================================================================
-        // STAGE 8 : DÉPLOIEMENT CONTINU (DOCKER COMPOSE)
+        // STAGE 8 : DÉPLOIEMENT CONTINU (DOCKER)
         // =================================================================
         stage('Deploy Application') {
             steps {
                 echo '🚀 Déploiement du conteneur Odoo 17 & PostgreSQL...'
                 sh '''
                     cd docker-deploy
-                    docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
-                    docker compose up -d 2>/dev/null || docker-compose up -d
+                    docker compose -f docker-compose.yml down 2>/dev/null || docker-compose -f docker-compose.yml down 2>/dev/null || true
+                    docker compose -f docker-compose.yml up -d || docker-compose -f docker-compose.yml up -d || true
                 '''
             }
         }
