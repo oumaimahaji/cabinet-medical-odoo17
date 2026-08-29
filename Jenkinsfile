@@ -57,7 +57,9 @@ pipeline {
             steps {
                 echo '🔍 Lancement de l analyse de qualité SonarQube...'
                 withSonarQubeEnv('SonarQube') {
-                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner"
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
+                    }
                 }
             }
         }
