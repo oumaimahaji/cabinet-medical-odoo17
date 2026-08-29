@@ -26,13 +26,13 @@ pipeline {
         // =================================================================
         stage('Install Dependencies') {
             steps {
-                echo '🐍 Installation des dépendances Python requises (ML, NLP, Sécurité)...'
+                echo '🐍 Préparation de l environnement Python et dépendances...'
                 sh '''
-                    python3 -m venv venv || virtualenv venv
+                    if [ ! -d "venv" ]; then
+                        python3 -m venv venv
+                    fi
                     . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install scikit-learn joblib pandas numpy passlib openpyxl
-                    pip install torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || pip install scikit-learn joblib pandas passlib openpyxl
+                    pip install scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || true
                 '''
             }
         }
