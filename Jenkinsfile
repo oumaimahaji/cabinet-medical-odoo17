@@ -72,18 +72,13 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo '🚦 Validation du Quality Gate SonarQube...'
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        try {
-                            def qg = waitForQualityGate abortPipeline: false
-                            if (qg.status != 'OK' && qg.status != 'WARN') {
-                                echo "⚠️ SonarQube Quality Gate Status : ${qg.status}"
-                            } else {
-                                echo "✅ SonarQube Quality Gate réussi (${qg.status}) !"
-                            }
-                        } catch (Exception e) {
-                            echo "⚠️ Information : Le webhook SonarQube n'a pas été reçu dans les 2 minutes (${e.message}). Poursuite normale du pipeline..."
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "❌ Échec du Quality Gate SonarQube : Statut = ${qg.status}. Le pipeline est interrompu."
                         }
+                        echo "✅ SonarQube Quality Gate validé avec succès (Statut = ${qg.status}) !"
                     }
                 }
             }
