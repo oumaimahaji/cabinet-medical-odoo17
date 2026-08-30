@@ -29,9 +29,9 @@ pipeline {
                 sh '''
                     if [ ! -d "/var/jenkins_home/shared_venv" ]; then
                         python3 -m venv /var/jenkins_home/shared_venv
-                        . /var/jenkins_home/shared_venv/bin/activate
-                        pip install --no-cache-dir scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu || true
                     fi
+                    . /var/jenkins_home/shared_venv/bin/activate
+                    pip install --no-cache-dir scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu
                     echo "✅ Environnement virtuel prêt !"
                 '''
             }
@@ -59,7 +59,7 @@ pipeline {
                 script {
                     withSonarQubeEnv('SonarQube') {
                         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
+                            sh '$SONAR_SCANNER_HOME/bin/sonar-scanner -Dsonar.token=$SONAR_TOKEN'
                         }
                     }
                 }
@@ -72,14 +72,8 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo '🚦 Validation du Quality Gate SonarQube...'
-                script {
-                    try {
-                        timeout(time: 2, unit: 'MINUTES') {
-                            waitForQualityGate abortPipeline: true
-                        }
-                    } catch (Exception e) {
-                        echo "ℹ️ Quality Gate statut : ${e.message}"
-                    }
+                timeout(time: 3, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -104,18 +98,12 @@ pipeline {
         stage('Push to Nexus') {
             steps {
                 echo '📤 Publication de l\'image Docker vers Nexus (192.168.33.10:8083)...'
-                script {
-                    try {
-                        withCredentials([usernamePassword(credentialsId: 'nexus-docker-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
-                            sh '''
-                                echo "$NEXUS_PWD" | docker login http://192.168.33.10:8083 -u "$NEXUS_USER" --password-stdin || true
-                                docker push 192.168.33.10:8083/cabinet-medical-odoo:latest || true
-                                docker push 192.168.33.10:8083/cabinet-medical-odoo:${IMAGE_TAG} || true
-                            '''
-                        }
-                    } catch (Exception e) {
-                        echo "⚠️ Erreur push Nexus : ${e.getMessage()}"
-                    }
+                withCredentials([usernamePassword(credentialsId: 'nexus-docker-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PWD')]) {
+                    sh '''
+                        echo "$NEXUS_PWD" | docker login "$NEXUS_REGISTRY" -u "$NEXUS_USER" --password-stdin
+                        docker push "$NEXUS_REGISTRY/${IMAGE_NAME}:latest"
+                        docker push "$NEXUS_REGISTRY/${IMAGE_NAME}:${IMAGE_TAG}"
+                    '''
                 }
             }
         }
@@ -146,8 +134,30 @@ pipeline {
             steps {
                 echo '🏥 Vérification de la disponibilité du serveur Odoo sur le port 8069...'
                 sh '''
-                    sleep 10
-                    curl -I http://localhost:8069 || curl -I http://192.168.33.10:8069 || true
+                    MAX_RETRIES=15
+                    DELAY=4
+                    URL_EXTERNAL="http://192.168.33.10:8069"
+                    URL_LOCAL="http://localhost:8069"
+                    SUCCESS=0
+
+                    echo "Attente de la disponibilité d'Odoo 17..."
+                    for i in $(seq 1 $MAX_RETRIES); do
+                        echo "Tentative $i/$MAX_RETRIES..."
+                        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL_EXTERNAL" || curl -s -o /dev/null -w "%{http_code}" "$URL_LOCAL" || echo "000")
+                        echo "Code HTTP reçu: $HTTP_CODE"
+
+                        if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "303" ] || [ "$HTTP_CODE" = "302" ]; then
+                            echo "✅ Odoo 17 opérationnel et accessible (HTTP $HTTP_CODE) !"
+                            SUCCESS=1
+                            break
+                        fi
+                        sleep $DELAY
+                    done
+
+                    if [ $SUCCESS -ne 1 ]; then
+                        echo "❌ Échec du Health Check : Le serveur Odoo 17 n'a pas répondu à temps sur le port 8069."
+                        exit 1
+                    fi
                 '''
             }
         }
