@@ -59,7 +59,7 @@ pipeline {
                 script {
                     withSonarQubeEnv('SonarQube') {
                         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh '$SONAR_SCANNER_HOME/bin/sonar-scanner -Dsonar.token=$SONAR_TOKEN'
+                            sh '$SONAR_SCANNER_HOME/bin/sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.ws.timeout=300'
                         }
                     }
                 }
