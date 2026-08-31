@@ -36,4 +36,5 @@ access_cabinet_notification_medecin,cabinet.notification.medecin,model_cabinet_n
 access_cabinet_notification_portal,cabinet.notification.portal,model_cabinet_notification,base.group_portal,1,1,0,0
 access_cabinet_prescription_sign_wizard_medecin,cabinet.prescription.sign.wizard.medecin,model_cabinet_prescription_sign_wizard,cabinet_medical.group_medecin,1,1,1,1
 access_cabinet_doctor_profile_wizard_medecin,cabinet.doctor.profile.wizard.medecin,model_cabinet_doctor_profile_wizard,cabinet_medical.group_medecin,1,1,1,1
+access_cabinet_wizard_import_patients_success,wizard.import.patients.success,model_cabinet_wizard_import_patients_success,base.group_user,1,1,1,1
 

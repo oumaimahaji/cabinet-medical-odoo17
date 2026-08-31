@@ -45,6 +45,28 @@
         </field>
     </record>
 
+    <!-- Vue de confirmation de succès avec bouton OK -->
+    <record id="view_wizard_import_patients_success_form" model="ir.ui.view">
+        <field name="name">wizard.import.patients.success.form</field>
+        <field name="model">cabinet.wizard.import.patients.success</field>
+        <field name="arch" type="xml">
+            <form string="Importation Réussie">
+                <div class="text-center" style="padding: 25px 15px 15px 15px;">
+                    <div style="width: 70px; height: 70px; margin: 0 auto 15px auto; background-color: #d4edda; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa fa-check-circle" style="font-size: 42px; color: #28a745;"/>
+                    </div>
+                    <h3 style="color: #155724; font-weight: bold; margin-bottom: 15px;">Importation Réussie !</h3>
+                    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 10px; border: 1px solid #e9ecef;">
+                        <field name="message" readonly="1" nolabel="1" style="font-size: 15px; color: #333; line-height: 1.6; white-space: pre-wrap;"/>
+                    </div>
+                </div>
+                <footer>
+                    <button name="action_ok" type="object" string="OK" class="btn-success" icon="fa-check" style="min-width: 100px; font-weight: bold;"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
     <record id="action_wizard_import_patients" model="ir.actions.act_window">
         <field name="name">Import patients Excel</field>
         <field name="type">ir.actions.act_window</field>
@@ -56,5 +78,3 @@
         <field name="binding_view_types">list</field>
     </record>
 </odoo>
-
-

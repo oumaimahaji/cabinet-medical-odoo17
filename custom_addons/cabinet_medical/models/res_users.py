@@ -16,7 +16,6 @@ class ResUsers(models.Model):
     pin_signature_hash = fields.Char(
         string='Hash PIN Signature',
         copy=False,
-        groups='base.group_system',
         help="PIN haché de manière sécurisée avec PBKDF2-SHA512, jamais stocké en clair."
     )
     has_signature = fields.Boolean(
@@ -30,11 +29,13 @@ class ResUsers(models.Model):
         store=False
     )
 
-    @api.depends('signature_medecin', 'pin_signature_hash')
+    @api.depends('signature_medecin')
     def _compute_signature_status(self):
         for user in self:
             user.has_signature = bool(user.signature_medecin)
-            user.has_signature_pin = bool(user.pin_signature_hash)
+            user.has_signature_pin = bool(user.sudo().pin_signature_hash)
+
+
 
     def set_signature_pin(self, new_pin):
         """Définit le PIN personnel du médecin après vérification de format."""

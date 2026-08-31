@@ -240,14 +240,33 @@ class WizardImportPatients(models.TransientModel):
                 errors.append(f"Ligne {idx} : {err_msg}")
                 _logger.warning("Import patients – ligne %s: %s", idx, e)
 
-        # --- Build final result message ---
+        # --- Si succès sans erreurs : Ouvrir la boîte de dialogue professionnelle avec bouton OK ---
+        if created > 0 and not errors:
+            success_msg = f"🎉 Importation réussie !\n\n{created} patient{'s ont été créés' if created > 1 else ' a été créé'} avec succès dans la base de données."
+            if warnings:
+                success_msg += f"\n\n⚠️ {len(warnings)} avertissement(s) :\n" + "\n".join(warnings)
+
+            success_wizard = self.env['cabinet.wizard.import.patients.success'].create({
+                'message': success_msg,
+            })
+            return {
+                'name': '✅ Importation réussie',
+                'type': 'ir.actions.act_window',
+                'res_model': 'cabinet.wizard.import.patients.success',
+                'res_id': success_wizard.id,
+                'view_mode': 'form',
+                'target': 'new',
+            }
+
+
+        # --- Si des erreurs sont survenues ou 0 patient créé : Conserver le formulaire ouvert avec le rapport détaillé ---
         parts = [f"Traitement terminé — {total_rows} lignes traitées."]
-        parts.append(f"✅ {created} patients créés avec succès.")
+        parts.append(f"✅ {created} patients créés.")
         if warnings:
             parts.append(f"\n⚠️ {len(warnings)} avertissement(s) :")
             parts.extend(warnings)
         if errors:
-            parts.append(f"\n❌ {len(errors)} erreurs détectées :")
+            parts.append(f"\n❌ {len(errors)} erreur(s) détectée(s) :")
             parts.extend(errors)
         self.resultat = "\n".join(parts)
 
@@ -259,3 +278,16 @@ class WizardImportPatients(models.TransientModel):
             'view_mode': 'form',
             'target': 'new',
         }
+
+
+class WizardImportPatientsSuccess(models.TransientModel):
+    _name = 'cabinet.wizard.import.patients.success'
+    _description = 'Confirmation de succès import patients'
+
+    message = fields.Text(string='Message', readonly=True)
+
+    def action_ok(self):
+        """Ferme la boîte de dialogue et recharge la vue liste des patients"""
+        action = self.env['ir.actions.act_window']._for_xml_id('cabinet_medical.action_patient_secretaire') if self.env.ref('cabinet_medical.action_patient_secretaire', raise_if_not_found=False) else self.env['ir.actions.act_window']._for_xml_id('cabinet_medical.action_patient')
+        action['target'] = 'main'
+        return action

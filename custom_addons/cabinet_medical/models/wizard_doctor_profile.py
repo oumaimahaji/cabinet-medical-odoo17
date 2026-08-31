@@ -34,7 +34,8 @@ class DoctorProfileWizard(models.TransientModel):
     def _compute_existing_status(self):
         for rec in self:
             rec.has_existing_signature = bool(rec.user_id.signature_medecin)
-            rec.has_existing_pin = bool(rec.user_id.pin_signature_hash)
+            rec.has_existing_pin = bool(rec.user_id.sudo().pin_signature_hash)
+
 
     @api.model
     def default_get(self, fields_list):
