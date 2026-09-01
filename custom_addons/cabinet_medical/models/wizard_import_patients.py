@@ -10,6 +10,8 @@ _logger = logging.getLogger(__name__)
 
 # Batch size for creation – avoids memory issues on large files
 BATCH_SIZE = 50
+MODEL_SUCCESS = 'cabinet.wizard.import.patients.success'
+ACTION_WINDOW = 'ir.actions.act_window'
 
 
 class WizardImportPatients(models.TransientModel):
@@ -285,13 +287,13 @@ class WizardImportPatients(models.TransientModel):
             if warnings:
                 success_msg += f"\n\n⚠️ {len(warnings)} avertissement(s) :\n" + "\n".join(warnings)
 
-            success_wizard = self.env['cabinet.wizard.import.patients.success'].create({
+            success_wizard = self.env[MODEL_SUCCESS].create({
                 'message': success_msg,
             })
             return {
                 'name': '✅ Importation réussie',
-                'type': 'ir.actions.act_window',
-                'res_model': 'cabinet.wizard.import.patients.success',
+                'type': ACTION_WINDOW,
+                'res_model': MODEL_SUCCESS,
                 'res_id': success_wizard.id,
                 'view_mode': 'form',
                 'target': 'new',
@@ -310,7 +312,7 @@ class WizardImportPatients(models.TransientModel):
         self.resultat = "\n".join(parts)
 
         return {
-            'type': 'ir.actions.act_window',
+            'type': ACTION_WINDOW,
             'res_model': self._name,
             'res_id': self.id,  # type: ignore
             'views': [(False, 'form')],
@@ -320,13 +322,13 @@ class WizardImportPatients(models.TransientModel):
 
 
 class WizardImportPatientsSuccess(models.TransientModel):
-    _name = 'cabinet.wizard.import.patients.success'
+    _name = MODEL_SUCCESS
     _description = 'Confirmation de succès import patients'
 
     message = fields.Text(string='Message', readonly=True)
 
     def action_ok(self):
         """Ferme la boîte de dialogue et recharge la vue liste des patients"""
-        action = self.env['ir.actions.act_window']._for_xml_id('cabinet_medical.action_patient_secretaire') if self.env.ref('cabinet_medical.action_patient_secretaire', raise_if_not_found=False) else self.env['ir.actions.act_window']._for_xml_id('cabinet_medical.action_patient')
+        action = self.env[ACTION_WINDOW]._for_xml_id('cabinet_medical.action_patient_secretaire') if self.env.ref('cabinet_medical.action_patient_secretaire', raise_if_not_found=False) else self.env[ACTION_WINDOW]._for_xml_id('cabinet_medical.action_patient')
         action['target'] = 'main'
         return action

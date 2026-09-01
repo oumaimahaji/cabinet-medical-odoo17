@@ -1,4 +1,5 @@
 from odoo import models, fields, api  # type: ignore
+DATE_FORMAT_DISPLAY = "%d/%m/%Y"
 from odoo.exceptions import ValidationError, AccessError  # type: ignore
 from datetime import timedelta
 import logging
@@ -608,6 +609,39 @@ class Appointment(models.Model):
                     )
 
     @api.depends('date', 'heure')
+    def _generate_slots_html(self, heure_debut, heure_fin, occupied_hours, current_selected):
+        slots_html = []
+        h = heure_debut
+        while h <= heure_fin:
+            h_round = round(h, 2)
+            h_int = int(h)
+            m_int = int(round((h - h_int) * 60))
+            time_label = f"{h_int:02d}:{m_int:02d}"
+
+            is_occupied = h_round in occupied_hours
+            is_selected = (current_selected is not None and abs(current_selected - h_round) < 0.01)
+
+            if is_occupied:
+                slots_html.append(
+                    f'<div style="padding:8px 12px;border-radius:6px;background:#edf2f7;border:1px solid #cbd5e0;'
+                    f'color:#a0aec0;font-weight:600;font-size:13px;text-align:center;cursor:not-allowed;" title="Occupé">'
+                    f'<i class="fa fa-lock me-1"></i>{time_label}</div>'
+                )
+            elif is_selected:
+                slots_html.append(
+                    f'<div style="padding:8px 12px;border-radius:6px;background:#2563eb;border:1px solid #1d4ed8;'
+                    f'color:white;font-weight:700;font-size:13px;text-align:center;box-shadow:0 2px 4px rgba(37,99,235,0.3);">'
+                    f'<i class="fa fa-check-circle me-1"></i>{time_label} (Choisi)</div>'
+                )
+            else:
+                slots_html.append(
+                    f'<div style="padding:8px 12px;border-radius:6px;background:#ffffff;border:1px solid #22c55e;'
+                    f'color:#15803d;font-weight:600;font-size:13px;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,0.05);">'
+                    f'<i class="fa fa-clock-o me-1"></i>{time_label}</div>'
+                )
+            h += 0.5
+        return slots_html
+
     def _compute_available_slots_preview(self):
         """Génère la grille interactive des créneaux horaires disponibles pour la date sélectionnée"""
         params = self.env['ir.config_parameter'].sudo()
@@ -619,7 +653,7 @@ class Appointment(models.Model):
         for rec in self:
             target_date = rec.date or fields.Date.today()
             weekday = target_date.weekday()
-            date_display = target_date.strftime('%d/%m/%Y')
+            date_display = target_date.strftime('DATE_FORMAT_DISPLAY')
 
             if weekday not in work_days:
                 rec.available_slots_preview = (
@@ -646,38 +680,8 @@ class Appointment(models.Model):
             occupied_hours = {round(r.heure, 2) for r in existing_rdvs if r.heure is not False}
 
             # Générer les créneaux de 30 minutes
-            slots_html = []
-            h = heure_debut
             current_selected = round(rec.heure, 2) if rec.heure is not False else None
-
-            while h <= heure_fin:
-                h_round = round(h, 2)
-                h_int = int(h)
-                m_int = int(round((h - h_int) * 60))
-                time_label = f"{h_int:02d}:{m_int:02d}"
-
-                is_occupied = h_round in occupied_hours
-                is_selected = (current_selected is not None and abs(current_selected - h_round) < 0.01)
-
-                if is_occupied:
-                    slots_html.append(
-                        f'<div style="padding:8px 12px;border-radius:6px;background:#edf2f7;border:1px solid #cbd5e0;'
-                        f'color:#a0aec0;font-weight:600;font-size:13px;text-align:center;cursor:not-allowed;" title="Occupé">'
-                        f'<i class="fa fa-lock me-1"></i>{time_label}</div>'
-                    )
-                elif is_selected:
-                    slots_html.append(
-                        f'<div style="padding:8px 12px;border-radius:6px;background:#2563eb;border:1px solid #1d4ed8;'
-                        f'color:white;font-weight:700;font-size:13px;text-align:center;box-shadow:0 2px 4px rgba(37,99,235,0.3);">'
-                        f'<i class="fa fa-check-circle me-1"></i>{time_label} (Choisi)</div>'
-                    )
-                else:
-                    slots_html.append(
-                        f'<div style="padding:8px 12px;border-radius:6px;background:#ffffff;border:1px solid #22c55e;'
-                        f'color:#15803d;font-weight:600;font-size:13px;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,0.05);">'
-                        f'<i class="fa fa-clock-o me-1"></i>{time_label}</div>'
-                    )
-                h += 0.5
+            slots_html = rec._generate_slots_html(heure_debut, heure_fin, occupied_hours, current_selected)
 
             total_free = len([h for h in slots_html if '#15803d' in h or '#2563eb' in h])
             rec.available_slots_preview = (
@@ -835,7 +839,7 @@ class Appointment(models.Model):
                 duplicate = self.env['cabinet.rendezvous'].search(domain, limit=1)
                 if duplicate:
                     patient_name = duplicate.display_patient_name or "un autre patient"
-                    date_str = rec.date_fr or rec.date.strftime('%d/%m/%Y')
+                    date_str = rec.date_fr or rec.date.strftime('DATE_FORMAT_DISPLAY')
                     time_str = self._format_float_time(rec.heure)
                     return {
                         'warning': {
@@ -968,6 +972,22 @@ class Appointment(models.Model):
         if self.patient_name:
             self.patient_id = False
 
+    def _prepare_create_vals(self, vals):
+        if 'name' in vals:
+            if not vals.get('patient_name'):
+                vals['patient_name'] = vals['name']
+            vals.pop('name', None)
+
+        if not vals.get('patient_id') and not vals.get('patient_name'):
+            ctx_pid = self._context.get('default_patient_id') or self._context.get('patient_id')
+            if ctx_pid:
+                vals['patient_id'] = ctx_pid
+
+        if vals.get('patient_name') and not vals.get('patient_id'):
+            patient = self.env['cabinet.patient'].create({'name': vals['patient_name']})
+            vals['patient_id'] = patient.id
+        return vals
+
     @api.model_create_multi
     def create(self, vals_list):
         import traceback
@@ -978,22 +998,7 @@ class Appointment(models.Model):
         _logger.info("TRACEBACK:\n" + "".join(traceback.format_stack()))
         
         for vals in vals_list:
-            if 'name' in vals:
-                if not vals.get('patient_name'):
-                    vals['patient_name'] = vals['name']
-                vals.pop('name', None)
-
-            # Si le champ patient_id est readonly dans la vue, le client web d'Odoo peut ne pas l'envoyer dans vals.
-            # On le récupère alors depuis le contexte s'il existe.
-            if not vals.get('patient_id') and not vals.get('patient_name'):
-                ctx_pid = self._context.get('default_patient_id') or self._context.get('patient_id')
-                if ctx_pid:
-                    vals['patient_id'] = ctx_pid
-
-            # Création automatique du patient si seul le nom est fourni
-            if vals.get('patient_name') and not vals.get('patient_id'):
-                patient = self.env['cabinet.patient'].create({'name': vals['patient_name']})
-                vals['patient_id'] = patient.id
+            self._prepare_create_vals(vals)
                 
         records = super(Appointment, self).create(vals_list)
         
@@ -1293,7 +1298,7 @@ class Appointment(models.Model):
         """Calculer la date au format français"""
         for rec in self:
             if rec.date:
-                rec.date_fr = rec.date.strftime('%d/%m/%Y')
+                rec.date_fr = rec.date.strftime('DATE_FORMAT_DISPLAY')
             else:
                 rec.date_fr = ''
     
