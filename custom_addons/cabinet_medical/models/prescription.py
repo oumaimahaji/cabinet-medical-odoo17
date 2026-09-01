@@ -4,7 +4,7 @@ os.environ['TRANSFORMERS_OFFLINE'] = '1'
 
 from odoo import models, fields, api  # type: ignore
 import unicodedata
-from odoo.exceptions import ValidationError  # type: ignore
+from odoo.exceptions import ValidationError, AccessError  # type: ignore
 from datetime import date, datetime, timedelta
 import re
 import difflib

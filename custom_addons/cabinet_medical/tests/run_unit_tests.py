@@ -19,9 +19,14 @@ print("\n=== RUNNING test_no_show_pipeline.py ===")
 suite3 = unittest.defaultTestLoader.discover(test_dir, pattern='test_no_show_pipeline.py')
 res3 = unittest.TextTestRunner(verbosity=2).run(suite3)
 
+# 4. Run test_res_users
+print("\n=== RUNNING test_res_users.py ===")
+suite4 = unittest.defaultTestLoader.discover(test_dir, pattern='test_res_users.py')
+res4 = unittest.TextTestRunner(verbosity=2).run(suite4)
+
 print("\n================ TOTAL SUMMARY ================")
-total_ran = res1.testsRun + res2.testsRun + res3.testsRun
-total_errors = len(res1.errors) + len(res2.errors) + len(res3.errors)
-total_failures = len(res1.failures) + len(res2.failures) + len(res3.failures)
+total_ran = res1.testsRun + res2.testsRun + res3.testsRun + res4.testsRun
+total_errors = len(res1.errors) + len(res2.errors) + len(res3.errors) + len(res4.errors)
+total_failures = len(res1.failures) + len(res2.failures) + len(res3.failures) + len(res4.failures)
 print(f"Total Unit Tests Ran: {total_ran}, Errors: {total_errors}, Failures: {total_failures}")
 

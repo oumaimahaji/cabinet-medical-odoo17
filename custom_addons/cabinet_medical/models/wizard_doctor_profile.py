@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api  # type: ignore
-from odoo.exceptions import ValidationError, AccessError  # type: ignore
+from odoo.exceptions import ValidationError  # type: ignore
 
 class DoctorProfileWizard(models.TransientModel):
     _name = 'cabinet.doctor.profile.wizard'

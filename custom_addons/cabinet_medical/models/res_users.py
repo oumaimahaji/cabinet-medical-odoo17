@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api  # type: ignore
-from odoo.exceptions import ValidationError, UserError, AccessError  # type: ignore
+from odoo.exceptions import ValidationError, AccessError  # type: ignore
 from passlib.context import CryptContext  # type: ignore
 
 pin_crypt_context = CryptContext(schemes=['pbkdf2_sha512'], deprecated='auto')

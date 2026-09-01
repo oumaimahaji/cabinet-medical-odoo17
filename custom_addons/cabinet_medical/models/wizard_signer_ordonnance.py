@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, api  # type: ignore
-from odoo.exceptions import ValidationError, UserError, AccessError  # type: ignore
+from odoo import models, fields  # type: ignore
+from odoo.exceptions import ValidationError, AccessError  # type: ignore
 
 class CabinetPrescriptionSignWizard(models.TransientModel):
     _name = 'cabinet.prescription.sign.wizard'
