@@ -18,6 +18,20 @@
         </field>
     </record>
 
+    <!-- Vue Search Bordereau -->
+    <record id="view_cabinet_bordereau_search" model="ir.ui.view">
+        <field name="name">cabinet.bordereau.search</field>
+        <field name="model">cabinet.bordereau</field>
+        <field name="arch" type="xml">
+            <search string="Recherche Bordereaux">
+                <field name="name"/>
+                <field name="periode_label"/>
+                <separator/>
+                <filter string="Archivés" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
     <!-- Vue Form Bordereau -->
     <record id="view_cabinet_bordereau_form" model="ir.ui.view">
         <field name="name">cabinet.bordereau.form</field>
@@ -59,7 +73,7 @@
                     <notebook>
                         <page string="Factures CNAM/APCI">
                             <field name="facture_ids" readonly="state != 'draft'">
-                                <tree string="Factures" editable="bottom">
+                                <tree string="Factures" create="0" editable="bottom">
                                     <field name="name" readonly="1"/>
                                     <field name="date_facture" readonly="1"/>
                                     <field name="patient_id" readonly="1"/>

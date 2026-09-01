@@ -56,5 +56,6 @@ class CabinetPrescriptionSignWizard(models.TransientModel):
                 'message': f"L'ordonnance a été signée par le Dr. {current_user.name} et est maintenant verrouillée.",
                 'sticky': False,
                 'type': 'success',
+                'next': {'type': 'ir.actions.act_window_close'},
             }
         }

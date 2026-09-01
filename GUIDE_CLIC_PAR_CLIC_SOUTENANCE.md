@@ -2,7 +2,8 @@
 ## ⏱️ Durée Totale : 15 à 20 min • Guide Ultra-Précis (Que Cliquer + Que Dire au Jury)
 
 > **Mode d'emploi le jour J :**  
-> Suivez ce guide ligne par ligne. Chaque étape vous indique **exactement où cliquer avec la souris** (`🖱️ ACTION`) et **ce que vous devez dire à voix haute devant le jury** (`🎙️ VOUS DITES`).
+> Suivez ce guide ligne par ligne. Chaque étape vous indique **exactement où cliquer avec la souris** (`🖱️ ACTION`) et **ce que vous devez dire à voix haute devant le jury** (`🎙️ VOUS DITES`). 
+> Les encadrés **📝 DONNÉES DE TEST** vous indiquent exactement quoi taper.
 
 ---
 
@@ -21,275 +22,166 @@ Ouvrez **Google Chrome** avec ces **5 onglets ouverts en plein écran** :
 
 ---
 
-## 📞 ACTE 1 : L'APPEL TÉLÉPHONIQUE DU PATIENT & LE SECRÉTARIAT (00:00 - 04:00)
+## 👩‍💼 ACTE 1 : LE SECRÉTARIAT & L'ADMINISTRATION PATIENT (00:00 - 05:00)
 
-### 🔹 Étape 1.1 : Connexion au Secrétariat
+### 🔹 Étape 1.1 : Connexion & Tour d'Horizon des Assurances
 - 🖱️ **ACTION :**
-  1. Allez sur **l'Onglet 1 (Odoo)**.
-  2. Sur l'écran de connexion personnalisé, saisissez :
-     - Identifiant : `secretaire`
-     - Mot de passe : `secretaire123`
-  3. Cliquez sur **Se connecter** (*Log in*).
+  1. Allez sur **l'Onglet 1 (Odoo)**. Connectez-vous avec :
+     > **📝 DONNÉES DE TEST** :
+     > Identifiant : `secretaire`
+     > Mot de passe : `secretaire123`
+  2. Cliquez sur le menu **Assurances / Mutuelles**.
+  3. 👁️ *Survolez la liste des conventions sans rien modifier (montrez les pourcentages de prise en charge).*
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Bonjour Monsieur le Président, honorables membres du jury. Nous débutons notre démonstration au secrétariat médical lors de l'appel téléphonique d'un patient. Comme vous le constatez, l'interface Odoo a été totalement personnalisée : le menu principal a été épuré pour n'exposer à la secrétaire que la gestion administrative et les plannings, sans jamais divulguer les données médicales."*
+  > *"Bonjour à tous. Notre démonstration commence au secrétariat du cabinet. Conformément aux règles de sécurité RBAC, la secrétaire a un accès restreint à son cœur de métier : la gestion administrative. C'est elle, par exemple, qui configure le répertoire des Assurances et Mutuelles, permettant au cabinet de s'adapter à n'importe quelle convention tarifaire sans toucher au code."*
 
----
-
-### 🔹 Étape 1.2 : Importation massive de patients avec contrôle strict
+### 🔹 Étape 1.2 : Prise de RDV au téléphone & IA n°1 (Machine Learning No-Show)
 - 🖱️ **ACTION :**
-  1. Dans le menu du haut, cliquez sur **Cabinet Médical** > **Patients**.
-  2. Cliquez sur le bouton en haut à gauche **"Importer Patients (Excel)"**.
-  3. *(Montrez la fenêtre modale)* Montrez les options de contrôle puis cliquez sur **Annuler** ou chargez un fichier exemple.
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Pour intégrer rapidement les dossiers de santé, nous avons développé un wizard d'importation Excel (`wizard_import_patients.py`). Il vérifie rigoureusement les formats tunisiens : la CIN à 8 chiffres, le matricule CNAM à 10 chiffres et le téléphone. Chaque ligne est protégée par un `SAVEPOINT` PostgreSQL pour qu'une faute de frappe n'interrompe jamais l'import global."*
-
----
-
-### 🔹 Étape 1.3 : Prise de RDV au téléphone & IA n°1 (Machine Learning No-Show)
-- 🖱️ **ACTION :**
-  1. Dans le menu, cliquez sur **Agenda / Rendez-vous** (ou **Rendez-vous**).
-  2. Cliquez sur le bouton **Créer** (ou *Nouveau*).
-  3. Dans le champ **Patient**, sélectionnez : `Mohamed Ben Salem` (ou tapez un nom de patient existant).
+  1. Cliquez sur le menu **Patients**, puis sur le bouton **Importer Patients (Excel)** pour montrer rapidement qu'on peut ingérer massivement des données avec contrôle strict (CIN/CNAM). Cliquez sur **Annuler**.
+  2. Dans le menu, cliquez sur **Agenda / Rendez-vous**. Cliquez sur **Créer**.
+  3. Dans le champ **Patient**, tapez :
+     > **📝 DONNÉES DE TEST** : `Sami Trabelsi`
   4. **Démonstration ML Cas 1 (Risque Élevé)** :
-     - Modifiez la **Date du rendez-vous** pour la fixer dans **25 jours** à l'avance.
-     - 👁️ *Montrez le bandeau d'alerte qui apparaît automatiquement sous le formulaire* :  
+     - Fixez la **Date du rendez-vous** à dans **25 jours**.
+     - 👁️ *Montrez le bandeau rouge d'alerte sous le formulaire* :  
        🔴 **"Risque de No-Show Élevé (58%) - Raison : Délai de réservation lointain"**.
   5. **Démonstration ML Cas 2 (Urgence - Risque Faible)** :
-     - Cochez la case **"Consultation d'urgence"**.
-     - 👁️ *Montrez le bandeau qui se recalcule instantanément en vert* :  
-       🟢 **"Risque de No-Show Faible (3.2%) - Raison : Urgence médicale"**.
-  6. Décochez l'urgence, remettez la date à **Aujourd'hui** et cliquez sur le bouton **Enregistrer**.
+     - Cochez la case **"Consultation d'urgence"** (ou ramenez la date à **Aujourd'hui**).
+     - 👁️ *Montrez le bandeau qui passe au vert* :  
+       🟢 **"Risque de No-Show Faible (3.2%)"**.
+  6. Cliquez sur **Enregistrer**.
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Lors de la fixation du rendez-vous téléphonique, notre **première IA entre en action : un modèle de Machine Learning Random Forest** (`ml_no_show.py`), entraîné sur 1 500 dossiers cliniques. En évaluant 7 variables comme le délai de prise de RDV, le statut d'urgence et les antécédents, l'IA calcule instantanément la probabilité que le patient ne vienne pas ('No-Show'). Cela permet à la secrétaire de déclencher des rappels ciblés ou d'optimiser l'agenda."*
+  > *"Un patient appelle pour prendre rendez-vous. C'est ici qu'intervient notre **première IA : un modèle de Machine Learning Random Forest** entraîné sur 1 500 dossiers. En analysant en temps réel le délai du RDV et l'historique du patient, elle calcule instantanément la probabilité d'absence (le 'No-Show'). La secrétaire sait ainsi immédiatement si ce patient nécessite un rappel SMS renforcé."*
+
+### 🔹 Étape 1.3 : IA n°2 (Assistant LLM Local Ollama/Phi-3) & Arrivée
+- 🖱️ **ACTION :**
+  1. Allez dans **Cabinet Médical** > **Patients**, ouvrez la fiche de `Sami Trabelsi` (qui doit avoir une date CNAM expirée).
+  2. Montrez l'alerte orange CNAM et cliquez sur **"Conseil Assistant IA"** (icône d'étincelle).
+  3. 👁️ *Montrez la notification popup de l'IA :*  
+     ✨ **[IA Assistant]** : *"La carte CNAM du patient est échue. Veuillez inviter le patient à solliciter le document de renouvellement..."*
+  4. Retournez dans les rendez-vous d'aujourd'hui, ouvrez celui de Sami, et cliquez sur **"Patient Arrivé"** (statut `Présent`).
+  5. **Déconnectez-vous** du compte Secrétaire.
+- 🎙️ **VOUS DITES AU JURY :**
+  > *"Avant que le patient n'arrive, la secrétaire vérifie son dossier. Notre **deuxième IA** détecte que la carte CNAM est expirée. Il s'agit d'un **LLM souverain local (Phi-3 sous Ollama)**. Il tourne 100% en local sur notre serveur : le secret médical est garanti. Il assiste la secrétaire sur les démarches administratives. Le patient arrive au cabinet, la secrétaire valide sa présence en salle d'attente, et nous passons maintenant côté médical."*
 
 ---
 
-### 🔹 Étape 1.4 : IA n°3 (Assistant LLM Local Ollama/Phi-3 pour les Droits CNAM)
+## 👨‍⚕️ ACTE 2 : LA CLINIQUE & LE PARAMÉTRAGE MÉDICAL (05:00 - 12:00)
+
+### 🔹 Étape 2.1 : Configuration & Prise en charge par le Médecin
 - 🖱️ **ACTION :**
-  1. Allez dans **Cabinet Médical** > **Patients**.
-  2. Cliquez sur la fiche du patient (qui a une carte CNAM expirée).
-  3. Montrez le bandeau d'alerte orange en haut de la fiche du patient et cliquez sur le bouton **"Conseil Assistant IA"** (ou sur l'alerte).
-  4. 👁️ *Montrez la notification popup qui s'affiche en haut à droite avec le texte reformulé :*  
-     ✨ **[IA Assistant]** : *"La carte CNAM du patient est échue depuis 42 jours. Veuillez solliciter le document de renouvellement..."*
+  1. Connectez-vous en tant que Médecin :
+     > **📝 DONNÉES DE TEST** :
+     > Identifiant : `medecin`
+     > Mot de passe : `medecin123`
+  2. Allez dans le menu **Configuration**.
+  3. 👁️ *Survolez rapidement les sous-menus pour montrer les capacités de gestion du médecin :*
+     - **Tarifs CNAM (Actes Médicaux)** : le dictionnaire des actes avec leurs prix.
+     - **Paramètres du cabinet** : pour gérer l'envoi d'emails et SMS (SMTP).
+     - **✍️ Signature et PIN Médecin** : pour configurer la signature électronique de l'ordonnance.
+  4. Allez dans **Mes Rendez-vous**, cliquez sur celui de `Sami Trabelsi` et cliquez sur **"Démarrer la consultation"**.
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Ici intervient notre **troisième IA : un LLM souverain local (Phi-3 sous Ollama)** (`facture.py`). Il analyse les dates de validité CNAM et APCI et génère une recommandation d'action claire pour la secrétaire, en local sur le serveur, garantissant qu'aucune donnée de santé ne fuite sur Internet."*
+  > *"Le médecin se connecte. Contrairement à la secrétaire, c'est lui qui définit la nomenclature tarifaire des actes médicaux, la configuration globale du cabinet (SMTP/SMS) et sa propre signature électronique, prouvant la robustesse de notre architecture de droits. Il démarre ensuite sa journée et ouvre la consultation du patient en salle d'attente. Lui seul a accès aux données cliniques."*
+
+### 🔹 Étape 2.2 : Constantes, Acte Médical & Wizard de Suivi
+- 🖱️ **ACTION :**
+  1. Remplissez les données cliniques :
+     > **📝 DONNÉES DE TEST** :
+     > - **Diagnostic** : `Infection pulmonaire sévère`
+     > - **Constantes** : Tension `14/8`, Température `38.5°C`
+  2. Dans l'onglet **Actes Médicaux**, ajoutez une ligne : `Consultation Spécialiste` (Prix : 30 DT).
+  3. Cliquez sur le bouton en haut **"Planifier un suivi"**.
+  4. 👁️ *Montrez le calendrier personnalisé OWL.* Sélectionnez une date libre (ex: dans 15 jours à 09:00), puis cliquez sur **Enregistrer**.
+- 🎙️ **VOUS DITES AU JURY :**
+  > *"Après l'examen, le médecin saisit son acte médical. Grâce à un composant calendrier Web (OWL) développé sur-mesure, il peut fixer directement le prochain RDV de suivi de son patient sans avoir à solliciter de nouveau le secrétariat."*
+
+### 🔹 Étape 2.3 : Prescription Sécurisée (IA n°3 - Hybride BDPM)
+- 🖱️ **ACTION :**
+  1. Dans la consultation, allez dans l'onglet **Ordonnance** et cliquez sur **Créer une Ordonnance**.
+  2. 👁️ *Faites remarquer l'encadré en haut* : `Allergie : Pénicilline`.
+  3. **Test Allergie & Faute de frappe** : Ajoutez la ligne :
+     > **📝 DONNÉES DE TEST** : `Pénécilline 1g` (avec une faute volontaire).
+  4. Cliquez sur **"🤖 Vérifier avec l'IA"**.
+  5. 👁️ *Montrez l'alerte rouge* : 🔴 **"Risque allergique majeur : ... famille des Pénicillines !"**
+  6. **Test Valide** : Supprimez la ligne, et ajoutez :
+     > **📝 DONNÉES DE TEST** : `Paracétamol 1g` et `Azithromycine 500mg`.
+  7. Re-cliquez sur **"🤖 Vérifier avec l'IA"**.
+  8. 👁️ *Montrez l'alerte verte* : 🟢 **"Prescription validée"**.
+  9. Cliquez sur **"Signer et Verrouiller l'Ordonnance"**. Terminez la consultation.
+- 🎙️ **VOUS DITES AU JURY :**
+  > *"Pour rédiger l'ordonnance, notre **3ème IA de Sécurisation Thérapeutique** entre en jeu. Le patient est allergique à la Pénicilline. Même si le médecin fait une faute de frappe ('Pénécilline'), l'algorithme de Fuzzy Matching intercepte l'erreur, consulte notre Ontologie Pharmaceutique locale (BDPM) et bloque la prescription. Une fois une molécule sûre prescrite, le médecin signe numériquement l'ordonnance, qui devient immuable."*
+
+### 🔹 Étape 2.4 : L'IA n°4 (Claude 3.5 Haiku) pour le Dashboard
+- 🖱️ **ACTION :**
+  1. Allez dans le menu **Tableau de Bord IA**.
+  2. 👁️ *Montrez les graphiques (Pathologies, No-Show) et la Synthèse Décisionnelle Claude en bas de page.*
+  3. **Déconnectez-vous** du compte Médecin.
+- 🎙️ **VOUS DITES AU JURY :**
+  > *"Avant de finir sa journée, le médecin consulte son Tableau de Bord. Notre **4ème IA** agrège ici la data du cabinet et interroge l'API Anthropic Claude 3.5 pour générer en temps réel une synthèse financière et épidémiologique. Le médecin se déconnecte, laissant la secrétaire finaliser le paiement du patient."*
 
 ---
 
-## 🩺 ACTE 2 : ARRIVÉE DU PATIENT & CONSULTATION MÉDICALE (04:00 - 07:00)
+## 💰 ACTE 3 : LA FACTURATION & TÉLÉTRANSMISSION (12:00 - 14:00)
 
-### 🔹 Étape 2.1 : Validation de la présence en salle d'attente
+### 🔹 Étape 3.1 : Facture et Formulaires Légaux (Compte Secrétaire)
 - 🖱️ **ACTION :**
-  1. Retournez dans **Rendez-vous**.
-  2. Ouvrez le rendez-vous d'aujourd'hui.
-  3. Cliquez sur le bouton en haut **"Patient Arrivé"** (le statut passe en vert : `Présent`).
-  4. Déconnectez-vous en cliquant sur l'avatar en haut à droite > **Déconnexion** (*Log out*).
+  1. Reconnectez-vous en tant que **Secrétaire** (`secretaire` / `secretaire123`).
+  2. Allez dans **Consultations** (ou Facturation), et ouvrez la consultation terminée de Sami.
+  3. Cliquez sur **"Générer la Facture"**.
+  4. 👁️ *Montrez la ventilation automatique :* (Total : 30 DT / CNAM : 21 DT / Patient : 9 DT).
+  5. Cliquez sur **Valider**.
+  6. Cliquez sur le bouton d'impression en haut pour montrer le **Bulletin de Soins BS1 CNAM** (PDF Cerfa) et l'**Ordonnance Médicale** (PDF).
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Le patient arrive au cabinet. La secrétaire clique sur 'Patient Arrivé', ce qui l'insère automatiquement dans la file d'attente active du médecin. Déconnectons-nous pour passer côté docteur."*
+  > *"De retour au secrétariat, conformément aux règles RBAC, c'est l'administration qui encaisse. Le moteur de facturation gère automatiquement la ventilation Tiers-Payant (CNAM vs Patient). En un clic, la secrétaire édite les documents légaux conformes : le Cerfa BS1 pour le remboursement et l'ordonnance sécurisée."*
+
+### 🔹 Étape 3.2 : Bordereau de Télétransmission M5
+- 🖱️ **ACTION :**
+  1. Allez dans le menu **CNAM** > **Bordereaux**.
+  2. Cliquez sur **Créer**, puis **"Récupérer les factures du mois"**.
+  3. Cliquez sur Imprimer pour générer le **Bordereau M5**.
+- 🎙️ **VOUS DITES AU JURY :**
+  > *"En fin de mois, le module regroupe toutes les créances de la sécurité sociale dans le Bordereau officiel M5, verrouillant les factures pour empêcher tout doublon de télétransmission."*
 
 ---
 
-### 🔹 Étape 2.2 : Prise en charge par le Médecin & Secret Médical
+## 🌐 ACTE 4 : L'EXPÉRIENCE PATIENT & CYBERSÉCURITÉ OWASP (14:00 - 16:00)
+
+### 🔹 Étape 4.1 : Connexion Web du Patient
 - 🖱️ **ACTION :**
-  1. Sur la page de connexion, connectez-vous en tant que Médecin :
-     - Identifiant : `oumaima.hajji@esprit.tn` (ou `admin`)
-     - Mot de passe : `medecin123` (ou `admin`)
-  2. Cliquez sur **Cabinet Médical** > **Rendez-vous du jour** (ou **Consultations**).
-  3. Cliquez sur le rendez-vous de `Mohamed Ben Salem` (Statut : `Présent`).
-  4. Cliquez sur le bouton en haut **"Démarrer la consultation"**.
-  5. 👁️ *Montrez les onglets médicaux confidentiels* :
-     - Renseignez un diagnostic : `Infection respiratoire aiguë`.
-     - Renseignez les constantes : Tension `13/8`, Température `38.5°C`.
-  6. Dans l'onglet **Actes Médicaux**, cliquez sur **Ajouter une ligne** :
-     - Sélectionnez : `Consultation Spécialiste` (Code `C01`, Montant `30 DT`, Prise en charge CNAM `70%`).
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Le médecin démarre la séance. En vertu des règles de sécurité RBAC définies dans `security.xml`, l'ensemble du dossier clinique, les antécédents et les constantes vitales sont réservés au médecin. Après examen, le médecin saisit l'acte médical conventionné à 30 DT. Nous passons alors à la prescription médicamenteuse."*
-
----
-
-## 🤖 ACTE 3 : PRESCRIPTION SÉCURISÉE PAR L'IA n°2 HYBRIDE (07:00 - 11:00)
-
-### 🔹 Étape 3.1 : Détection d'Allergie par l'Ontologie Pharmaceutique BDPM
-- 🖱️ **ACTION :**
-  1. Dans la consultation, cliquez sur le bouton **"Créer une Ordonnance"** (ou allez dans l'onglet Ordonnance).
-  2. 👁️ *Montrez l'antécédent affiché en haut* : `Allergie connue : Pénicilline` | `Traitement en cours : Spironolactone`.
-  3. **Test Ontologie BDPM** :
-     - Dans le tableau des médicaments, cliquez sur **Ajouter une ligne**.
-     - Sélectionnez ou tapez : `Amoxicilline 1g` (Posologie : 1 comprimé 2 fois par jour).
-     - Cliquez sur le bouton violet avec l'icône robot : **"🤖 Vérifier avec l'IA"**.
-     - 👁️ *Montrez le grand bandeau rouge d'alerte critique* :  
-       🔴 **"Risque allergique majeur : Amoxicilline appartient à la famille des Pénicillines !"**
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Voici le cœur clinique de notre système : **l'IA Hybride de Sécurisation Thérapeutique** (`prescription.py`). Le patient est allergique à la Pénicilline, mais le médecin a saisi 'Amoxicilline'. Grâce à notre **Ontologie pharmaceutique BDPM locale** (`CIS_bdpm.txt`) de 15 000 médicaments, l'IA fait immédiatement le lien de parenté chimique et bloque la prescription."*
-
----
-
-### 🔹 Étape 3.2 : Tolérance aux fautes de frappe (Fuzzy Matching 82%)
-- 🖱️ **ACTION :**
-  1. Modifiez le nom du médicament avec une faute d'orthographe : tapez `Augmantin` (avec un 'a') ou `Pénécilline`.
-  2. Cliquez sur **"🤖 Vérifier avec l'IA"**.
-  3. 👁️ *Montrez que l'alerte rouge persiste* : le système intercepte la faute de frappe.
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Même si le praticien commet une faute de frappe dans la précipitation, notre algorithme de **Fuzzy Matching** (`SequenceMatcher` avec seuil à 82%) rattrape l'erreur phonétique et maintient la sécurité."*
-
----
-
-### 🔹 Étape 3.3 : Détection d'Interaction Médicamenteuse Sévère (Type B)
-- 🖱️ **ACTION :**
-  1. Supprimez la ligne d'antibiotique (icône poubelle).
-  2. Ajoutez une ligne : `Ramipril 5mg` (médicament pour la tension).
-  3. Cliquez sur **"🤖 Vérifier avec l'IA"**.
-  4. 👁️ *Montrez l'alerte d'interaction orange/rouge* :  
-     🟠 **"Interaction Médicamenteuse Sévère : Association Spironolactone (traitement en cours) + Ramipril (IEC) ➔ Risque vital d'hyperkaliémie."**
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"L'IA croise également l'ordonnance avec l'historique des traitements en cours du patient. Elle détecte ici une interaction pharmacologique majeure entre le diurétique du patient et l'IEC prescrit, évitant un accident cardiaque grave."*
-
----
-
-### 🔹 Étape 3.4 : Validation Thérapeutique Safe & Signature Immuable
-- 🖱️ **ACTION :**
-  1. Supprimez la ligne à risque et ajoutez un traitement sûr :
-     - Ligne 1 : `Paracétamol 1g`
-     - Ligne 2 : `Azithromycine 500mg` (Macrolide toléré)
-  2. Cliquez sur **"🤖 Vérifier avec l'IA"**.
-  3. 👁️ *Montrez le bandeau vert qui s'affiche* :  
-     🟢 **"Prescription validée : Aucun conflit allergique ni interaction détectée."**
-  4. Cliquez sur **"Signer et Verrouiller l'Ordonnance"**.
-  5. 👁️ *Montrez au jury que le statut passe à 'Signé' et qu'il est désormais impossible d'ajouter ou supprimer une ligne.*
-  6. Cliquez sur le fil d'Ariane pour revenir à la consultation et cliquez sur **"Terminer la consultation"**.
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Avec des molécules compatibles, l'IA valide la prescription en vert. Le médecin signe l'ordonnance qui devient strictement immuable et infalsifiable. Nous clôturons la séance médicale."*
-
----
-
-## 💰 ACTE 4 : FACTURATION CNAM & TÉLÉTRANSMISSION BORDEREAU M5 (11:00 - 14:00)
-
-### 🔹 Étape 4.1 : Génération et Ventilation Automatique de la Facture
-- 🖱️ **ACTION :**
-  1. Depuis la consultation terminée, cliquez sur le bouton **"Générer la Facture"**.
-  2. 👁️ *Montrez la ventilation financière calculée automatiquement :*
-     - **Scénario CNAM :** `CNAM Tiers-Payant (Filière Privée)`
-     - **Montant Total :** `30.000 DT`
-     - **Part Prise en Charge CNAM (70%) :** `21.000 DT`
-     - **Ticket Modérateur Patient (30%) :** `9.000 DT`
-  3. Cliquez sur le bouton **"Valider la Facture"**.
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Le moteur de facturation (`facture.py`) prend le relais. Il gère les 8 scénarios de la réglementation tunisienne (Filière privée, Remboursement, APCI 100%, Mutuelles). Ici, la ventilation conventionnelle est instantanée : 21 DT pris en charge par la CNAM et 9 DT réglés sur place par le patient."*
-
----
-
-### 🔹 Étape 4.2 : Impression des Formulaires Légaux Officiels
-- 🖱️ **ACTION :**
-  1. En haut de la facture, cliquez sur le menu **Imprimer** :
-     - Cliquez sur **Bulletin de Soins BS1 CNAM** (le PDF s'ouvre avec le cerfa officiel).
-     - Cliquez sur **Ordonnance Médicale Sécurisée** (PDF avec en-tête et code-barres).
-     - Cliquez sur **Reçu de Paiement / Facture**.
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"L'application édite automatiquement l'ensemble des documents légaux conformes aux exigences de l'Ordre des Médecins et de la CNAM : le bulletin de soins BS1 rempli, l'ordonnance sécurisée et la quittance de paiement."*
-
----
-
-### 🔹 Étape 4.3 : Télétransmission Mensuelle (Bordereau Récapitulatif M5)
-- 🖱️ **ACTION :**
-  1. Allez dans le menu **Cabinet Médical** > **CNAM** > **Bordereaux**.
-  2. Cliquez sur **Créer**.
-  3. Sélectionnez le mois en cours et cliquez sur le bouton **"Récupérer les factures du mois"**.
-  4. Cliquez sur **Valider** > **Imprimer le Bordereau M5**.
-  5. 👁️ *Montrez le PDF du Bordereau M5 avec la liste des créances et le total dû par la CNAM.*
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"En fin de mois, le module de télétransmission (`bordereau.py`) regroupe toutes les créances dans le **Bordereau Officiel M5**, verrouille les factures pour empêcher les doublons et prépare le dossier de remboursement pour la caisse de sécurité sociale."*
-
----
-
-## 🌐 ACTE 5 : PORTAIL PATIENT WEB RÉACTIF & CYBERSÉCURITÉ OWASP (14:00 - 16:00)
-
-### 🔹 Étape 5.1 : Connexion au Portail Patient
-- 🖱️ **ACTION :**
-  1. Ouvrez une **nouvelle fenêtre de navigation privée** (ou un nouvel onglet) :
-     - URL : `http://192.168.33.10:8069/my`
+  1. Ouvrez une **fenêtre de navigation privée**.
   2. Connectez-vous avec le compte du patient :
-     - Identifiant : `mohamed.bensalem@gmail.com`
-     - Mot de passe : `patient123`
-  3. 👁️ *Montrez le portail patient :*
-     - Cliquez sur **Mes Rendez-vous** : le patient voit son RDV d'aujourd'hui terminé.
-     - Cliquez sur **Mes Ordonnances** : le patient clique sur **Télécharger PDF** pour récupérer son ordonnance sécurisée signée.
+     > **📝 DONNÉES DE TEST** :
+     > Identifiant : `sami.trabelsi@gmail.com`
+     > Mot de passe : `patient123`
+  3. Cliquez sur **Mes Rendez-vous** et **Mes Ordonnances**. Téléchargez le PDF.
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Le patient dispose de son propre portail web réactif (`portal.py`). Il peut télécharger ses ordonnances et suivre ses rendez-vous depuis son smartphone ou son ordinateur.*
-  >
-  > *Sur le plan de la cybersécurité, notre système respecte les normes **OWASP** :*
-  > - *Des **Record Rules PostgreSQL** (`portal_security.xml`) filtrent directement les requêtes SQL en base de données : un patient ne peut techniquement jamais voir les dossiers d'un autre patient.*
-  > - *Les jetons de session sont détruits à chaque modification sensible pour contrer le Session Hijacking."*
+  > *"Le patient, de retour chez lui, accède à son espace Web personnel. La cybersécurité est ici au centre de notre conception : nous appliquons les règles **OWASP**. Grâce aux 'Record Rules PostgreSQL', les requêtes SQL sont filtrées directement dans la base de données. Il est mathématiquement impossible pour un patient d'intercepter les données cliniques d'un tiers."*
 
 ---
 
-## 🚀 ACTE 6 : IA n°4 DASHBOARD CLAUDE & L'USINE LOGICIELLE DEVOPS (16:00 - 19:00)
+## 🚀 ACTE 5 : L'USINE LOGICIELLE DEVOPS (16:00 - 19:00)
 
-### 🔹 Étape 6.1 : IA n°4 - Tableau de Bord Décisionnel Exécutif (Claude 3.5 Haiku)
+### 🔹 Étape 5.1 : Démonstration de l'Infrastructure Qualité
 - 🖱️ **ACTION :**
-  1. Revenez sur **l'Onglet 1 (Odoo)** sur le compte Médecin.
-  2. Allez dans **Cabinet Médical** > **Tableau de Bord IA**.
-  3. 👁️ *Montrez les graphiques interactifs Chart.js (Répartition des pathologies, No-Show, Recouvrement CNAM).*
-  4. 👁️ *Descendez en bas de page et montrez le bloc :*  
-     **"Synthèse Décisionnelle de l'Assistant Claude"**.
+  1. Passez sur **l'Onglet 2 (Jenkins)**.
+     - 👁️ *Montrez les étapes vertes de compilation et la section des **tests unitaires**.*
+  2. Passez sur **l'Onglet 3 (SonarQube)**.
+     - 👁️ *Montrez le statut "PASSED", la sécurité (Note A).*
+  3. Passez sur **l'Onglet 4 (Nexus)** et **l'Onglet 5 (Grafana)**.
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Voici notre **quatrième IA : le Tableau de Bord Décisionnel** développé en JavaScript OWL (`ai_dashboard.js`) et Chart.js. Côté serveur, la méthode `get_ai_insights()` agrège les statistiques réelles et interroge l'API **Anthropic Claude 3.5 Haiku** pour fournir au médecin une analyse financière et clinique complète, avec un mécanisme de secours local Python en cas de coupure Internet."*
-
----
-
-### 🔹 Étape 6.2 : Démonstration du Pipeline Jenkins CI/CD (100% Vert)
-- 🖱️ **ACTION :**
-  1. Basculez sur **l'Onglet 2 (Jenkins)** (`http://192.168.33.10:8080`).
-  2. Montrez la **Stage View avec les 9 étapes vertes** :
-     - Stage 1 : `Checkout SCM` (GitHub)
-     - Stage 2 : `Install Dependencies` (Venv IA)
-     - Stage 3 : `Unit Tests` (**102 tests unitaires réussis à 100%**)
-     - Stage 4 : `SonarQube Analysis`
-     - Stage 5 : `Quality Gate` (Passé via API REST)
-     - Stage 6 : `Docker Build`
-     - Stage 7 : `Push to Nexus`
-     - Stage 8 : `Deploy Application`
-     - Stage 9 : `Health Check` (HTTP 303 validé)
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Pour garantir la haute disponibilité et la qualité de ce système médical critique, nous avons mis en place une usine logicielle CI/CD complète sur Jenkins.*
-  >
-  > *À chaque commit, la suite de **102 tests unitaires** (`run_unit_tests.py`) est exécutée en 25 secondes pour valider mathématiquement l'ontologie BDPM, les règles d'interactions et le modèle No-Show avant tout déploiement."*
-
----
-
-### 🔹 Étape 6.3 : SonarQube, Nexus et Monitoring Grafana
-- 🖱️ **ACTION :**
-  1. Basculez sur **l'Onglet 3 (SonarQube)** :
-     - Montrez le statut **Quality Gate : PASSED**.
-     - Montrez **Security : Note A (0 Vulnérabilité)**.
-     - Montrez **Reliability : Note C (2 points identifiés)**.
-  2. Basculez sur **l'Onglet 4 (Nexus)** :
-     - Montrez dans `docker-repo` la présence de l'image de conteneur d'entreprise `cabinet-medical-odoo:17.0.X`.
-  3. Basculez sur **l'Onglet 5 (Grafana)** :
-     - Montrez les jauges de charge serveur (CPU, RAM, Uptime) collectées par Prometheus.
-- 🎙️ **VOUS DITES AU JURY :**
-  > *"Sur **SonarQube**, le Quality Gate est franchi avec une **Note A en sécurité (0 faille)** garantissant la protection des données de santé, et 2 points d'amélioration en fiabilité qui guident notre refactorisation continue.*
-  >
-  > *L'application est empaquetée dans une image Docker d'entreprise sur notre registre privé **Nexus** (port 8083), puis déployée sans interruption de service sous la surveillance en temps réel du couple **Prometheus & Grafana**."*
+  > *"Pour garantir la haute disponibilité de ce système de santé critique, tout le code est encadré par une usine logicielle CI/CD.*
+  > *Sur Jenkins, plus de 100 tests unitaires valident mathématiquement nos algorithmes d'IA à chaque mise à jour.*
+  > *SonarQube audite le code et nous garantit un zéro défaut de sécurité (Note A).*
+  > *Enfin, l'application est empaquetée via Nexus et surveillée en temps réel par Grafana. C'est un produit prêt pour la production."*
 
 ---
 
 ## 🎯 CONCLUSION DE LA SOUTENANCE (19:00 - 20:00)
 
 - 🎙️ **VOUS DITES AU JURY :**
-  > *"Pour conclure, ce projet de fin d'études apporte une réponse industrielle et innovante aux défis de la santé numérique :*
-  > 1. **Un métier médical tunisien modélisé avec exactitude** (CNAM, 8 scénarios de facturation, bordereaux M5, RBAC).
-  > 2. **Une ingénierie IA hybride à 4 niveaux** (Machine Learning No-Show, Ontologie locale BDPM, LLM local Phi-3 et synthèse Claude).
-  > 3. **Une chaîne DevOps moderne et sécurisée** (Jenkins, SonarQube, Docker, Nexus, Grafana et conformité OWASP).
+  > *"Pour conclure, ce projet de fin d'études apporte une véritable réponse industrielle à la digitalisation médicale :*
+  > 1. **Un workflow métier exhaustif** strictement segmenté (Médecin / Secrétariat).
+  > 2. **Une approche IA pionnière à 4 strates** : Prédictive (No-Show), Générative (Phi-3 / Claude), et Hybride experte (Ontologie BDPM).
+  > 3. **Un socle cloud-native** infaillible reposant sur les meilleures pratiques DevSecOps.
   >
-  > *Je vous remercie pour votre attention et je suis ravie de répondre à vos questions."*
-
----
-
-## 💡 ANTI-SÈCHE EXPRESS : RÉPONSES AUX 4 QUESTIONS DU JURY
-
-| Question probable du Jury | Votre réponse percutante |
-| :--- | :--- |
-| **"Et si la connexion Internet est coupée au cabinet ?"** | *"L'ontologie BDPM, le Fuzzy Matching, le modèle ML No-Show et la facturation tournent **100% en local** sur le serveur. Le cabinet reste totalement autonome sans Internet."* |
-| **"Pourquoi la Note C en fiabilité sur SonarQube ?"** | *"Le Quality Gate est validé et la sécurité est irréprochable (Note A, 0 faille). SonarQube a identifié 2 détails mineurs de typage dans le code Python, ce qui prouve la précision de notre analyse statique et constitue notre backlog pour la version 2.0."* |
-| **"Pourquoi avoir combiné Ontologie BDPM et NLP Transformer ?"** | *"L'ontologie garantit un risque zéro absolu sur les molécules répertoriées, tandis que le NLP et le Fuzzy gèrent le langage naturel et les fautes de frappe des médecins."* |
-| **"Comment garantissez-vous le secret médical entre patients sur le portail ?"** | *"Par des Record Rules PostgreSQL (`portal_security.xml`) appliquées au niveau de la requête SQL. Un patient ne peut techniquement requêter que son propre identifiant `user_id`."* |
+  > *Je vous remercie pour votre attention et serai ravi(e) de répondre à vos questions."*

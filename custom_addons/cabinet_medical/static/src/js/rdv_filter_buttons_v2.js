@@ -1,19 +1,13 @@
 /** @odoo-module **/
 
+console.log("RDV FILTER JS LOADED - version 17.0.1.0.5-debug");
 import { patch } from "@web/core/utils/patch";
 import { ListController } from "@web/views/list/list_controller";
 import { CalendarController } from "@web/views/calendar/calendar_controller";
 import { FormViewDialog } from "@web/views/view_dialogs/form_view_dialog";
 import { FormController } from "@web/views/form/form_controller";
 
-console.log("RDV FILTER JS LOADED - version 17.0.1.0.2");
 
-patch(FormViewDialog.prototype, {
-    setup() {
-        super.setup();
-        console.log("FormViewDialog setup called. Props:", this.props);
-    }
-});
 
 /**
  * Configure la fonction de filtre pour un contrôleur (Liste ou Calendrier)
@@ -121,7 +115,7 @@ function setupRdvFilter(component) {
         updateRdvButtons(activeKey);
     }, 50);
 
-    component.rdvOpenForm = function (dateStr, heureFloat, patientId, rdvId) {
+    component.rdvOpenForm = async function (dateStr, heureFloat, patientId, rdvId) {
         if (component.env && component.env.services && component.env.services.dialog) {
             let ctx = {
                 default_date: dateStr,
@@ -130,16 +124,74 @@ function setupRdvFilter(component) {
                 create: true,
                 edit: true
             };
-            if (patientId && patientId !== 'null') {
-                ctx.default_patient_id = parseInt(patientId);
-            }
-            if (window._isMedecin) {
-                ctx.form_view_ref = 'cabinet_medical.view_appointment_form_suivi_medecin';
+
+            // === DIAGNOSTIC ===
+            console.group("[RDV SUIVI] rdvOpenForm appelé");
+            console.log("  ▶ patientId reçu (arg)    :", patientId, typeof patientId);
+            console.log("  ▶ window._calPatientId     :", window._calPatientId, typeof window._calPatientId);
+            console.log("  ▶ component.props.context  :", component.props && component.props.context);
+            // ==================
+
+            let effectivePid = false;
+            if (patientId && patientId !== 'null' && patientId !== 'undefined' && !isNaN(parseInt(patientId))) {
+                effectivePid = parseInt(patientId);
+                console.log("  ✅ Source: patientId argument →", effectivePid);
+            } else if (window._calPatientId && !isNaN(parseInt(window._calPatientId))) {
+                effectivePid = parseInt(window._calPatientId);
+                console.log("  ✅ Source: window._calPatientId →", effectivePid);
+            } else if (component.props && component.props.context && component.props.context.default_patient_id) {
+                const p = parseInt(component.props.context.default_patient_id);
+                if (!isNaN(p)) { effectivePid = p; console.log("  ✅ Source: props.context.default_patient_id →", effectivePid); }
+            } else if (component.model && component.model.root && component.model.root.data) {
+                const pData = component.model.root.data.patient_id;
+                if (typeof pData === 'number') { effectivePid = pData; console.log("  ✅ Source: model.root.data.patient_id (number) →", effectivePid); }
+                else if (Array.isArray(pData) && pData.length > 0) { effectivePid = pData[0]; console.log("  ✅ Source: model.root.data.patient_id (array) →", effectivePid); }
+                else if (typeof pData === 'object' && pData && pData.id) { effectivePid = pData.id; console.log("  ✅ Source: model.root.data.patient_id (object) →", effectivePid); }
+                else { console.warn("  ❌ model.root.data.patient_id non résolu :", pData); }
             } else {
-                ctx.form_view_ref = 'cabinet_medical.view_appointment_form_secretaire_edit';
+                console.warn("  ❌ Aucune source de patientId trouvée.");
             }
 
-            component.env.services.dialog.add(FormViewDialog, {
+            if (effectivePid) {
+                ctx.default_patient_id = effectivePid;
+                ctx.default_patient_name = false;
+            }
+
+            // Vue à utiliser : suivi simplifié si on est dans le wizard, vue médecin ou secrétaire sinon
+            const isSuiviWizard = (window._calPatientId !== null && window._calPatientId !== undefined);
+            
+            let viewRef = 'cabinet_medical.view_appointment_form_secretaire_edit';
+            if (isSuiviWizard) {
+                viewRef = 'cabinet_medical.view_appointment_form_suivi_medecin';
+            } else if (window._isMedecin) {
+                viewRef = 'cabinet_medical.view_appointment_form_medecin';
+            }
+
+            console.log("  ▶ isSuiviWizard:", isSuiviWizard, "| viewRef:", viewRef, "| ctx.default_patient_id:", ctx.default_patient_id);
+
+            // Toujours forcer form_view_ref dans le contexte pour que le backend
+            // charge la bonne vue même si viewId n'est pas résolu côté JS
+            ctx.form_view_ref = viewRef;
+
+            let viewId = false;
+            try {
+                const orm = component.orm || (component.env && component.env.services && component.env.services.orm);
+                if (orm) {
+                    const resolvedId = await orm.call(
+                        "ir.ui.view",
+                        "search_read",
+                        [[["key", "=", viewRef]], ["id"]],
+                        { limit: 1 }
+                    );
+                    if (resolvedId && resolvedId.length > 0) {
+                        viewId = resolvedId[0].id;
+                    }
+                }
+            } catch (err) {
+                console.warn("Impossible de résoudre l'ID de vue pour", viewRef, err);
+            }
+
+            const dialogProps = {
                 resModel: 'cabinet.rendezvous',
                 resId: rdvId || false,
                 context: ctx,
@@ -150,7 +202,18 @@ function setupRdvFilter(component) {
                         component.model.load();
                     }
                 },
-            });
+            };
+
+            if (viewId) {
+                dialogProps.viewId = viewId;
+                dialogProps.views = [[viewId, "form"]];
+            }
+
+            console.log("  ▶ viewId résolu (ORM)      :", viewId);
+            console.log("  ▶ dialogProps.context       :", JSON.stringify(ctx));
+            console.groupEnd();
+
+            component.env.services.dialog.add(FormViewDialog, dialogProps);
         }
     };
 }
@@ -237,7 +300,18 @@ patch(CalendarController.prototype, {
     }
 });
 
-// 3. Fonction globale appelée par les clics HTML dans le bandeau (main.py / XML)
+// 3. Patch du FormController (uniquement pour cabinet.suivi.wizard)
+patch(FormController.prototype, {
+    setup() {
+        super.setup();
+        if (this.props.resModel === 'cabinet.suivi.wizard') {
+            setupRdvFilter(this);
+            window._activeRdvController = this;
+        }
+    }
+});
+
+// 4. Fonction globale appelée par les clics HTML dans le bandeau (main.py / XML)
 window._rdvSetFilter = function (filterKey) {
     if (window._activeRdvController && typeof window._activeRdvController.rdvSetFilter === "function") {
         window._activeRdvController.rdvSetFilter(filterKey);
@@ -254,11 +328,17 @@ window._consultationSetFilter = function (filterKey) {
     }
 };
 
-window._rdvOpenForm = function (dateStr, heureFloat, patientId, rdvId) {
-    if (window._activeRdvController && typeof window._activeRdvController.rdvOpenForm === "function") {
-        window._activeRdvController.rdvOpenForm(dateStr, heureFloat, patientId, rdvId);
+window._rdvOpenForm = async function (dateStr, heureFloat, patientId, rdvId) {
+    let controller = window._activeRdvController || window._activeConsultationController;
+    let effectivePid = patientId;
+    if (!effectivePid || effectivePid === 'null' || effectivePid === 'undefined') {
+        effectivePid = window._calPatientId;
+    }
+
+    if (controller && typeof controller.rdvOpenForm === "function") {
+        await controller.rdvOpenForm(dateStr, heureFloat, effectivePid, rdvId);
     } else {
-        console.warn("Aucun contrôleur de vue actif trouvé pour ouvrir le formulaire.");
+        console.warn("Aucun contrôleur actif trouvé pour rdvOpenForm.");
     }
 };
 
@@ -273,6 +353,8 @@ window._calPatientId = null;
 window._rdvInitCalendar = function (patientId, isMedecin) {
     window._calPatientId = patientId || null;
     window._isMedecin = isMedecin || false;
+
+    console.log("[RDV SUIVI] _rdvInitCalendar appelé — patientId:", patientId, "| window._calPatientId:", window._calPatientId);
 
     // Masquer le calendrier natif d'Odoo de façon robuste
     let hideAttempts = 0;

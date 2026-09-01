@@ -53,8 +53,47 @@ class WizardImportPatients(models.TransientModel):
         if isinstance(value, (int, float)):
             return bool(value)
         if isinstance(value, str):
-            return value.strip().lower() in ('true', '1', 'yes', 'oui', 'y')
+            return value.strip().lower() in ('true', '1', 'yes', 'oui', 'y', 'vrai')
         return False
+
+    @staticmethod
+    def _clean_regime_cnam(value):
+        """Map flexible user inputs to valid regime_cnam Selection keys."""
+        if not value:
+            return None
+        v = str(value).strip().lower()
+        mapping = {
+            'cnss': 'cnss_salarie',
+            'cnss_salarie': 'cnss_salarie',
+            'salarie': 'cnss_salarie',
+            'cnss_independant': 'cnss_independant',
+            'independant': 'cnss_independant',
+            'cnrps': 'cnrps_fonctionnaire',
+            'cnrps_fonctionnaire': 'cnrps_fonctionnaire',
+            'fonctionnaire': 'cnrps_fonctionnaire',
+            'cnrps_militaire': 'cnrps_militaire',
+            'militaire': 'cnrps_militaire',
+            'retraite_cnss': 'retraite_cnss',
+            'retraite_cnrps': 'retraite_cnrps',
+            'retraite': 'retraite_cnss',
+            'etudiant': 'etudiant',
+            'autre': 'autre',
+        }
+        return mapping.get(v, 'autre' if v else None)
+
+    @staticmethod
+    def _clean_filiere_cnam(value):
+        """Map flexible user inputs to valid filiere_cnam Selection keys."""
+        if not value:
+            return None
+        v = str(value).strip().lower()
+        if 'prive' in v or 'tiers' in v:
+            return 'privee'
+        if 'rembours' in v:
+            return 'remboursement'
+        if 'publi' in v:
+            return 'remboursement'  # standard fallback for public/remboursement
+        return 'remboursement' if v else None
 
     @staticmethod
     def _to_date(value):
@@ -197,14 +236,14 @@ class WizardImportPatients(models.TransientModel):
                     vals = {
                         'name': name,
                         'date_naissance': self._to_date(row[COL['date_naissance']].value),
-                        'genre': self._safe_str(row[COL['genre']].value),
+                        'genre': self._safe_str(row[COL['genre']].value).lower() if self._safe_str(row[COL['genre']].value) else None,
                         'telephone': self._safe_str(row[COL['telephone']].value) or None,
                         'cin': cin,
                         'adresse': self._safe_str(row[COL['adresse']].value) or None,
                         'is_cnam': is_cnam,
                         'numero_cnam': numero_cnam or None,
-                        'regime_cnam': self._safe_str(row[COL['regime_cnam']].value) or None,
-                        'filiere_cnam': self._safe_str(row[COL['filiere_cnam']].value) or None,
+                        'regime_cnam': self._clean_regime_cnam(row[COL['regime_cnam']].value) if is_cnam else None,
+                        'filiere_cnam': self._clean_filiere_cnam(row[COL['filiere_cnam']].value) if is_cnam else None,
                         'date_validite_cnam': self._to_date(row[COL['date_validite_cnam']].value),
                         'is_apci': self._to_bool(row[COL['is_apci']].value),
                         'numero_decision_apci': self._safe_str(row[COL['numero_decision_apci']].value) or None,

@@ -61,11 +61,11 @@
                             <field name="patient_name"
                                    string="Nouveau patient (Nom)"
                                    readonly="1"
-                                   invisible="patient_id"/>
+                                   invisible="patient_id or not patient_name"/>
                             <field name="patient_id"
                                    string="Patient existant"
                                    readonly="1"
-                                   invisible="patient_name"/>
+                                   invisible="not patient_id and patient_name"/>
                         </group>
                         <group string="Rendez-vous">
                             <field name="date" widget="date" readonly="1"/>
@@ -84,19 +84,26 @@
         <field name="name">cabinet.rendezvous.form.suivi.medecin</field>
         <field name="model">cabinet.rendezvous</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Planifier un rendez-vous de suivi">
                 <sheet>
-                    <div class="alert alert-info" role="alert">
-                        Planification du prochain rendez-vous de suivi.
+                    <div class="alert alert-info" role="alert" style="margin-bottom: 15px; border-left: 4px solid #0284c7;">
+                        <i class="fa fa-stethoscope me-2"/> <strong>Planification du rendez-vous de suivi</strong> pour le patient sélectionné.
                     </div>
                     <group>
-                        <field name="id" invisible="1"/>
-                        <field name="patient_id" readonly="1"/>
-                        <field name="date" widget="date" readonly="id"/>
-                        <field name="heure" widget="float_time" readonly="id"/>
-                        <field name="is_urgence" readonly="id"/>
+                        <group string="Patient">
+                            <field name="id" invisible="1"/>
+                            <field name="patient_id" required="1" options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="patient_name" invisible="1"/>
+                            <field name="motif_rapide" placeholder="Ex: Consultation de contrôle, résultat bilan..."/>
+                        </group>
+                        <group string="Date et Heure du rendez-vous">
+                            <field name="date" widget="date" required="1"/>
+                            <field name="heure" widget="float_time" required="1"/>
+                            <field name="is_urgence" widget="boolean_toggle"/>
+                        </group>
                     </group>
                     <field name="slot_availability_status" widget="html" readonly="1" nolabel="1"/>
+                    <field name="available_slots_preview" invisible="1"/>
                     <footer>
                         <button string="Enregistrer le rendez-vous" special="save" class="btn-primary" icon="fa-save"/>
                         <button string="Annuler" special="cancel" class="btn-secondary"/>

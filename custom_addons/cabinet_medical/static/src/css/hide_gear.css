@@ -64,6 +64,23 @@
     font-size: 13px !important;
 }
 
+/* Masquer tout élément de désarchivage / unarchive dans tous les menus déroulants d'action */
+.dropdown-item:has(i.oi-unarchive),
+.dropdown-item:has(i.fa-undo),
+.o_menu_item:has(i.oi-unarchive),
+.o_menu_item:has(i.fa-undo),
+span.o_menu_item:has(i.oi-unarchive),
+span.dropdown-item:has(i.oi-unarchive),
+[data-menu-xmlid*="unarchive"],
+.dropdown-item[title*="Désarchiver"],
+.dropdown-item[title*="Unarchive"],
+.o_menu_item[title*="Désarchiver"],
+.o_menu_item[title*="Unarchive"] {
+    display: none !important;
+}
+
+
+
 /* =========================================
    PAGINATION EN BAS DU TABLEAU (VRAIE POSITION PROFESSIONNELLE)
    ========================================= */

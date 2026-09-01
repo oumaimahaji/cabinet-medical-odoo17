@@ -19,6 +19,39 @@ JOURS_FR = {
 
 class CabinetMedicalController(http.Controller):
 
+    @http.route('/test_create_facture', type='http', auth='public')
+    def test_create_facture(self, **kwargs):
+        env = request.env(su=True)
+        # 1. Chercher un patient CNAM Tiers-Payant
+        patient = env['cabinet.patient'].search([('is_cnam_affiliated', '=', True), ('cnam_regime', '=', 'cnss'), ('cnam_filiere', '=', 'prive')], limit=1)
+        if not patient:
+            return "Aucun patient CNAM Privé trouvé."
+        
+        # 2. Créer une consultation
+        consultation = env['cabinet.consultation'].create({
+            'patient_id': patient.id,
+            'motif': 'Consultation Test Bordereau CNAM',
+            'state': 'done'
+        })
+        
+        # 3. Créer des actes (100 DT et 50 DT) pour générer un montant
+        env['cabinet.acte'].create([
+            {'consultation_id': consultation.id, 'name': 'Consultation Spécialiste', 'montant': 100.0},
+            {'consultation_id': consultation.id, 'name': 'Echographie', 'montant': 50.0}
+        ])
+        
+        # 4. Générer la facture et la valider
+        facture = env['cabinet.facture'].create({
+            'patient_id': patient.id,
+            'consultation_id': consultation.id,
+            'date_facture': fields.Date.today(),
+            'state': 'validated'
+        })
+        # Forcer le recalcul des montants
+        facture._compute_parts()
+        
+        return f"Facture de test {facture.name} créée avec succès pour {patient.nom_complet}! Montant CNAM Cabinet: {facture.montant_cnam_cabinet} DT. Vous pouvez maintenant rafraîchir Odoo, aller dans Bordereau, et récupérer les factures."
+
     @http.route('/cabinet_medical/get_calendar_data', type='json', auth='user')
     def get_calendar_data(self, month=None, selected_date=None, **kwargs):
         env = request.env

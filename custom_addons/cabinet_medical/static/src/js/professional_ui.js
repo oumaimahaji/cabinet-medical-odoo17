@@ -6,32 +6,64 @@ import { session } from "@web/session";
 import { X2ManyField } from "@web/views/fields/x2many/x2many_field";
 import { X2ManyFieldDialog } from "@web/views/fields/relational_utils";
 
-// Cacher l'app switcher (icône 9 carrés) pour les utilisateurs qui ne sont pas admin
-const hideAppSwitcher = () => {
-    if (session.uid !== 1) {
-        document.body.classList.add('hide_app_switcher');
-        const toggleBtn = document.querySelector('.o_navbar_apps_menu, .o_menu_toggle');
-        if (toggleBtn) {
-            toggleBtn.style.setProperty('display', 'none', 'important');
+import { ListController } from "@web/views/list/list_controller";
+import { FormController } from "@web/views/form/form_controller";
+
+// Supprimer dynamiquement tout élément "Désarchiver" / "Unarchive" qui apparaîtrait dans le DOM
+const removeUnarchiveDomElements = () => {
+    document.querySelectorAll('.dropdown-item, .o_menu_item, span, a, button').forEach((el) => {
+        const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+        if (text === 'désarchiver' || text === 'unarchive' || text.startsWith('désarchiver') || text.startsWith('unarchive')) {
+            // Si c'est un item de menu ou un bouton d'action
+            const container = el.closest('.dropdown-item, .o_menu_item, li') || el;
+            container.style.setProperty('display', 'none', 'important');
         }
-    }
+    });
 };
 
-if (document.body) {
-    hideAppSwitcher();
-} else {
-    document.addEventListener("DOMContentLoaded", hideAppSwitcher);
-}
+document.addEventListener('DOMContentLoaded', removeUnarchiveDomElements);
+setInterval(removeUnarchiveDomElements, 200);
+document.addEventListener('click', () => {
+    setTimeout(removeUnarchiveDomElements, 10);
+    setTimeout(removeUnarchiveDomElements, 50);
+    setTimeout(removeUnarchiveDomElements, 150);
+}, true);
 
-// Odoo recharge parfois la navbar dynamiquement (SPA), on force la vérification
-setInterval(hideAppSwitcher, 500);
+
+// Supprimer Unarchive à la source dans les contrôleurs de listes et de formulaires
+patch(ListController.prototype, {
+    getStaticActionMenuItems() {
+        const menuItems = super.getStaticActionMenuItems();
+        if (menuItems && menuItems.unarchive) {
+            delete menuItems.unarchive;
+        }
+        return menuItems;
+    },
+});
+
+patch(FormController.prototype, {
+    getStaticActionMenuItems() {
+        const menuItems = super.getStaticActionMenuItems();
+        if (menuItems && menuItems.unarchive) {
+            delete menuItems.unarchive;
+        }
+        return menuItems;
+    },
+});
 
 patch(ActionMenus.prototype, {
     async getActionItems(props) {
-        const items = await super.getActionItems(props);
+        let items = await super.getActionItems(props);
         if (items) {
+            // Filtrer définitivement toute entrée Désarchiver / Unarchive
+            items = items.filter((item) => {
+                const key = String(item.key || '').toLowerCase();
+                const desc = String(item.description || '').toLowerCase();
+                return key !== 'unarchive' && !desc.includes('désarchiver') && !desc.includes('unarchive');
+            });
+
             for (const item of items) {
-                if (item.description && item.description.toLowerCase().includes("import")) {
+                if (item.description && String(item.description).toLowerCase().includes("import")) {
                     item.icon = "fa fa-upload";
                 }
             }
@@ -39,6 +71,8 @@ patch(ActionMenus.prototype, {
         return items;
     }
 });
+
+
 
 // 1. Correction des icônes dans les breadcrumbs (titres de page)
 // On utilise un setInterval très léger pour s'assurer que l'icône est toujours là

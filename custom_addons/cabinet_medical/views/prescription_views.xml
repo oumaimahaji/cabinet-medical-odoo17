@@ -64,8 +64,8 @@
                                     <field name="active" column_invisible="True"/>
                                     <field name="sequence" widget="handle"/>
                                     <button name="action_archive" type="object" icon="fa-archive" title="Archiver" invisible="not active"/>
-                                    <button name="action_unarchive" type="object" icon="fa-undo" title="Restaurer" invisible="active"/>
                                     <field name="medicament" placeholder="Nom du médicament..."/>
+
                                     <field name="dosage" placeholder="Dosage..."/>
                                     <field name="posologie" placeholder="Posologie..."/>
                                     <field name="duree" placeholder="Durée..."/>
@@ -81,8 +81,8 @@
                 </sheet>
                 <footer>
                     <button string="✍️ Signer l'ordonnance" name="action_open_sign_wizard" type="object" class="btn-success" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>
-                    <button string="💾 Enregistrer l'ordonnance" name="action_save_prescription" type="object" class="btn-primary" invisible="state == 'signed'" close="1"/>
-                    <button string="✖ Fermer" special="cancel" class="btn-secondary" close="1"/>
+                    <button string="💾 Enregistrer l'ordonnance" name="action_save_prescription" type="object" class="btn-primary" invisible="state == 'signed'"/>
+                    <button string="✔️ Terminé" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
         </field>

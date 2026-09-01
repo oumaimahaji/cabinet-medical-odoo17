@@ -26,7 +26,7 @@
                 <header>
                     <button name="action_valider" string="Encaisser le paiement" type="object" class="btn-primary" invisible="state != 'draft'" groups="cabinet_medical.group_secretaire"/>
                     
-                    <!-- Facture toujours visible si validée -->
+                    <!-- Facture détaillée globale -->
                     <button name="%(cabinet_medical.action_report_facture)d" string="Imprimer Facture" type="action" class="btn-secondary" icon="fa-print" invisible="state != 'validated'"/>
                     
                     <!-- Reçu visible SAUF SI le patient ne paie rien au cabinet (APCI Tiers-Payant) -->
@@ -44,6 +44,7 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,validated"/>
                 </header>
                 <sheet>
+                    <field name="active" invisible="1"/>
                     <!-- Bandeau dynamique du scénario -->
                     <div class="alert alert-info" role="alert" style="margin-bottom: 20px; font-size: 16px;">
                         <strong><field name="scenario" readonly="1"/></strong>

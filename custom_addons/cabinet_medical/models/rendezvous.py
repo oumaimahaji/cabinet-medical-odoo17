@@ -208,6 +208,12 @@ class Appointment(models.Model):
         store=False
     )
 
+    available_slots_preview = fields.Html(
+        string='Créneaux disponibles',
+        compute='_compute_available_slots_preview',
+        store=False
+    )
+
     # Dossier incomplet : patient sans dossier ou dossier incomplet
     is_dossier_incomplet = fields.Boolean(
         string='Dossier incomplet',
@@ -601,6 +607,91 @@ class Appointment(models.Model):
                         f'✅ Créneau disponible — {remaining_normal} place(s) normale(s) et {remaining_urg} urgence(s).</div>'
                     )
 
+    @api.depends('date', 'heure')
+    def _compute_available_slots_preview(self):
+        """Génère la grille interactive des créneaux horaires disponibles pour la date sélectionnée"""
+        params = self.env['ir.config_parameter'].sudo()
+        heure_debut = float(params.get_param('cabinet.heure_debut', '8.0'))
+        heure_fin = float(params.get_param('cabinet.heure_fin', '17.0'))
+        work_days_str = params.get_param('cabinet.work_days', '0,1,2,3,4,5')
+        work_days = [int(d.strip()) for d in work_days_str.split(',') if d.strip()]
+
+        for rec in self:
+            target_date = rec.date or fields.Date.today()
+            weekday = target_date.weekday()
+            date_display = target_date.strftime('%d/%m/%Y')
+
+            if weekday not in work_days:
+                rec.available_slots_preview = (
+                    f'<div style="padding:15px;background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;color:#c53030;text-align:center;">'
+                    f'<i class="fa fa-calendar-times-o me-2"></i><strong>Cabinet fermé le {date_display}</strong> (Jour non travaillé).'
+                    f'</div>'
+                )
+                continue
+
+            # Trouver les créneaux déjà occupés ce jour-là
+            domain = [
+                ('date', '=', target_date),
+                ('state', 'not in', ['annule', 'absent'])
+            ]
+            rec_id = False
+            if getattr(rec, '_origin', False) and getattr(rec._origin, 'id', False):
+                rec_id = rec._origin.id
+            elif getattr(rec, 'id', False):
+                rec_id = rec.id
+            if isinstance(rec_id, int):
+                domain.append(('id', '!=', rec_id))
+
+            existing_rdvs = self.env['cabinet.rendezvous'].search(domain)
+            occupied_hours = {round(r.heure, 2) for r in existing_rdvs if r.heure is not False}
+
+            # Générer les créneaux de 30 minutes
+            slots_html = []
+            h = heure_debut
+            current_selected = round(rec.heure, 2) if rec.heure is not False else None
+
+            while h <= heure_fin:
+                h_round = round(h, 2)
+                h_int = int(h)
+                m_int = int(round((h - h_int) * 60))
+                time_label = f"{h_int:02d}:{m_int:02d}"
+
+                is_occupied = h_round in occupied_hours
+                is_selected = (current_selected is not None and abs(current_selected - h_round) < 0.01)
+
+                if is_occupied:
+                    slots_html.append(
+                        f'<div style="padding:8px 12px;border-radius:6px;background:#edf2f7;border:1px solid #cbd5e0;'
+                        f'color:#a0aec0;font-weight:600;font-size:13px;text-align:center;cursor:not-allowed;" title="Occupé">'
+                        f'<i class="fa fa-lock me-1"></i>{time_label}</div>'
+                    )
+                elif is_selected:
+                    slots_html.append(
+                        f'<div style="padding:8px 12px;border-radius:6px;background:#2563eb;border:1px solid #1d4ed8;'
+                        f'color:white;font-weight:700;font-size:13px;text-align:center;box-shadow:0 2px 4px rgba(37,99,235,0.3);">'
+                        f'<i class="fa fa-check-circle me-1"></i>{time_label} (Choisi)</div>'
+                    )
+                else:
+                    slots_html.append(
+                        f'<div style="padding:8px 12px;border-radius:6px;background:#ffffff;border:1px solid #22c55e;'
+                        f'color:#15803d;font-weight:600;font-size:13px;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,0.05);">'
+                        f'<i class="fa fa-clock-o me-1"></i>{time_label}</div>'
+                    )
+                h += 0.5
+
+            total_free = len([h for h in slots_html if '#15803d' in h or '#2563eb' in h])
+            rec.available_slots_preview = (
+                f'<div style="margin-top:10px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+                f'<strong style="color:#1e293b;font-size:14px;"><i class="fa fa-calendar-check-o text-primary me-2"></i>Disponibilités du {date_display} :</strong>'
+                f'<span class="badge" style="background:#dcfce7;color:#166534;font-size:12px;padding:4px 8px;border-radius:6px;">{total_free} créneau(x) libre(s)</span>'
+                f'</div>'
+                f'<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));gap:8px;">'
+                f'{"".join(slots_html)}'
+                f'</div>'
+                f'</div>'
+            )
+
     @api.constrains('date', 'is_urgence')
     def _check_appointments_limit(self):
         for rec in self:
@@ -686,6 +777,16 @@ class Appointment(models.Model):
                 if existing > 0:
                     raise ValidationError("Ce patient a déjà un rendez-vous programmé pour cette date")
     
+    @api.constrains('date', 'state')
+    def _check_date_not_in_past(self):
+        """Empêcher la création de rendez-vous à une date passée"""
+        if self.env.context.get('skip_past_date_check') or self.env.context.get('install_mode'):
+            return
+        today = fields.Date.today()
+        for rec in self:
+            if rec.date and rec.date < today and rec.state in ('en_attente', False):
+                raise ValidationError("Impossible de créer un rendez-vous à une date passée. Veuillez sélectionner aujourd'hui ou une date future.")
+
     @api.constrains('date', 'heure')
     def _check_duplicate_appointment(self):
         """Vérifier qu'il n'y a pas déjà un rendez-vous à la même heure et date"""
@@ -742,6 +843,18 @@ class Appointment(models.Model):
                             'message': f"Ce créneau ({date_str} à {time_str}) est déjà réservé pour {patient_name}."
                         }
                     }
+
+    @api.onchange('date')
+    def _onchange_date_past_check(self):
+        """Avertir immédiatement si la date choisie est dans le passé"""
+        for rec in self:
+            if rec.date and rec.date < fields.Date.today() and rec.state in ('en_attente', False):
+                return {
+                    'warning': {
+                        'title': '⚠️ Date passée non autorisée',
+                        'message': "La date sélectionnée est dans le passé. Veuillez choisir la date d'aujourd'hui ou une date future."
+                    }
+                }
     
     @api.depends('patient_id', 'patient_name')
     def _compute_display_patient_name(self):
@@ -769,14 +882,6 @@ class Appointment(models.Model):
                     "Vous devez soit sélectionner un patient existant, "
                     "soit entrer le nom du patient pour un rendez-vous rapide."
                 )
-            # Permettre la transition de patient_name vers patient_id lors de la création
-            # mais vérifier que patient_name correspond bien au patient lié
-            if rec.patient_id and rec.patient_name:
-                # Vérifier si le nom correspond au patient lié
-                if rec.patient_id.name.lower() != rec.patient_name.lower():
-                    raise ValidationError(
-                        "Le nom du patient ne correspond pas au patient sélectionné."
-                    )
     
     @api.model
     def default_get(self, fields_list):
@@ -826,7 +931,42 @@ class Appointment(models.Model):
                             res['heure'] = local_dt.hour + local_dt.minute / 60.0
                 except Exception:
                     pass
+
+        # Récupération automatique du patient depuis le contexte (ex: Planifier un suivi depuis consultation)
+        if 'patient_id' in fields_list and not res.get('patient_id'):
+            ctx_patient_id = self._context.get('default_patient_id') or self._context.get('patient_id')
+            if ctx_patient_id:
+                try:
+                    pid = int(ctx_patient_id)
+                    patient = self.env['cabinet.patient'].browse(pid)
+                    if patient.exists():
+                        res['patient_id'] = patient.id
+                    else:
+                        res['patient_id'] = False
+                except Exception:
+                    res['patient_id'] = False
+
+        if 'patient_name' in fields_list:
+            if res.get('patient_id'):
+                res['patient_name'] = False
+            elif not res.get('patient_name'):
+                ctx_patient_name = self._context.get('default_patient_name') or self._context.get('patient_name')
+                if ctx_patient_name:
+                    res['patient_name'] = ctx_patient_name
+                else:
+                    res['patient_name'] = False
+
         return res
+
+    @api.onchange('patient_id')
+    def _onchange_patient_id(self):
+        if self.patient_id:
+            self.patient_name = False
+
+    @api.onchange('patient_name')
+    def _onchange_patient_name(self):
+        if self.patient_name:
+            self.patient_id = False
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -842,7 +982,14 @@ class Appointment(models.Model):
                 if not vals.get('patient_name'):
                     vals['patient_name'] = vals['name']
                 vals.pop('name', None)
-                
+
+            # Si le champ patient_id est readonly dans la vue, le client web d'Odoo peut ne pas l'envoyer dans vals.
+            # On le récupère alors depuis le contexte s'il existe.
+            if not vals.get('patient_id') and not vals.get('patient_name'):
+                ctx_pid = self._context.get('default_patient_id') or self._context.get('patient_id')
+                if ctx_pid:
+                    vals['patient_id'] = ctx_pid
+
             # Création automatique du patient si seul le nom est fourni
             if vals.get('patient_name') and not vals.get('patient_id'):
                 patient = self.env['cabinet.patient'].create({'name': vals['patient_name']})
@@ -1238,6 +1385,12 @@ class Appointment(models.Model):
     def unlink(self):
         """Bloquer la suppression physique des rendez-vous (Règle 3)"""
         raise ValidationError("Les rendez-vous ne peuvent pas être supprimés physiquement pour des raisons de traçabilité et d'historique. Si le rendez-vous n'a pas lieu, veuillez cliquer sur 'Patient absent' ou utiliser le statut 'Annulé'.")
+
+    @api.model
+    def get_suivi_form_view_id(self):
+        """Retourne l'ID numérique de la vue formulaire de suivi médecin."""
+        view = self.env.ref('cabinet_medical.view_appointment_form_suivi_medecin', raise_if_not_found=False)
+        return view.id if view else False
 
     @api.model
     def get_interactive_calendar_html(self, patient_id=None):

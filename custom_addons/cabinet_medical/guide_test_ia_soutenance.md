@@ -42,7 +42,7 @@ Ce document décrit pas à pas comment faire la démonstration des 4 niveaux d'I
 3. **Résultat immédiat :** Un écran de chargement affiche *"Analyse intelligente de l'activité en cours..."*.
 4. **Mettez en valeur devant le jury :**
    - **L'Indice de Santé (sur 100)** : Montrez comment il synthétise le financier et le médical.
-   - **L'Intelligence Clinique (IA PFE)** : Pointez le compteur *"Alertes Allergies bloquées"*. Si vous avez fait le Test n°1 juste avant, le compteur affichera **1** !
+   - **L'Intelligence Clinique (IA)** : Pointez le compteur *"Alertes Allergies bloquées"*. Si vous avez fait le Test n°1 juste avant, le compteur affichera **1** !
    - **Analyse IA Globale** : Lisez les recommandations générées par Claude au bas de la page. Montrez au jury que Claude justifie ses conseils avec vos *vraies* données (ex: "Vu qu'il y a 24 DT d'impayés, nous recommandons des relances").
    - **Prévisions (Mois prochain)** : Montrez l'estimation de l'affluence future et son *Niveau de confiance*.
 

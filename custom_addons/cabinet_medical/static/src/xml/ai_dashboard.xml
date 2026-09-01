@@ -57,7 +57,7 @@
                                                         <h6 class="text-info fw-bold"><i class="fa fa-line-chart me-2"/>Prévisions (Mois prochain)</h6>
                                                         <p class="text-muted small"><t t-esc="state.aiStats.ai_forecasts"/></p>
                                                         
-                                                        <h6 class="text-primary fw-bold mt-4"><i class="fa fa-stethoscope me-2"/>Intelligence Clinique (IA PFE)</h6>
+                                                        <h6 class="text-primary fw-bold mt-4"><i class="fa fa-stethoscope me-2"/>Intelligence Clinique (IA)</h6>
                                                         <ul class="list-unstyled small text-muted mb-0">
                                                             <li class="mb-1"><i class="fa fa-shield text-success me-1"/> <strong>Alertes Allergies bloquées :</strong> <t t-esc="state.aiStats.nb_alertes_allergies"/> (<t t-esc="state.aiStats.nb_alertes_critiques"/> critiques)</li>
                                                             <li class="mb-1"><i class="fa fa-medkit text-info me-1"/> <strong>Top Prescriptions :</strong> <t t-esc="state.aiStats.top_medicaments"/></li>

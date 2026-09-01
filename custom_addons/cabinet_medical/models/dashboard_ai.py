@@ -411,7 +411,7 @@ class DashboardAI(models.AbstractModel):
             
         prompt = f"""En tant qu'Assistant IA Clinique, analyse les données du cabinet médical. Toutes tes analyses doivent être justifiées par ces chiffres.
         
-Données Médicales et IA PFE :
+Données Médicales et IA :
 - Alertes Allergies IA détectées ce mois : {metrics.get('nb_alertes_allergies', 0)} (dont {metrics.get('nb_alertes_critiques', 0)} critiques)
 - Patients avec allergies dans la base : {metrics.get('patients_allergiques', 0)}
 - Top Médicaments prescrits : {metrics.get('top_medicaments', 'N/A')}

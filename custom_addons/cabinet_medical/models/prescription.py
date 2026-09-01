@@ -1715,13 +1715,15 @@ class Prescription(models.Model):
         return records
 
     def write(self, vals):
-        # VERROUILLAGE SERVEUR STRICT : Interdire toute modification d'une ordonnance signée
+        # VERROUILLAGE SERVEUR STRICT : Interdire toute modification d'une ordonnance signée (sauf archivage)
         for record in self:
             if record.state == 'signed' and not self.env.context.get('in_signature_process'):
-                raise ValidationError(
-                    "Cette ordonnance a été signée et est définitivement verrouillée. "
-                    "Aucune modification (médicaments, posologies, instructions, date ou statut actif) n'est autorisée sur une ordonnance signée."
-                )
+                # Autoriser uniquement la modification du champ 'active' (pour l'archivage)
+                if any(k != 'active' for k in vals):
+                    raise ValidationError(
+                        "Cette ordonnance a été signée et est définitivement verrouillée. "
+                        "Aucune modification (médicaments, posologies, instructions, date) n'est autorisée sur une ordonnance signée, à l'exception de l'archivage."
+                    )
 
         res = super(Prescription, self).write(vals)
         if not self.env.context.get('in_ia_check') and not self.env.context.get('in_signature_process') and any(k in vals for k in ('ordonnance_line_ids', 'patient_id', 'consultation_id', 'active')):
@@ -1857,6 +1859,11 @@ class Prescription(models.Model):
         self.ensure_one()
         self.write({'active': False})
         return {'type': 'ir.actions.act_window_close'}
+
+    def action_unarchive(self):
+        """Interdire le désarchivage via le menu Actions."""
+        raise ValidationError("Le désarchivage des ordonnances médicales n'est pas autorisé.")
+
 
 
 # -------------------------------------------------------------------------

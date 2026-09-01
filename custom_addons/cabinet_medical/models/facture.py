@@ -11,6 +11,7 @@ class Facture(models.Model):
     _order = 'date_facture desc'
 
     name = fields.Char(string='Numéro facture', readonly=True, default='Nouveau')
+    active = fields.Boolean(string="Actif", default=True, tracking=True)
     patient_id = fields.Many2one('cabinet.patient', string='Patient', required=True)
     consultation_id = fields.Many2one('cabinet.consultation', string='Consultation', required=True)
     date_facture = fields.Date(string='Date', required=True, default=fields.Date.today)

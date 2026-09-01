@@ -11,6 +11,7 @@ class BordereauCNAM(models.Model):
     date_creation = fields.Date(string='Date de création', default=fields.Date.context_today, required=True)
     date_debut = fields.Date(string='Période du', required=True)
     date_fin = fields.Date(string='Au', required=True)
+    active = fields.Boolean(default=True, string='Actif')
 
     # Libellé de période lisible (ex: "Juin 2025") — utile pour les impressions
     periode_label = fields.Char(

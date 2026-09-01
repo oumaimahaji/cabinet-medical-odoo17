@@ -151,21 +151,25 @@ class Consultation(models.Model):
         }
 
     def action_planifier_suivi(self):
-        """Ouvre le calendrier interactif en popup pour planifier un rendez-vous de suivi"""
+        """Ouvre le calendrier interactif de suivi avec le patient de la consultation verrouillé et pré-rempli"""
         self.ensure_one()
         if not (self.env.user._is_superuser() or self.env.user.id == 1 or self.env.user.has_group('cabinet_medical.group_medecin')):
             raise AccessError("Seul le Médecin peut planifier un suivi.")
+        
+        wizard = self.env['cabinet.suivi.wizard'].create({
+            'patient_id': self.patient_id.id,
+            'calendar_html': self.env['cabinet.rendezvous'].get_interactive_calendar_html(patient_id=self.patient_id.id)
+        })
         return {
-            'name': 'Planifier un suivi',
+            'name': f"Planifier un suivi — {self.patient_id.name}",
             'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.rendezvous',
-            'view_mode': 'calendar',
-            'views': [(self.env.ref('cabinet_medical.view_appointment_calendar').id, 'calendar')],
+            'res_model': 'cabinet.suivi.wizard',
+            'res_id': wizard.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('cabinet_medical.view_cabinet_suivi_wizard_form').id, 'form')],
             'target': 'new',
             'context': {
                 'default_patient_id': self.patient_id.id,
-                'default_patient_name': self.patient_id.name,
-                'search_default_filter_today': 1
             }
         }
 

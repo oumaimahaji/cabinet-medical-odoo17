@@ -65,17 +65,17 @@
                     </div>
                     <group>
                         <group string="Patient">
-                            <!-- Cas 1 : Nouveau patient (nom seulement) -->
+                            <!-- Patient existant -->
+                            <field name="patient_id"
+                                   string="Patient"
+                                   placeholder="Sélectionner un patient existant…"
+                                   force_save="1"/>
+                            <!-- Cas d'un nouveau patient (nom seulement) -->
                             <field name="patient_name"
                                    string="Nouveau patient (Nom)"
-                                   placeholder="Saisir le nom complet du patient…"
-                                   invisible="patient_id"
-                                   help="Utilisez ce champ si le patient n'a pas encore de dossier."/>
-                            <!-- Cas 2 : Patient existant -->
-                            <field name="patient_id"
-                                   string="Patient existant"
-                                   placeholder="Sélectionner un patient existant…"
-                                   invisible="patient_name"/>
+                                   placeholder="Saisir le nom complet si nouveau patient…"
+                                   invisible="patient_id or context.get('default_patient_id')"
+                                   help="Utilisez ce champ uniquement si le patient n'a pas encore de dossier."/>
                         </group>
                         <group string="Rendez-vous">
                             <field name="motif_rapide" placeholder="Motif de la consultation…"/>
