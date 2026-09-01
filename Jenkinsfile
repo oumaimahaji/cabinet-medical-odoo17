@@ -31,7 +31,7 @@ pipeline {
                         python3 -m venv /var/jenkins_home/shared_venv
                     fi
                     . /var/jenkins_home/shared_venv/bin/activate
-                    pip install --no-cache-dir scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers --extra-index-url https://download.pytorch.org/whl/cpu
+                    pip install --no-cache-dir scikit-learn joblib pandas numpy passlib openpyxl torch sentence-transformers coverage --extra-index-url https://download.pytorch.org/whl/cpu
                     echo "✅ Environnement virtuel prêt !"
                 '''
             }
@@ -45,7 +45,8 @@ pipeline {
                 echo '🧪 Exécution de la suite complète des 102 tests unitaires...'
                 sh '''
                     . /var/jenkins_home/shared_venv/bin/activate
-                    python3 -u custom_addons/cabinet_medical/tests/run_unit_tests.py
+                    coverage run custom_addons/cabinet_medical/tests/run_unit_tests.py
+                    coverage xml -o coverage.xml
                 '''
             }
         }
