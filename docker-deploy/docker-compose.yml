@@ -29,7 +29,7 @@ services:
       - "8069:8069"
     volumes:
       - odoo-web-data:/var/lib/odoo
-      - ../custom_addons:/mnt/extra-addons
+      - /vagrant/custom_addons:/mnt/extra-addons
       - ./odoo.conf:/etc/odoo/odoo.conf
     restart: unless-stopped
 
