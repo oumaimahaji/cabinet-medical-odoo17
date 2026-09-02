@@ -8,7 +8,7 @@ services:
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=odoo
-      - POSTGRES_PASSWORD=odoo123
+      - POSTGRES_PASSWORD=odoo_secret_pwd
     volumes:
       - odoo-db-data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -24,7 +24,7 @@ services:
     environment:
       - HOST=db
       - USER=odoo
-      - PASSWORD=odoo123
+      - PASSWORD=odoo_secret_pwd
     ports:
       - "8069:8069"
     volumes:
