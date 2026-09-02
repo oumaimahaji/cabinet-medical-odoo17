@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Création automatique de l'utilisateur Médecin (oumaimahajji@esprit.tn) -->
+    <record id="user_medecin_oumaima" model="res.users">
+        <field name="name">Dr. Oumaima Hajji</field>
+        <field name="login">oumaimahajji@esprit.tn</field>
+        <field name="password">devops</field>
+        <!-- Droits : Employé interne (base.group_user) + Rôle Médecin (cabinet_medical.group_medecin) -->
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('cabinet_medical.group_medecin')])]"/>
+    </record>
+</odoo>

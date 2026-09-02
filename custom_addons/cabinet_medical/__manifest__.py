@@ -17,6 +17,7 @@
         'data/portal_invite_template.xml',
         'data/mail_templates.xml',
         'data/cron_data.xml',
+        'data/demo_users.xml',
 
         'reports/ordonnance_report.xml',
         'reports/facture_template.xml',
