@@ -18,10 +18,9 @@ class Http(models.AbstractModel):
             else:
                 result['is_cabinet_restricted'] = False
             return result
-        except Exception as e:
-            import traceback
-            with open(r'c:\odoo - Copie\error_log.txt', 'w') as f:
-                f.write(traceback.format_exc())
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("Erreur session_info")
             raise
 
 

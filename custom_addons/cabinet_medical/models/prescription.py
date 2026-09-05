@@ -588,9 +588,8 @@ def _get_bdpm_ontology():
                 med_to_family[fam_norm] = fam_norm
             for m in meds:
                 m_norm = _normalize_text(m)
-                if m_norm and len(m_norm) >= 2:
-                    if m_norm not in med_to_family:
-                        med_to_family[m_norm] = fam_norm
+                if m_norm and len(m_norm) >= 2 and m_norm not in med_to_family:
+                    med_to_family[m_norm] = fam_norm
 
     # 3. Chargement dynamique depuis les fichiers BDPM
     try:
@@ -1242,7 +1241,7 @@ class Prescription(models.Model):
                         if not med_name or not str(med_name).strip():
                             continue
                         duree_val = getattr(line, 'duree', '')
-                        is_active, d_fin, libelle_duree = _analyser_duree_traitement(d_presc, duree_val, ref_date)
+                        is_active, _, _ = _analyser_duree_traitement(d_presc, duree_val, ref_date)
                         if is_active:
                             date_str = d_presc.strftime(DATE_FORMAT) if hasattr(d_presc, 'strftime') else str(d_presc)
                             traitements.append({
@@ -1598,7 +1597,12 @@ class Prescription(models.Model):
         meds = medicaments if medicaments is not None else meds_ctx
         allergies_val = allergies if allergies is not None else al_ctx
 
-        p_id = patient_id if patient_id is not None else (patient.id if patient else '')
+        if patient_id is not None:
+            p_id = patient_id
+        elif patient:
+            p_id = patient.id
+        else:
+            p_id = ''
         pat_id = str(p_id or '')
         meds_key = "|".join(sorted(_normalize_text(m) for m in (meds or [])))
         al_key = _normalize_text(allergies_val or '')
@@ -1613,7 +1617,7 @@ class Prescription(models.Model):
         tc_key = _normalize_text(tc_val or '')
 
         raw = f"{pat_id}::{meds_key}::{al_key}::{tc_key}"
-        return hashlib.md5(raw.encode('utf-8')).hexdigest()
+        return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
     def _calculate_ia_status(self):
         """Méthode de calcul unifiée séquentielle (Niveau 1 -> Niveau 2 -> Interactions -> Fusion)."""
@@ -1740,7 +1744,7 @@ class Prescription(models.Model):
         3. Renvoie True pour déclencher le rafraîchissement natif des champs du formulaire Odoo JS.
         """
         self.ensure_one()
-        patient, medicaments, allergies = self._extract_verification_context()
+        _, medicaments, allergies = self._extract_verification_context()
         if not medicaments:
             self.write({
                 FIELD_IA_STATUT: IA_STATUT_NON_VERIFIE,
