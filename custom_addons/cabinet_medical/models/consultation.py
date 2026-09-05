@@ -117,17 +117,23 @@ class Consultation(models.Model):
         for acte in self.acte_ids:
             acte.is_acte_apci = self.is_consultation_apci
 
+    def _validate_single_apci_consultation(self, rec):
+        """Vérifie la validité des droits APCI du patient pour une consultation ciblée."""
+        patient = rec.patient_id
+        if not patient.is_apci:
+            raise ValidationError(f"Le patient {patient.name} n'est pas enregistré comme bénéficiaire de l'APCI.")
+        if not patient.numero_decision_apci:
+            raise ValidationError(f"Numéro de décision APCI obligatoire pour une consultation APCI (Patient: {patient.name}).")
+        consult_date = rec.date_consultation.date() if rec.date_consultation else fields.Date.today()
+        if patient.date_fin_apci and patient.date_fin_apci < consult_date:
+            raise ValidationError(f"La prise en charge APCI de {patient.name} a expiré le {patient.date_fin_apci}.")
+
     @api.constrains('is_consultation_apci', 'patient_id', 'date_consultation')
     def _check_apci_consultation_validity(self):
         for rec in self:
-            if rec.is_consultation_apci:
-                if not rec.patient_id.is_apci:
-                    raise ValidationError(f"Le patient {rec.patient_id.name} n'est pas enregistré comme bénéficiaire de l'APCI.")
-                if not rec.patient_id.numero_decision_apci:
-                    raise ValidationError(f"Numéro de décision APCI obligatoire pour une consultation APCI (Patient: {rec.patient_id.name}).")
-                consult_date = rec.date_consultation.date() if rec.date_consultation else fields.Date.today()
-                if rec.patient_id.date_fin_apci and rec.patient_id.date_fin_apci < consult_date:
-                    raise ValidationError(f"La prise en charge APCI de {rec.patient_id.name} a expiré le {rec.patient_id.date_fin_apci}.")
+            if not rec.is_consultation_apci:
+                continue
+            self._validate_single_apci_consultation(rec)
 
     @api.constrains('motif')
     def _check_motif(self):
