@@ -11,7 +11,7 @@ class Facture(models.Model):
     _order = 'date_facture desc'
 
     name = fields.Char(string='Numéro facture', readonly=True, default='Nouveau')
-    active = fields.Boolean(string="Actif", default=True, tracking=True)
+    active = fields.Boolean(string="Actif", default=True)
     patient_id = fields.Many2one('cabinet.patient', string='Patient', required=True)
     consultation_id = fields.Many2one('cabinet.consultation', string='Consultation', required=True)
     date_facture = fields.Date(string='Date', required=True, default=fields.Date.today)
@@ -273,7 +273,9 @@ class Facture(models.Model):
         """ Envoie le contexte à Ollama en local pour reformuler l'alerte en langage naturel """
         import requests # type: ignore
         import time
-        url = "http://localhost:11434/api/generate"
+        IrParam = self.env['ir.config_parameter'].sudo()
+        url = IrParam.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
+        model = IrParam.get_param('cabinet_medical.ollama_model', 'tinyllama')
         prompt = f"""Tu es l'assistant médical intelligent d'un cabinet médical Odoo.
 Alerte : {anomaly_type}
 Contexte technique : {context_data}
@@ -282,9 +284,9 @@ Consigne : Rédige une seule phrase d'alerte claire, fluide et professionnelle e
 
         start_time = time.time()
         try:
-            # Timeout : 1.5s connexion TCP, 15.0s max réponse Phi3 + keep_alive permanent
+            # Timeout : 1.5s connexion TCP, 15.0s max réponse LLM + keep_alive permanent
             response = requests.post(url, json={
-                "model": "phi3",
+                "model": model,
                 "prompt": prompt,
                 "stream": False,
                 "keep_alive": -1,

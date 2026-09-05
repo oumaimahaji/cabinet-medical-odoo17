@@ -6,3 +6,11 @@ class ResCompany(models.Model):
     medecin_nom = fields.Char(string='Nom du Médecin')
     medecin_inpe = fields.Char(string='INPE Médecin')
     medecin_code_convention = fields.Char(string='Code Convention CNAM')
+
+    def check_access_rights(self, operation, raise_exception=True):
+        if operation in ('read', 'write') and (
+            self.env.user.has_group('cabinet_medical.group_medecin') or
+            self.env.user.has_group('cabinet_medical.group_secretaire')
+        ):
+            return True
+        return super().check_access_rights(operation, raise_exception)

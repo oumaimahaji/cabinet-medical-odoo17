@@ -12,6 +12,7 @@
         <field name="name">Médecin</field>
         <field name="category_id" ref="module_category_cabinet_medical"/>
         <field name="comment">Accès aux consultations, agenda, prescriptions et bordereau CNAM.</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
     <!-- Groupe : Secrétaire -->
@@ -19,6 +20,7 @@
         <field name="name">Secrétaire</field>
         <field name="category_id" ref="module_category_cabinet_medical"/>
         <field name="comment">Accès aux patients, rendez-vous, facturation et impressions.</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user')), (4, ref('base.group_partner_manager'))]"/>
     </record>
 
     <!-- Règle de sécurité : La Secrétaire ne peut consulter que les consultations terminées ('done') -->

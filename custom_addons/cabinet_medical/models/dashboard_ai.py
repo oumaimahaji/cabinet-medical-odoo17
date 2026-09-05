@@ -403,12 +403,6 @@ class DashboardAI(models.AbstractModel):
             html = metrics.pop('_insights_html', "<p class='text-muted'>Aucune donnée disponible.</p>")
             return {'html': html, 'stats': metrics}
             
-        api_key = self.env['ir.config_parameter'].sudo().get_param('cabinet_medical.claude_api_key')
-        
-        # Moteur local de secours si pas d'API
-        if not api_key:
-            return self._generate_local_fallback(metrics, True)
-            
         prompt = f"""En tant qu'Assistant IA Clinique, analyse les données du cabinet médical. Toutes tes analyses doivent être justifiées par ces chiffres.
         
 Données Médicales et IA :
@@ -435,6 +429,13 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
     "us39_comment": "Analyse de la répartition patients (Max 1 ligne)."
 }}
 """
+        import os
+        api_key = self.env['ir.config_parameter'].sudo().get_param('cabinet_medical.claude_api_key') or os.environ.get('CLAUDE_API_KEY')
+        
+        # Si pas de clé Claude configurée -> bascule vers Ollama local
+        if not api_key:
+            return self._call_ollama_fallback(metrics, prompt, is_medecin)
+
         try:
             import requests
             headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
@@ -458,11 +459,64 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
                 metrics['ai_us39'] = ai_data.get('us39_comment', '')
                 return {'html': ai_data.get('top_insights_html', ''), 'stats': metrics}
             else:
-                _logger.warning(f"Claude API Error: {response.text}")
-                return self._generate_local_fallback(metrics, is_medecin)
+                _logger.warning(f"Claude API Error (status {response.status_code}): {response.text}. Bascule sur Ollama local.")
+                return self._call_ollama_fallback(metrics, prompt, is_medecin)
                 
         except Exception as e:
-            _logger.warning(f"Claude API Exception: {e}")
+            _logger.warning(f"Claude API Exception: {e}. Bascule sur Ollama local.")
+            return self._call_ollama_fallback(metrics, prompt, is_medecin)
+
+    def _call_ollama_fallback(self, metrics, prompt, is_medecin):
+        """Secours Ollama local : appelle le LLM local (phi3 ou tinyllama) si Claude n'est pas disponible."""
+        import requests
+        IrParam = self.env['ir.config_parameter'].sudo()
+        url = IrParam.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
+        model = IrParam.get_param('cabinet_medical.ollama_model', 'tinyllama')
+
+        try:
+            payload = {
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.2,
+                    "num_predict": 800
+                }
+            }
+            response = requests.post(url, json=payload, timeout=(2.0, 30.0))
+            if response.status_code == 200:
+                result = response.json()
+                raw_text = result.get('response', '').strip()
+                json_str = raw_text
+                if "```json" in json_str:
+                    json_str = json_str.split("```json")[1].split("```")[0]
+                elif "```" in json_str:
+                    json_str = json_str.split("```")[1].split("```")[0]
+                try:
+                    ai_data = json.loads(json_str.strip())
+                    metrics['health_score'] = ai_data.get('global_health_score', metrics['health_score'])
+                    metrics['ai_anomalies'] = ai_data.get('detected_anomalies', metrics['ai_anomalies'])
+                    metrics['ai_recommendations'] = ai_data.get('recommendations', metrics['ai_recommendations'])
+                    metrics['ai_forecasts'] = ai_data.get('forecasts', metrics['ai_forecasts'])
+                    metrics['ai_us35'] = ai_data.get('us35_comment', '')
+                    metrics['ai_us36'] = ai_data.get('us36_comment', '')
+                    metrics['ai_us37'] = ai_data.get('us37_comment', '')
+                    metrics['ai_us39'] = ai_data.get('us39_comment', '')
+                    html = ai_data.get('top_insights_html', f"<p>🤖 <em>[Secours LLM {model}]</em> {raw_text[:250]}</p>")
+                    return {'html': html, 'stats': metrics}
+                except Exception:
+                    html = f"""
+                    <ul class='list-unstyled mb-0'>
+                        <li class='mb-2'><strong>🤖 Assistant LLM Local ({model}) :</strong> {raw_text[:300]}</li>
+                        <li class='mb-2'><strong>🩺 Statut Médical :</strong> Données analysées localement en mode sécurisé.</li>
+                    </ul>
+                    """
+                    return {'html': html, 'stats': metrics}
+            else:
+                _logger.warning(f"Ollama API Error status {response.status_code}: {response.text}")
+                return self._generate_local_fallback(metrics, is_medecin)
+        except Exception as e:
+            _logger.info(f"Ollama local non joignable ({e}), passage au moteur local heuristique.")
             return self._generate_local_fallback(metrics, is_medecin)
 
     def _generate_local_fallback(self, metrics, is_medecin):

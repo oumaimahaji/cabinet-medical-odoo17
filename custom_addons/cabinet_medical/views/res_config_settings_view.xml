@@ -52,6 +52,18 @@
                             <setting id="claude_api_key_setting" string="IA : Clé API Anthropic (Claude)" help="Clé API pour générer les insights intelligents du tableau de bord.">
                                 <field name="claude_api_key" password="True"/>
                             </setting>
+                            <setting id="ollama_settings" string="IA Locale : Ollama" help="Configuration du serveur Ollama local pour les reformulations et le secours IA.">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="ollama_url" string="URL Ollama" class="col-lg-4 o_light_label"/>
+                                        <field name="ollama_url"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="ollama_model" string="Modèle" class="col-lg-4 o_light_label"/>
+                                        <field name="ollama_model"/>
+                                    </div>
+                                </div>
+                            </setting>
                             <setting id="medecin_traitant_setting" string="Médecin Traitant" help="Informations légales du médecin" groups="cabinet_medical.group_medecin">
                                 <div class="content-group">
                                     <div class="row mt16">

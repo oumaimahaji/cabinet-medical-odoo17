@@ -48,6 +48,18 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='cabinet_medical.claude_api_key',
         help='Clé API pour générer les insights intelligents du tableau de bord.'
     )
+    ollama_url = fields.Char(
+        string='URL Service Ollama',
+        config_parameter='cabinet_medical.ollama_url',
+        default='http://ollama:11434/api/generate',
+        help='URL du endpoint Ollama local (ex: http://ollama:11434/api/generate)'
+    )
+    ollama_model = fields.Char(
+        string='Modèle Ollama',
+        config_parameter='cabinet_medical.ollama_model',
+        default='tinyllama',
+        help='Nom du modèle Ollama (ex: tinyllama, phi3)'
+    )
     cnam_taux_dentaire = fields.Float(
         string='Taux actes dentaires (%)',
         config_parameter='cabinet.cnam_taux_dentaire',
@@ -113,6 +125,31 @@ class ResConfigSettings(models.TransientModel):
         if self.env.user.has_group('cabinet_medical.group_medecin') or self.env.user.has_group('cabinet_medical.group_secretaire'):
             return super(ResConfigSettings, self.sudo()).default_get(fields_list)
         return super().default_get(fields_list)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Override pour permettre la création de la configuration (écriture related sur res.company via sudo)."""
+        if self.env.user.has_group('cabinet_medical.group_medecin') or self.env.user.has_group('cabinet_medical.group_secretaire'):
+            return super(ResConfigSettings, self.sudo()).create(vals_list)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        """Override pour permettre la modification de la configuration via sudo."""
+        if self.env.user.has_group('cabinet_medical.group_medecin') or self.env.user.has_group('cabinet_medical.group_secretaire'):
+            return super(ResConfigSettings, self.sudo()).write(vals)
+        return super().write(vals)
+
+    def get_values(self):
+        """Override pour charger les valeurs avec sudo si médecin ou secrétaire."""
+        if self.env.user.has_group('cabinet_medical.group_medecin') or self.env.user.has_group('cabinet_medical.group_secretaire'):
+            return super(ResConfigSettings, self.sudo()).get_values()
+        return super().get_values()
+
+    def set_values(self):
+        """Override pour enregistrer les paramètres avec sudo si médecin ou secrétaire."""
+        if self.env.user.has_group('cabinet_medical.group_medecin') or self.env.user.has_group('cabinet_medical.group_secretaire'):
+            return super(ResConfigSettings, self.sudo()).set_values()
+        return super().set_values()
 
     def execute(self):
         """Override pour permettre au médecin ou à la secrétaire de sauvegarder les paramètres."""

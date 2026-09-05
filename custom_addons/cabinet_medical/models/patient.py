@@ -381,17 +381,17 @@ class Patient(models.Model):
             
         email_clean = self.email.strip().lower()
         # Chercher si un utilisateur avec cet email existe déjà
-        existing_user = self.env['res.users'].search(['|', ('login', '=', email_clean), ('email', '=', email_clean)], limit=1)
+        existing_user = self.env['res.users'].sudo().search(['|', ('login', '=', email_clean), ('email', '=', email_clean)], limit=1)
         if existing_user:
             # Vérifier si cet utilisateur est déjà lié à un autre patient
-            other_patient = self.env['cabinet.patient'].search([('user_id', '=', existing_user.id), ('id', '!=', self.id)], limit=1)
+            other_patient = self.env['cabinet.patient'].sudo().search([('user_id', '=', existing_user.id), ('id', '!=', self.id)], limit=1)
             if other_patient:
                 raise ValidationError(
                     f"Impossible de créer ou lier cet accès : Le compte utilisateur ({existing_user.name} - {existing_user.login}) "
                     f"est déjà lié au dossier patient '{other_patient.name}' (ID: {other_patient.id}). "
                     f"Chaque patient doit disposer d'une adresse email et d'un compte portail uniques."
                 )
-            self.user_id = existing_user.id
+            self.sudo().user_id = existing_user.id
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -404,10 +404,10 @@ class Patient(models.Model):
             }
             
         # Chercher si le contact (partner) existe déjà avec cet email
-        partner = self.env['res.partner'].search([('email', '=', self.email)], limit=1)
+        partner = self.env['res.partner'].sudo().search([('email', '=', self.email)], limit=1)
         if not partner:
             # Créer le partner s'il n'existe pas
-            partner = self.env['res.partner'].create({
+            partner = self.env['res.partner'].sudo().create({
                 'name': self.name,
                 'email': self.email,
                 'phone': self.telephone,
@@ -430,7 +430,7 @@ class Patient(models.Model):
                 
                 # Lier l'utilisateur fraîchement créé au dossier patient
                 if partner.user_ids:
-                    self.user_id = partner.user_ids[0].id
+                    self.sudo().user_id = partner.user_ids[0].id
             
             return {
                 'type': 'ir.actions.client',
