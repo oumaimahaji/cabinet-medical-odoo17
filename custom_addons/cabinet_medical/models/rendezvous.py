@@ -1,13 +1,24 @@
 from odoo import models, fields, api  # type: ignore
-DATE_FORMAT_DISPLAY = "%d/%m/%Y"
 from odoo.exceptions import ValidationError, AccessError  # type: ignore
 from datetime import timedelta
 import logging
 
 _logger = logging.getLogger(__name__)
 
+DATE_FORMAT_DISPLAY = "%d/%m/%Y"
+RENDEZVOUS_MODEL = 'cabinet.rendezvous'
+PATIENT_MODEL = 'cabinet.patient'
+CONSULTATION_MODEL = 'cabinet.consultation'
+NOTIFICATION_MODEL = 'cabinet.notification'
+CONFIG_PARAM_MODEL = 'ir.config_parameter'
+ACTION_ACT_WINDOW = 'ir.actions.act_window'
+ACTION_CLIENT = 'ir.actions.client'
+PARAM_MAX_RDV_NORMAL = 'cabinet.max_rdv_normal'
+PARAM_MAX_RDV_URGENCE = 'cabinet.max_rdv_urgence'
+URL_MY_RENDEZVOUS = '/my/rendezvous'
+
 class Appointment(models.Model):
-    _name = 'cabinet.rendezvous'
+    _name = RENDEZVOUS_MODEL
     _description = 'Rendez-vous médical'
     _order = 'date asc'
     _rec_name = 'display_patient_name'
@@ -16,7 +27,7 @@ class Appointment(models.Model):
 
     # Patient (optionnel pour création rapide)
     patient_id = fields.Many2one(
-        'cabinet.patient',
+        PATIENT_MODEL,
         string='Patient',
         required=False,
         ondelete='restrict'
@@ -307,8 +318,8 @@ class Appointment(models.Model):
         today = fields.Date.today()
         return {
             'name': '⚠️ Rendez-vous passés à clôturer',
-            'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.rendezvous',
+            'type': ACTION_ACT_WINDOW,
+            'res_model': RENDEZVOUS_MODEL,
             'view_mode': 'tree,form',
             'domain': [('date', '<', today), ('state', '=', 'en_attente')],
             'context': {'search_default_en_attente': 1},
@@ -501,9 +512,9 @@ class Appointment(models.Model):
                 rec.slot_availability_status = ''
                 continue
 
-            params = self.env['ir.config_parameter'].sudo()
-            max_normal = int(params.get_param('cabinet.max_rdv_normal', '20'))
-            max_urgence = int(params.get_param('cabinet.max_rdv_urgence', '2'))
+            params = self.env[CONFIG_PARAM_MODEL].sudo()
+            max_normal = int(params.get_param(PARAM_MAX_RDV_NORMAL, '20'))
+            max_urgence = int(params.get_param(PARAM_MAX_RDV_URGENCE, '2'))
             heure_debut = float(params.get_param('cabinet.heure_debut', '8.0'))
             heure_fin = float(params.get_param('cabinet.heure_fin', '17.0'))
             work_days_str = params.get_param('cabinet.work_days', '0,1,2,3,4,5')
@@ -644,7 +655,7 @@ class Appointment(models.Model):
 
     def _compute_available_slots_preview(self):
         """Génère la grille interactive des créneaux horaires disponibles pour la date sélectionnée"""
-        params = self.env['ir.config_parameter'].sudo()
+        params = self.env[CONFIG_PARAM_MODEL].sudo()
         heure_debut = float(params.get_param('cabinet.heure_debut', '8.0'))
         heure_fin = float(params.get_param('cabinet.heure_fin', '17.0'))
         work_days_str = params.get_param('cabinet.work_days', '0,1,2,3,4,5')
@@ -653,7 +664,7 @@ class Appointment(models.Model):
         for rec in self:
             target_date = rec.date or fields.Date.today()
             weekday = target_date.weekday()
-            date_display = target_date.strftime('DATE_FORMAT_DISPLAY')
+            date_display = target_date.strftime(DATE_FORMAT_DISPLAY)
 
             if weekday not in work_days:
                 rec.available_slots_preview = (
@@ -676,7 +687,7 @@ class Appointment(models.Model):
             if isinstance(rec_id, int):
                 domain.append(('id', '!=', rec_id))
 
-            existing_rdvs = self.env['cabinet.rendezvous'].search(domain)
+            existing_rdvs = self.env[RENDEZVOUS_MODEL].search(domain)
             occupied_hours = {round(r.heure, 2) for r in existing_rdvs if r.heure is not False}
 
             # Générer les créneaux de 30 minutes
@@ -700,8 +711,8 @@ class Appointment(models.Model):
     def _check_appointments_limit(self):
         for rec in self:
             if rec.date:
-                max_normal = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_normal', '20'))
-                max_urgence = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_urgence', '2'))
+                max_normal = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_NORMAL, '20'))
+                max_urgence = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_URGENCE, '2'))
                 max_total = max_normal + max_urgence
                 
                 domain_all = [('date', '=', rec.date), ('state', 'not in', ['annule', 'absent'])]
@@ -729,7 +740,7 @@ class Appointment(models.Model):
         """Vérifier la limite de rendez-vous d'urgence par jour"""
         for rec in self:
             if rec.date and rec.is_urgence:
-                max_urgence = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_urgence', '2'))
+                max_urgence = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_URGENCE, '2'))
                 domain = [
                     ('date', '=', rec.date),
                     ('is_urgence', '=', True),
@@ -836,10 +847,10 @@ class Appointment(models.Model):
                 if isinstance(rec_id, int):
                     domain.append(('id', '!=', rec_id))  # type: ignore
                 
-                duplicate = self.env['cabinet.rendezvous'].search(domain, limit=1)
+                duplicate = self.env[RENDEZVOUS_MODEL].search(domain, limit=1)
                 if duplicate:
                     patient_name = duplicate.display_patient_name or "un autre patient"
-                    date_str = rec.date_fr or rec.date.strftime('DATE_FORMAT_DISPLAY')
+                    date_str = rec.date_fr or rec.date.strftime(DATE_FORMAT_DISPLAY)
                     time_str = self._format_float_time(rec.heure)
                     return {
                         'warning': {
@@ -925,11 +936,10 @@ class Appointment(models.Model):
                     
                     if 'heure' in fields_list and not res.get('heure'):
                         # Vérifier s'il y a une heure spécifiée dans le contexte original
-                        has_time = False
-                        if isinstance(default_date_val, str) and ':' in default_date_val:
-                            has_time = True
-                        elif isinstance(default_date_val, datetime) and (default_date_val.hour > 0 or default_date_val.minute > 0):
-                            has_time = True
+                        has_time = bool(
+                            (isinstance(default_date_val, str) and ':' in default_date_val)
+                            or (isinstance(default_date_val, datetime) and (default_date_val.hour > 0 or default_date_val.minute > 0))
+                        )
                         
                         if has_time and isinstance(local_dt, datetime):
                             res['heure'] = local_dt.hour + local_dt.minute / 60.0
@@ -942,7 +952,7 @@ class Appointment(models.Model):
             if ctx_patient_id:
                 try:
                     pid = int(ctx_patient_id)
-                    patient = self.env['cabinet.patient'].browse(pid)
+                    patient = self.env[PATIENT_MODEL].browse(pid)
                     if patient.exists():
                         res['patient_id'] = patient.id
                     else:
@@ -984,7 +994,7 @@ class Appointment(models.Model):
                 vals['patient_id'] = ctx_pid
 
         if vals.get('patient_name') and not vals.get('patient_id'):
-            patient = self.env['cabinet.patient'].create({'name': vals['patient_name']})
+            patient = self.env[PATIENT_MODEL].create({'name': vals['patient_name']})
             vals['patient_id'] = patient.id
         return vals
 
@@ -1004,12 +1014,12 @@ class Appointment(models.Model):
         
         for record in records:
             if record.patient_id and record.state == 'present':
-                self.env['cabinet.notification'].create_notification(
+                self.env[NOTIFICATION_MODEL].create_notification(
                     patient_id=record.patient_id.id,
                     title="Arrivée enregistrée",
                     message="Votre présence au cabinet a été enregistrée. Votre consultation sera prise en charge prochainement.",
                     notif_type='rdv_present',
-                    res_url='/my/rendezvous'
+                    res_url=URL_MY_RENDEZVOUS
                 )
         return records
 
@@ -1023,7 +1033,7 @@ class Appointment(models.Model):
         if vals.get('patient_name') and not vals.get('patient_id'):
             for rec in self:
                 if not rec.patient_id:
-                    patient = self.env['cabinet.patient'].create({'name': vals['patient_name']})
+                    patient = self.env[PATIENT_MODEL].create({'name': vals['patient_name']})
                     vals['patient_id'] = patient.id
                     break # On crée un seul patient même si on modifie un lot de RDV
                     
@@ -1042,35 +1052,35 @@ class Appointment(models.Model):
             # 1. State changes
             if 'state' in vals and old_state != record.state:
                 if record.state == 'present':
-                    self.env['cabinet.notification'].create_notification(
+                    self.env[NOTIFICATION_MODEL].create_notification(
                         patient_id=record.patient_id.id,
                         title="Arrivée enregistrée",
                         message="Votre présence au cabinet a été enregistrée. Votre consultation sera prise en charge prochainement.",
                         notif_type='rdv_present',
-                        res_url='/my/rendezvous'
+                        res_url=URL_MY_RENDEZVOUS
                     )
                 elif record.state in ('annule', 'absent'):
-                    self.env['cabinet.notification'].create_notification(
+                    self.env[NOTIFICATION_MODEL].create_notification(
                         patient_id=record.patient_id.id,
                         title="Rendez-vous annulé",
                         message=f"Votre rendez-vous du {record.date_fr} à {record._format_float_time(record.heure)} a été annulé.",
                         notif_type='rdv_annule',
-                        res_url='/my/rendezvous',
+                        res_url=URL_MY_RENDEZVOUS,
                         critical=True,
-                        res_model='cabinet.rendezvous',
+                        res_model=RENDEZVOUS_MODEL,
                         res_id=getattr(record, 'id')
                     )
             
             # 2. Date or hour changes (only if it was already created)
             if ('date' in vals or 'heure' in vals) and (old_date and old_heure) and (old_date != record.date or old_heure != record.heure):
-                self.env['cabinet.notification'].create_notification(
+                self.env[NOTIFICATION_MODEL].create_notification(
                     patient_id=record.patient_id.id,
                     title="Rendez-vous reporté",
                     message=f"Votre rendez-vous a été reporté au {record.date_fr} à {record._format_float_time(record.heure)}.",
                     notif_type='rdv_reporte',
-                    res_url='/my/rendezvous',
+                    res_url=URL_MY_RENDEZVOUS,
                     critical=True,
-                    res_model='cabinet.rendezvous',
+                    res_model=RENDEZVOUS_MODEL,
                     res_id=getattr(record, 'id')
                 )
         return res
@@ -1097,8 +1107,8 @@ class Appointment(models.Model):
 
         return {
             'name': 'Compléter le dossier patient',
-            'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.patient',
+            'type': ACTION_ACT_WINDOW,
+            'res_model': PATIENT_MODEL,
             'res_id': self.patient_id.id,
             'views': [(False, 'form')],
             'view_mode': 'form',
@@ -1114,8 +1124,8 @@ class Appointment(models.Model):
         patient_name = self.display_patient_name
         return {
             'name': 'Nouveau rendez-vous',
-            'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.rendezvous',
+            'type': ACTION_ACT_WINDOW,
+            'res_model': RENDEZVOUS_MODEL,
             'views': [(False, 'form')],
             'view_mode': 'form',
             'target': 'new',
@@ -1136,7 +1146,7 @@ class Appointment(models.Model):
         self._compute_show_buttons()
         # Retourner l'action de rechargement pour mettre à jour l'interface
         return {
-            'type': 'ir.actions.client',
+            'type': ACTION_CLIENT,
             'tag': 'reload',
         }
 
@@ -1150,7 +1160,7 @@ class Appointment(models.Model):
         # 1. Chercher si une consultation existe déjà aujourd'hui pour ce patient (pour éviter les doublons)
         today_start = datetime.now().replace(hour=0, minute=0, second=0)
         today_end = datetime.now().replace(hour=23, minute=59, second=59)
-        existing_consult = self.env['cabinet.consultation'].search([
+        existing_consult = self.env[CONSULTATION_MODEL].search([
             ('patient_id', '=', self.patient_id.id),
             ('date_consultation', '>=', today_start),
             ('date_consultation', '<=', today_end)
@@ -1160,7 +1170,7 @@ class Appointment(models.Model):
             consultation_id = existing_consult.id
         else:
             # 2. Créer DIRECTEMENT la consultation dans la base de données
-            new_consult = self.env['cabinet.consultation'].create({
+            new_consult = self.env[CONSULTATION_MODEL].create({
                 'patient_id': self.patient_id.id,
                 'rdv_id': self.id,  # type: ignore
                 'motif': "Consultation programmée", # Remplit le champ obligatoire
@@ -1170,8 +1180,8 @@ class Appointment(models.Model):
         # 3. Ouvrir la consultation (qui est déjà sauvegardée !)
         return {
             'name': 'Démarrer consultation',
-            'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.consultation',
+            'type': ACTION_ACT_WINDOW,
+            'res_model': CONSULTATION_MODEL,
             'res_id': consultation_id,
             'views': [(False, 'form')],
             'view_mode': 'form',
@@ -1182,13 +1192,13 @@ class Appointment(models.Model):
         """Rouvrir la fiche de consultation existante pour ce rendez-vous."""
         self.ensure_one()
         # Chercher la consultation liée à ce rdv
-        consult = self.env['cabinet.consultation'].search([('rdv_id', '=', self.id)], limit=1)  # type: ignore
+        consult = self.env[CONSULTATION_MODEL].search([('rdv_id', '=', self.id)], limit=1)  # type: ignore
         if not consult:
             # Fallback si rdv_id n'était pas rempli mais même patient/date
             from datetime import datetime
             today_start = datetime.now().replace(hour=0, minute=0, second=0)
             today_end = datetime.now().replace(hour=23, minute=59, second=59)
-            consult = self.env['cabinet.consultation'].search([
+            consult = self.env[CONSULTATION_MODEL].search([
                 ('patient_id', '=', self.patient_id.id),
                 ('date_consultation', '>=', today_start),
                 ('date_consultation', '<=', today_end)
@@ -1197,8 +1207,8 @@ class Appointment(models.Model):
         if consult:
             return {
                 'name': 'Consultation',
-                'type': 'ir.actions.act_window',
-                'res_model': 'cabinet.consultation',
+                'type': ACTION_ACT_WINDOW,
+                'res_model': CONSULTATION_MODEL,
                 'res_id': consult.id,
                 'views': [(False, 'form')],
                 'view_mode': 'form',
@@ -1215,8 +1225,8 @@ class Appointment(models.Model):
         if self.patient_id:
             return {
                 'name': 'Compléter la fiche patient',
-                'type': 'ir.actions.act_window',
-                'res_model': 'cabinet.patient',
+                'type': ACTION_ACT_WINDOW,
+                'res_model': PATIENT_MODEL,
                 'res_id': self.patient_id.id,
                 'views': [(False, 'form')],
                 'view_mode': 'form',
@@ -1227,7 +1237,7 @@ class Appointment(models.Model):
             }
         
         return {
-            'type': 'ir.actions.client',
+            'type': ACTION_CLIENT,
             'tag': 'reload'
         }
     
@@ -1240,7 +1250,7 @@ class Appointment(models.Model):
             raise ValidationError("Ce rendez-vous ne peut plus être annulé dans son état actuel.")
         self.state = 'annule'
         return {
-            'type': 'ir.actions.client',
+            'type': ACTION_CLIENT,
             'tag': 'reload'
         }
 
@@ -1251,7 +1261,7 @@ class Appointment(models.Model):
             raise AccessError("Seule la Secrétaire peut annuler un rendez-vous ou marquer un patient absent.")
         self.state = 'absent'
         return {
-            'type': 'ir.actions.client',
+            'type': ACTION_CLIENT,
             'tag': 'reload'
         }
 
@@ -1273,8 +1283,8 @@ class Appointment(models.Model):
             ])
             rec.today_appointments_count = today_count
             
-            max_normal = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_normal', '20'))
-            max_urgence = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_urgence', '2'))
+            max_normal = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_NORMAL, '20'))
+            max_urgence = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_URGENCE, '2'))
             max_total = max_normal + max_urgence
 
             # Afficher les places restantes normales ou totales
@@ -1298,7 +1308,7 @@ class Appointment(models.Model):
         """Calculer la date au format français"""
         for rec in self:
             if rec.date:
-                rec.date_fr = rec.date.strftime('DATE_FORMAT_DISPLAY')
+                rec.date_fr = rec.date.strftime(DATE_FORMAT_DISPLAY)
             else:
                 rec.date_fr = ''
     
@@ -1352,8 +1362,8 @@ class Appointment(models.Model):
     def _compute_date_appointments(self):
         """Calculer le nombre de RDV et places restantes pour la date sélectionnée"""
         for rec in self:
-            max_normal = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_normal', '20'))
-            max_urgence = int(self.env['ir.config_parameter'].sudo().get_param('cabinet.max_rdv_urgence', '2'))
+            max_normal = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_NORMAL, '20'))
+            max_urgence = int(self.env[CONFIG_PARAM_MODEL].sudo().get_param(PARAM_MAX_RDV_URGENCE, '2'))
             max_total = max_normal + max_urgence
 
             if rec.date:

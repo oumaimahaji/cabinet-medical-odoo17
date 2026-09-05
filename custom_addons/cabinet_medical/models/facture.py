@@ -398,7 +398,7 @@ class Facture(models.Model):
             if rec.scenario == SCENARIO_SANS_COUVERTURE:
                 part_cnam = 0.0
                 part_assurance = 0.0
-            elif rec.scenario in (SCENARIO_APCI_TIERS_PAYANT, SCENARIO_APCI_REMBOURSEMENT):
+            elif rec.scenario in (SCENARIO_APCI_TIERS_PAYANT, SCENARIO_APCI_REMBOURSEMENT, SCENARIO_CNAM_REMBOURSEMENT):
                 part_cnam = part_cnam_reelle
                 part_assurance = 0.0
             elif rec.scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR):
@@ -407,9 +407,6 @@ class Facture(models.Model):
                     couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False)
                     part_mutuelle_dep = (depassement * taux_assur) if (couv_dep is True) else 0.0
                     part_assurance = (ticket_mod * taux_assur) + part_mutuelle_dep
-            elif rec.scenario == SCENARIO_CNAM_REMBOURSEMENT:
-                part_cnam = part_cnam_reelle
-                part_assurance = 0.0
             elif rec.scenario == SCENARIO_CNAM_REMB_ASSUR:
                 part_cnam = part_cnam_reelle
                 couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False)
@@ -531,7 +528,7 @@ class Facture(models.Model):
         """ Envoie le contexte à Ollama en local pour reformuler l'alerte en langage naturel """
         import requests # type: ignore
         import time
-        ir_config_param = self.env['ir.config_parameter'].sudo()
+        ir_config_param = self.env[CONFIG_PARAM_MODEL].sudo()
         url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
         model = ir_config_param.get_param('cabinet_medical.ollama_model', 'tinyllama')
         prompt = f"""Tu es l'assistant médical intelligent d'un cabinet médical Odoo.

@@ -3,6 +3,17 @@ from odoo.exceptions import ValidationError  # type: ignore
 from datetime import date
 from dateutil.relativedelta import relativedelta # type: ignore
 
+ACTION_CLIENT = 'ir.actions.client'
+TAG_DISPLAY_NOTIFICATION = 'display_notification'
+NOTIF_TYPE_WARNING = 'warning'
+NOTIF_TYPE_SUCCESS = 'success'
+RENDEZVOUS_MODEL = 'cabinet.rendezvous'
+NOTIFICATION_MODEL = 'cabinet.notification'
+FACTURE_MODEL = 'cabinet.facture'
+ACTION_ACT_WINDOW = 'ir.actions.act_window'
+USERS_MODEL = 'res.users'
+DATE_FORMAT = '%d/%m/%Y'
+
 class Patient(models.Model):
     _name = 'cabinet.patient'
     _description = 'Gestion des Patients du Cabinet Médical'
@@ -48,7 +59,7 @@ class Patient(models.Model):
     telephone = fields.Char(string='Téléphone', required=False)
     telephone_error = fields.Char(compute='_compute_telephone_error')
     email = fields.Char(string='Email', help="Requis pour l'accès au portail patient")
-    user_id = fields.Many2one('res.users', string='Utilisateur Portail', readonly=True, help="L'utilisateur Odoo lié à ce patient pour l'accès portail.")
+    user_id = fields.Many2one(USERS_MODEL, string='Utilisateur Portail', readonly=True, help="L'utilisateur Odoo lié à ce patient pour l'accès portail.")
     cin = fields.Char(string='CIN', required=False)
     cin_error = fields.Char(compute='_compute_cin_error')
     adresse = fields.Text(string='Adresse')
@@ -151,10 +162,10 @@ class Patient(models.Model):
     consultation_ids = fields.One2many('cabinet.consultation', 'patient_id', string='Consultations')
     nb_consultations = fields.Integer(string='Nombre de consultations', compute='_compute_nb_consultations')
     
-    rendezvous_ids = fields.One2many('cabinet.rendezvous', 'patient_id', string='Rendez-vous')
+    rendezvous_ids = fields.One2many(RENDEZVOUS_MODEL, 'patient_id', string='Rendez-vous')
     nb_rendezvous = fields.Integer(string='Nombre de rendez-vous', compute='_compute_nb_rendezvous')
     
-    notification_ids = fields.One2many('cabinet.notification', 'patient_id', string='Notifications')
+    notification_ids = fields.One2many(NOTIFICATION_MODEL, 'patient_id', string='Notifications')
     unread_notification_count = fields.Integer(string='Notifications non lues', compute='_compute_unread_notification_count')
 
     # Statut du dossier : complet si les infos essentielles sont remplies
@@ -185,17 +196,15 @@ class Patient(models.Model):
     def _compute_telephone_error(self):
         for rec in self:
             rec.telephone_error = False
-            if rec.telephone:
-                if not rec.telephone.isdigit() or len(rec.telephone) != 8:
-                    rec.telephone_error = 'Le numéro de téléphone doit contenir exactement 8 chiffres'
+            if rec.telephone and (not rec.telephone.isdigit() or len(rec.telephone) != 8):
+                rec.telephone_error = 'Le numéro de téléphone doit contenir exactement 8 chiffres'
 
     @api.depends('cin')
     def _compute_cin_error(self):
         for rec in self:
             rec.cin_error = False
-            if rec.cin:
-                if not rec.cin.isdigit() or len(rec.cin) != 8:
-                    rec.cin_error = 'Le CIN doit contenir exactement 8 chiffres'
+            if rec.cin and (not rec.cin.isdigit() or len(rec.cin) != 8):
+                rec.cin_error = 'Le CIN doit contenir exactement 8 chiffres'
 
     @api.depends('date_validite_cnam', 'is_cnam')
     def _compute_cnam_expired(self):
@@ -226,14 +235,14 @@ class Patient(models.Model):
                 f"La carte CNAM (expirée depuis {jours_cnam} jours) et la prise en charge APCI ({patho_label}, décision {self.numero_decision_apci or 'N/A'}, expirée depuis {jours_apci} jours) de {self.name} "
                 f"sont toutes deux échues. Veuillez solliciter le renouvellement simultané des deux dossiers auprès de la CNAM."
             )
-            conseil_ia = self.env['cabinet.facture']._get_llm_alert("Double expiration CNAM et APCI", contexte, default_msg)
+            conseil_ia = self.env[FACTURE_MODEL]._get_llm_alert("Double expiration CNAM et APCI", contexte, default_msg)
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
+                'type': ACTION_CLIENT,
+                'tag': TAG_DISPLAY_NOTIFICATION,
                 'params': {
                     'title': 'Conseil Assistant IA (CNAM & APCI)',
                     'message': conseil_ia,
-                    'type': 'warning',
+                    'type': NOTIF_TYPE_WARNING,
                     'sticky': True,
                 }
             }
@@ -246,12 +255,12 @@ class Patient(models.Model):
         self.ensure_one()
         if not self.date_validite_cnam:
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
+                'type': ACTION_CLIENT,
+                'tag': TAG_DISPLAY_NOTIFICATION,
                 'params': {
                     'title': 'Conseil IA (CNAM)',
                     'message': "Aucune date de validité renseignée pour ce patient.",
-                    'type': 'warning',
+                    'type': NOTIF_TYPE_WARNING,
                     'sticky': False,
                 }
             }
@@ -260,15 +269,15 @@ class Patient(models.Model):
         contexte = f"Patient: {self.name}, Date validite CNAM expiree depuis {jours_retard} jours ({self.date_validite_cnam}), Filiere: {self.filiere_cnam or 'Non specifiee'}, Regime: {self.regime_cnam or 'Non specifie'}"
         default_msg = f"La carte CNAM du patient {self.name} est expirée depuis {jours_retard} jours ({self.date_validite_cnam}). Veuillez inviter le patient à fournir son attestation de renouvellement avant la prise en charge."
         
-        conseil_ia = self.env['cabinet.facture']._get_llm_alert("Expiration des droits CNAM", contexte, default_msg)
+        conseil_ia = self.env[FACTURE_MODEL]._get_llm_alert("Expiration des droits CNAM", contexte, default_msg)
         
         return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
+            'type': ACTION_CLIENT,
+            'tag': TAG_DISPLAY_NOTIFICATION,
             'params': {
                 'title': 'Conseil Assistant IA (CNAM)',
                 'message': conseil_ia,
-                'type': 'warning',
+                'type': NOTIF_TYPE_WARNING,
                 'sticky': True,
             }
         }
@@ -277,12 +286,12 @@ class Patient(models.Model):
         self.ensure_one()
         if not self.date_fin_apci:
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
+                'type': ACTION_CLIENT,
+                'tag': TAG_DISPLAY_NOTIFICATION,
                 'params': {
                     'title': 'Conseil IA (APCI)',
                     'message': "Aucune date de fin APCI renseignée pour ce patient.",
-                    'type': 'warning',
+                    'type': NOTIF_TYPE_WARNING,
                     'sticky': False,
                 }
             }
@@ -292,15 +301,15 @@ class Patient(models.Model):
         contexte = f"Patient: {self.name}, Prise en charge APCI expiree depuis {jours_retard} jours ({self.date_fin_apci}), Pathologie: {patho_label}, Decision: {self.numero_decision_apci or 'Non renseignee'}"
         default_msg = f"La prise en charge APCI ({patho_label}) du patient {self.name} est échue depuis {jours_retard} jours ({self.date_fin_apci}). Veuillez solliciter le renouvellement de la décision auprès de la CNAM."
         
-        conseil_ia = self.env['cabinet.facture']._get_llm_alert("Expiration de la prise en charge APCI", contexte, default_msg)
+        conseil_ia = self.env[FACTURE_MODEL]._get_llm_alert("Expiration de la prise en charge APCI", contexte, default_msg)
         
         return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
+            'type': ACTION_CLIENT,
+            'tag': TAG_DISPLAY_NOTIFICATION,
             'params': {
                 'title': 'Conseil Assistant IA (APCI)',
                 'message': conseil_ia,
-                'type': 'warning',
+                'type': NOTIF_TYPE_WARNING,
                 'sticky': True,
             }
         }
@@ -364,8 +373,8 @@ class Patient(models.Model):
         self.ensure_one()
         return {
             'name': 'Créer rendez-vous',
-            'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.rendezvous',
+            'type': ACTION_ACT_WINDOW,
+            'res_model': RENDEZVOUS_MODEL,
             'views': [(False, 'form')],
             'view_mode': 'form',
             'target': 'new',
@@ -384,7 +393,7 @@ class Patient(models.Model):
             
         email_clean = self.email.strip().lower()
         # Chercher si un utilisateur avec cet email existe déjà
-        existing_user = self.env['res.users'].sudo().search(['|', ('login', '=', email_clean), ('email', '=', email_clean)], limit=1)
+        existing_user = self.env[USERS_MODEL].sudo().search(['|', ('login', '=', email_clean), ('email', '=', email_clean)], limit=1)
         if existing_user:
             # Vérifier si cet utilisateur est déjà lié à un autre patient
             other_patient = self.env['cabinet.patient'].sudo().search([('user_id', '=', existing_user.id), ('id', '!=', self.id)], limit=1)
@@ -396,13 +405,13 @@ class Patient(models.Model):
                 )
             self.sudo().user_id = existing_user.id
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
+                'type': ACTION_CLIENT,
+                'tag': TAG_DISPLAY_NOTIFICATION,
                 'params': {
                     'title': 'Accès Lié',
                     'message': 'Un compte avec cet email existait déjà, il a été lié à ce patient.',
                     'sticky': False,
-                    'type': 'success',
+                    'type': NOTIF_TYPE_SUCCESS,
                 }
             }
             
@@ -436,13 +445,13 @@ class Patient(models.Model):
                     self.sudo().user_id = partner.user_ids[0].id
             
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
+                'type': ACTION_CLIENT,
+                'tag': TAG_DISPLAY_NOTIFICATION,
                 'params': {
                     'title': 'Accès Créé',
                     'message': 'Le compte portail a été créé avec succès et l\'email d\'invitation officiel a été envoyé instantanément.',
                     'sticky': False,
-                    'type': 'success',
+                    'type': NOTIF_TYPE_SUCCESS,
                 }
             }
         except Exception as e:
@@ -461,7 +470,7 @@ class Patient(models.Model):
         # If the email was changed on the patient card, update the user login and partner email
         if self.email != user.login:
             # Check for conflicts
-            conflicting_user = self.env['res.users'].sudo().search([('login', '=', self.email), ('id', '!=', user.id)], limit=1)
+            conflicting_user = self.env[USERS_MODEL].sudo().search([('login', '=', self.email), ('id', '!=', user.id)], limit=1)
             if conflicting_user:
                 raise ValidationError(f"Un autre compte utilisateur utilise déjà l'email {self.email}.")
             user.login = self.email
@@ -478,13 +487,13 @@ class Patient(models.Model):
                 wizard_user.with_context(use_custom_portal_template=True).sudo().action_invite_again()
             
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
+                'type': ACTION_CLIENT,
+                'tag': TAG_DISPLAY_NOTIFICATION,
                 'params': {
                     'title': 'Invitation Renvoyée',
                     'message': f"L'email d'invitation a été renvoyé avec succès à l'adresse {self.email}.",
                     'sticky': False,
-                    'type': 'success',
+                    'type': NOTIF_TYPE_SUCCESS,
                 }
             }
         except Exception as e:
@@ -494,7 +503,7 @@ class Patient(models.Model):
         self.ensure_one()
         return {
             'name': 'Consultations du patient',
-            'type': 'ir.actions.act_window',
+            'type': ACTION_ACT_WINDOW,
             'res_model': 'cabinet.consultation',
             'views': [(False, 'tree'), (False, 'form')],
             'view_mode': 'tree,form',
@@ -506,8 +515,8 @@ class Patient(models.Model):
         self.ensure_one()
         return {
             'name': 'Rendez-vous du patient',
-            'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.rendezvous',
+            'type': ACTION_ACT_WINDOW,
+            'res_model': RENDEZVOUS_MODEL,
             'views': [(False, 'tree'), (False, 'form')],
             'view_mode': 'tree,form',
             'domain': [('patient_id', '=', self.id)], # type: ignore
@@ -547,7 +556,7 @@ class Patient(models.Model):
             # Vérifier si ce patient est créé depuis un rendez-vous
             from_rendezvous_id = self._context.get('from_rendezvous_id')
             if from_rendezvous_id:
-                rdv = self.env['cabinet.rendezvous'].browse(from_rendezvous_id)
+                rdv = self.env[RENDEZVOUS_MODEL].browse(from_rendezvous_id)
                 if rdv.exists():
                     rdv.patient_id = patient.id
         return patients
@@ -579,18 +588,16 @@ class Patient(models.Model):
     @api.constrains('cin')
     def _check_cin(self):
         for rec in self:
-            if rec.cin:
-                if not rec.cin.isdigit() or len(rec.cin) != 8:
-                    raise ValidationError("Le CIN doit contenir exactement 8 chiffres")
+            if rec.cin and (not rec.cin.isdigit() or len(rec.cin) != 8):
+                raise ValidationError("Le CIN doit contenir exactement 8 chiffres")
 
     @api.constrains('telephone')
     def _check_telephone(self):
         for rec in self:
-            if rec.telephone:
-                if not rec.telephone.isdigit() or len(rec.telephone) != 8:
-                    raise ValidationError("Le téléphone doit contenir 8 chiffres")
-                if rec.telephone[0] not in ['2', '4', '5', '7', '9']:
-                    raise ValidationError("Le téléphone doit commencer par 2, 4, 5, 7 ou 9 (numéro tunisien)")
+            if rec.telephone and (not rec.telephone.isdigit() or len(rec.telephone) != 8):
+                raise ValidationError("Le téléphone doit contenir 8 chiffres")
+            if rec.telephone and rec.telephone[0] not in ['2', '4', '5', '7', '9']:
+                raise ValidationError("Le téléphone doit commencer par 2, 4, 5, 7 ou 9 (numéro tunisien)")
 
     @api.constrains('date_naissance')
     def _check_date_naissance(self):
@@ -612,7 +619,7 @@ class Patient(models.Model):
 
     def _compute_unread_notification_count(self):
         for rec in self:
-            rec.unread_notification_count = self.env['cabinet.notification'].search_count([
+            rec.unread_notification_count = self.env[NOTIFICATION_MODEL].search_count([
                 ('patient_id', '=', getattr(rec, 'id')),
                 ('is_read', '=', False)
             ])
@@ -630,7 +637,7 @@ class Patient(models.Model):
             ('date_validite_cnam', '=', today)
         ])
         for patient in expiring_today:
-            self.env['cabinet.notification'].create_notification(
+            self.env[NOTIFICATION_MODEL].create_notification(
                 patient_id=getattr(patient, 'id'),
                 title="Couverture CNAM expirée",
                 message="Votre couverture CNAM a expiré aujourd'hui. Veuillez contacter le secrétariat pour la mettre à jour.",
@@ -644,10 +651,10 @@ class Patient(models.Model):
             ('date_validite_cnam', '=', seven_days_later)
         ])
         for patient in expiring_soon:
-            self.env['cabinet.notification'].create_notification(
+            self.env[NOTIFICATION_MODEL].create_notification(
                 patient_id=getattr(patient, 'id'),
                 title="Expiration CNAM proche (7 jours)",
-                message=f"Votre couverture CNAM expire dans 7 jours (le {patient.date_validite_cnam.strftime('%d/%m/%Y')}). Pensez à renouveler vos droits.",
+                message=f"Votre couverture CNAM expire dans 7 jours (le {patient.date_validite_cnam.strftime(DATE_FORMAT)}). Pensez à renouveler vos droits.",
                 notif_type='cnam',
                 res_url='/my/couverture'
             )
