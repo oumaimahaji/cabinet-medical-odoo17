@@ -76,6 +76,8 @@ class Patient(models.Model):
         ('03', '03 - Enfant 2'),
         ('04', '04 - Enfant 3'),
         ('05', '05 - Enfant 4'),
+        ('06', '06 - Ascendant à charge'),
+        ('autre', 'Autre ayant droit'),
     ], string='Code Bénéficiaire', default='00')
     carte_labes_active = fields.Boolean(string='Carte LABES / e-Houwiya', default=False, help='Indique si la carte LABES du patient est active')
     regime_cnam = fields.Selection([
@@ -91,7 +93,8 @@ class Patient(models.Model):
        help='Indique l\'origine de l\'affiliation sociale du patient (CNSS = secteur privé, CNRPS = secteur public)')
     filiere_cnam = fields.Selection([
         ('privee', 'Tiers-payant (Filière Privée)'),
-        ('remboursement', 'Remboursement des Frais')
+        ('remboursement', 'Remboursement des Frais'),
+        ('publique', 'Filière Publique (Structures hospitalières)'),
     ], string='Filière CNAM')
     date_validite_cnam = fields.Date(string='Date validité CNAM')
     cnam_active = fields.Boolean(string='CNAM Active', default=True)

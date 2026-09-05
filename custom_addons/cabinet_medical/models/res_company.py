@@ -6,6 +6,11 @@ class ResCompany(models.Model):
     medecin_nom = fields.Char(string='Nom du Médecin')
     medecin_inpe = fields.Char(string='INPE Médecin')
     medecin_code_convention = fields.Char(string='Code Convention CNAM')
+    medecin_specialite = fields.Selection([
+        ('generaliste', 'Médecin Généraliste'),
+        ('specialiste', 'Médecin Spécialiste')
+    ], string='Spécialité du Médecin', default='generaliste')
+    medecin_conventionne = fields.Boolean(string='Médecin Conventionné CNAM', default=True)
 
     def check_access_rights(self, operation, raise_exception=True):
         if operation in ('read', 'write') and (

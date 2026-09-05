@@ -16,38 +16,100 @@
     <template id="report_facture_template">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <t t-call="web.external_layout">
-                    <div class="page">
-                        <div class="row">
-                            <div class="col-6">
-                                <h2>Facture <span t-field="doc.name"/></h2>
-                                <strong>Date : </strong><span t-field="doc.date_facture" t-options='{"widget": "date"}'/><br/>
-                                <strong>Consultation : </strong><span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/>
+                <t t-call="web.basic_layout">
+                    <t t-set="company" t-value="doc.company_id or env.company"/>
+                    <div class="page" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #2c3e50;">
+                        <!-- En-tête Médical Officiel Dynamique -->
+                        <div class="row pb-3 mb-3" style="border-bottom: 2px solid #0056b3;">
+                            <div class="col-7">
+                                <div class="d-flex align-items-center mb-2">
+                                    <t t-if="company.logo">
+                                        <img t-att-src="image_data_uri(company.logo)" style="max-height: 75px; max-width: 220px; margin-right: 15px;" alt="Logo Cabinet"/>
+                                    </t>
+                                    <div>
+                                        <h3 style="color: #0056b3; font-weight: bold; margin-bottom: 2px;">
+                                            <span t-esc="company.name or 'Cabinet Médical'"/>
+                                        </h3>
+                                        <div style="font-size: 13px; color: #555;">
+                                            <span t-esc="company.street or ''"/>
+                                            <t t-if="company.city">, <span t-esc="company.city"/></t>
+                                            <t t-if="company.country_id">, <span t-esc="company.country_id.name"/></t>
+                                        </div>
+                                        <div style="font-size: 13px; color: #555;">
+                                            <t t-if="company.phone"><strong>Tél : </strong><span t-esc="company.phone"/></t>
+                                            <t t-if="company.email"> | <strong>Email : </strong><span t-esc="company.email"/></t>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-6 text-right">
-                                <strong>Patient : </strong><span t-field="doc.patient_id.name"/><br/>
-                                <strong>CIN : </strong><span t-field="doc.patient_id.cin"/><br/>
-                                <strong>Scénario appliqué : </strong><span t-field="doc.scenario"/>
+                            <div class="col-5 text-right text-end">
+                                <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 8px 12px;">
+                                    <div style="font-weight: bold; color: #0056b3; font-size: 14px;">
+                                        <span t-esc="company.medecin_nom or 'Médecin Traitant'"/>
+                                    </div>
+                                    <div style="font-size: 12px; color: #495057;">
+                                        <t t-if="company.medecin_inpe">
+                                            <strong>INPE : </strong><span t-esc="company.medecin_inpe"/><br/>
+                                        </t>
+                                        <t t-if="company.medecin_code_convention">
+                                            <strong>Convention CNAM : </strong><span t-esc="company.medecin_code_convention"/><br/>
+                                        </t>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <br/><br/>
+                        <!-- Titre Facture & Infos Patient -->
+                        <div class="row mt-3 mb-3">
+                            <div class="col-6">
+                                <h2 style="color: #2c3e50; font-weight: bold; margin-bottom: 5px;">
+                                    Facture <span t-field="doc.name"/>
+                                </h2>
+                                <div style="font-size: 13px;">
+                                    <strong>Date d'émission : </strong><span t-field="doc.date_facture" t-options='{"widget": "date"}'/><br/>
+                                    <strong>Date consultation : </strong><span t-field="doc.consultation_id.date_consultation" t-options='{"widget": "date"}'/>
+                                </div>
+                            </div>
+                            <div class="col-6 text-right text-end">
+                                <div style="border-left: 3px solid #0056b3; padding-left: 12px; display: inline-block; text-align: left;">
+                                    <div style="font-size: 14px;"><strong>Patient : </strong><span t-field="doc.patient_id.name"/></div>
+                                    <div style="font-size: 13px; color: #555;">
+                                        <t t-if="doc.patient_id.cin">
+                                            <strong>CIN : </strong><span t-field="doc.patient_id.cin"/><br/>
+                                        </t>
+                                        <t t-if="doc.patient_id.numero_cnam">
+                                            <strong>N° CNAM : </strong><span t-field="doc.patient_id.numero_cnam"/>
+                                            <t t-if="doc.patient_id.code_beneficiaire_cnam"> (<span t-field="doc.patient_id.code_beneficiaire_cnam"/>)</t><br/>
+                                        </t>
+                                        <strong>Régime / Scénario : </strong>
+                                        <span class="badge badge-info" style="font-size: 12px; background-color: #e3f2fd; color: #0d47a1; padding: 3px 6px; border-radius: 4px;">
+                                            <span t-field="doc.scenario"/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Tableau détaillé des actes médicaux -->
-                        <table class="table table-sm o_main_table">
-                            <thead>
+                        <table class="table table-sm table-bordered mt-4" style="font-size: 13px;">
+                            <thead style="background-color: #f1f5f9; color: #1e293b;">
                                 <tr>
-                                    <th>Code Acte</th>
-                                    <th>Description de l'acte médical</th>
-                                    <th class="text-right">Montant (DT)</th>
+                                    <th style="width: 20%;">Code Acte</th>
+                                    <th style="width: 55%;">Description de l'acte médical</th>
+                                    <th class="text-right text-end" style="width: 25%;">Montant</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <t t-if="doc.consultation_id.acte_ids">
                                     <t t-foreach="doc.consultation_id.acte_ids" t-as="acte">
-                                        <tr>
-                                            <td><span t-field="acte.type_acte"/></td>
+                                        <tr t-if="acte.active">
+                                            <td>
+                                                <span t-esc="acte.code_acte or (acte.parametrage_id and acte.parametrage_id.code_cnam) or acte.type_acte"/>
+                                            </td>
                                             <td><span t-field="acte.description"/></td>
-                                            <td class="text-right"><span t-field="acte.montant"/></td>
+                                            <td class="text-right text-end">
+                                                <span t-field="acte.montant" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                            </td>
                                         </tr>
                                     </t>
                                 </t>
@@ -55,39 +117,128 @@
                                     <tr>
                                         <td><span>Consultation</span></td>
                                         <td><span>Consultation médicale standard</span></td>
-                                        <td class="text-right"><span t-field="doc.montant_total"/></td>
+                                        <td class="text-right text-end">
+                                            <span t-field="doc.montant_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                        </td>
                                     </tr>
                                 </t>
                             </tbody>
                         </table>
 
-                        <!-- Bloc des totaux et remboursements -->
-                        <div class="row mt32">
-                            <div class="col-7">
-                                <!-- Espace pour cachet -->
-                                <br/><br/>
-                                <strong>Cachet et signature du médecin :</strong>
+                        <!-- Bloc des totaux et décomposition financière -->
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <div style="border: 1px dashed #adb5bd; border-radius: 6px; padding: 25px; min-height: 140px; margin-top: 10px; text-align: center; color: #6c757d;">
+                                    <strong style="color: #495057;">Cachet et signature du médecin :</strong>
+                                    <br/><br/><br/>
+                                    <t t-if="company.medecin_nom">
+                                        <span style="font-size: 12px; color: #6c757d;" t-esc="company.medecin_nom"/>
+                                    </t>
+                                </div>
                             </div>
-                            <div class="col-5">
-                                <table class="table table-sm">
+                            <div class="col-6">
+                                <table class="table table-sm table-bordered" style="font-size: 13px;">
                                     <tr>
-                                        <td><strong>Total de la consultation</strong></td>
-                                        <td class="text-right"><strong><span t-field="doc.montant_total"/></strong></td>
+                                        <td><strong>Total des honoraires</strong></td>
+                                        <td class="text-right text-end" style="width: 45%;">
+                                            <strong><span t-field="doc.montant_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></strong>
+                                        </td>
                                     </tr>
-                                    <tr class="bg-light">
-                                        <td><strong>Total à payer au cabinet</strong></td>
-                                        <td class="text-right"><strong><span t-field="doc.montant_paye_cabinet"/></strong></td>
+
+                                    <!-- Cas 1 : Tiers-Payant CNAM (Filière privée / APCI TP / TP+Assur) -->
+                                    <t t-if="doc.montant_cnam_cabinet &gt; 0">
+                                        <tr style="color: #0b7285;">
+                                            <td>
+                                                <t t-if="doc.scenario == 'apci_tiers_payant'">
+                                                    <span>Prise en charge intégrale CNAM APCI (100%)</span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span>Prise en charge directe CNAM (Tiers-payant)</span>
+                                                </t>
+                                            </td>
+                                            <td class="text-right text-end">
+                                                - <span t-field="doc.montant_cnam_cabinet" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+
+                                    <!-- Prise en charge assurance si tiers-payant direct mutuelle -->
+                                    <t t-if="doc.part_assurance_display &gt; 0 and doc.patient_id.assurance_id and doc.patient_id.assurance_id.tiers_payant_direct">
+                                        <tr style="color: #1971c2;">
+                                            <td><span>Prise en charge Mutuelle (Tiers-payant direct)</span></td>
+                                            <td class="text-right text-end">
+                                                - <span t-field="doc.part_assurance_display" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+
+                                    <!-- Montant effectivement réglé au cabinet -->
+                                    <tr style="background-color: #e8f4fd; font-size: 14px;">
+                                        <td>
+                                            <t t-if="doc.scenario in ('cnam_tiers_payant', 'cnam_tp_assur')">
+                                                <strong>Total réglé au cabinet (Ticket modérateur)</strong>
+                                            </t>
+                                            <t t-elif="doc.scenario == 'apci_tiers_payant'">
+                                                <strong>Total réglé au cabinet (Exonération 100%)</strong>
+                                            </t>
+                                            <t t-else="">
+                                                <strong>Total réglé au cabinet</strong>
+                                            </t>
+                                        </td>
+                                        <td class="text-right text-end">
+                                            <strong><span t-field="doc.montant_paye_cabinet" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></strong>
+                                        </td>
                                     </tr>
-                                    <tr t-if="doc.montant_cnam_cabinet &gt; 0">
-                                        <td><strong>Prise en charge directe (Tiers-payant)</strong></td>
-                                        <td class="text-right"><strong><span t-field="doc.montant_cnam_cabinet"/></strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Reste à charge final estimé (après vos remboursements)</strong></td>
-                                        <td class="text-right"><strong><span t-field="doc.reste_a_charge_final"/></strong></td>
+
+                                    <!-- Cas Remboursement CNAM / Mutuelle différé -->
+                                    <t t-if="doc.scenario in ('cnam_remboursement', 'cnam_remb_assur', 'apci_remboursement')">
+                                        <tr style="color: #2b8a3e; font-style: italic;">
+                                            <td>
+                                                <t t-if="doc.scenario == 'apci_remboursement'">
+                                                    <span>Remboursement CNAM APCI à percevoir (100% via BS1)</span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span>Remboursement CNAM estimé à percevoir (via BS1)</span>
+                                                </t>
+                                            </td>
+                                            <td class="text-right text-end">
+                                                <span t-field="doc.part_cnam_display" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-if="doc.part_assurance_display &gt; 0 and (not doc.patient_id.assurance_id or not doc.patient_id.assurance_id.tiers_payant_direct)">
+                                        <tr style="color: #2b8a3e; font-style: italic;">
+                                            <td><span>Remboursement Mutuelle estimé à percevoir</span></td>
+                                            <td class="text-right text-end">
+                                                <span t-field="doc.part_assurance_display" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+
+                                    <!-- Ligne Reste à charge patient -->
+                                    <tr style="background-color: #fff3bf;">
+                                        <td>
+                                            <t t-if="doc.scenario in ('cnam_remboursement', 'cnam_remb_assur', 'apci_remboursement') or (doc.part_assurance_display &gt; 0 and not (doc.patient_id.assurance_id and doc.patient_id.assurance_id.tiers_payant_direct))">
+                                                <strong>Reste à charge patient net (après remboursements)</strong>
+                                            </t>
+                                            <t t-else="">
+                                                <strong>Reste à charge patient</strong>
+                                            </t>
+                                        </td>
+                                        <td class="text-right text-end">
+                                            <strong><span t-field="doc.reste_a_charge_final" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></strong>
+                                        </td>
                                     </tr>
                                 </table>
                             </div>
+                        </div>
+
+                        <!-- Pied de page officiel du cabinet -->
+                        <div class="mt-4 pt-3 text-center" style="border-top: 1px solid #dee2e6; font-size: 11px; color: #6c757d;">
+                            <span t-esc="company.name or 'Cabinet Médical'"/> - 
+                            <span t-esc="company.street or ''"/>, <span t-esc="company.city or 'Tunis'"/>, <span t-esc="company.country_id.name or 'Tunisie'"/> - 
+                            Tél : <span t-esc="company.phone or ''"/>
+                            <t t-if="company.email"> - Email : <span t-esc="company.email"/></t>
                         </div>
                     </div>
                 </t>

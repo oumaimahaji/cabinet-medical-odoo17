@@ -15,3 +15,5 @@ rapports_generes/
 SOUTENANCE_DEVOPS.html
 GUIDE_DEVOPS_SOUTENANCE.md
 scratch/
+.env
+*.env

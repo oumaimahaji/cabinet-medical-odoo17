@@ -19,6 +19,46 @@ class ActeParametrage(models.Model):
         ('autre', 'Autre'),
     ], string='Type d\'acte', required=True, default='consultation')
 
+    # --- Nomenclature NGAP officielle CNAM & Lettres-clés ---
+    lettre_cle = fields.Selection([
+        ('C', 'C — Consultation omnipraticien / médecin généraliste'),
+        ('CS', 'CS — Consultation médecin spécialiste'),
+        ('V', 'V — Visite à domicile omnipraticien'),
+        ('VS', 'VS — Visite à domicile spécialiste'),
+        ('K', 'K — Acte de chirurgie / acte technique'),
+        ('KE', 'KE — Acte d\'échographie / explorations ultrasoniques'),
+        ('ATM', 'ATM — Actes de traitement médical'),
+        ('P', 'P — Acte de petite chirurgie / pansement'),
+        ('D', 'D — Acte dentaire'),
+        ('B', 'B — Biologie médicale'),
+        ('Z', 'Z — Radiologie / imagerie conventionnelle'),
+        ('autre', 'Autre lettre-clé'),
+    ], string='Lettre-clé NGAP', help='Lettre-clé officielle selon la Nomenclature Générale des Actes Professionnels (NGAP)')
+    coefficient = fields.Float(string='Coefficient', default=1.0, help='Coefficient multiplicateur de la lettre-clé (ex: K 10, KE 25)')
+    valeur_cle = fields.Float(string='Valeur de la clé (DT)', help='Valeur unitaire de la lettre-clé fixée par convention/avenant')
+
+    # Validité temporelle (Avenants conventionnels)
+    date_debut_validite = fields.Date(
+        string='Date de début de validité',
+        default=fields.Date.today,
+        help='Date de prise d\'effet de ce tarif conventionnel'
+    )
+    date_fin_validite = fields.Date(
+        string='Date de fin de validité',
+        help='Date d\'expiration du tarif (laisser vide si actuellement en vigueur)'
+    )
+
+    # Accord préalable & Conditions
+    necessite_accord_prealable = fields.Boolean(
+        string='Accord préalable obligatoire (AP)',
+        default=False,
+        help='Cocher si cet acte nécessite l\'accord préalable écrit de la CNAM (art. 22 Convention sectorielle)'
+    )
+    conditions_prise_en_charge = fields.Text(
+        string='Conditions de prise en charge',
+        help='Indications ou restrictions fixées par la convention ou la nomenclature'
+    )
+
     # Tarif de base (tarif conventionné CNAM)
     tarif = fields.Float(string='Tarif conventionné (DT)', required=True, default=0.0)
 
@@ -54,6 +94,23 @@ class ActeParametrage(models.Model):
 
     is_remboursable = fields.Boolean(string='Remboursable CNAM', default=True)
     active = fields.Boolean(string='Actif', default=True)
+
+    @api.onchange('coefficient', 'valeur_cle')
+    def _onchange_ngap(self):
+        """Met à jour automatiquement le tarif conventionné si coefficient et valeur_clé sont définis."""
+        if self.coefficient and self.valeur_cle:
+            self.tarif = round(self.coefficient * self.valeur_cle, 3)
+
+    def is_valid_at_date(self, check_date):
+        """Vérifie si le tarif conventionné est en vigueur à une date donnée."""
+        self.ensure_one()
+        if not check_date:
+            return True
+        if self.date_debut_validite and check_date < self.date_debut_validite:
+            return False
+        if self.date_fin_validite and check_date > self.date_fin_validite:
+            return False
+        return True
 
     @api.depends('type_acte')
     def _compute_taux_cnam(self):

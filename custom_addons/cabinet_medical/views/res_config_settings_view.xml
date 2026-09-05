@@ -16,6 +16,9 @@
                             <setting id="cabinet_adresse_setting" string="Adresse" help="Saisir l'adresse du cabinet">
                                 <field name="cabinet_adresse"/>
                             </setting>
+                            <setting id="cabinet_logo_setting" string="Logo du cabinet" help="Logo officiel du cabinet pour les impressions">
+                                <field name="cabinet_logo" widget="image" class="oe_avatar"/>
+                            </setting>
                             <setting id="cabinet_telephone_setting" string="Téléphone" help="Saisir le numéro de téléphone">
                                 <field name="cabinet_telephone"/>
                             </setting>
@@ -64,11 +67,15 @@
                                     </div>
                                 </div>
                             </setting>
-                            <setting id="medecin_traitant_setting" string="Médecin Traitant" help="Informations légales du médecin" groups="cabinet_medical.group_medecin">
+                            <setting id="medecin_traitant_setting" string="Médecin Traitant &amp; Convention CNAM" help="Informations légales et conventionnelles du médecin" groups="cabinet_medical.group_medecin">
                                 <div class="content-group">
                                     <div class="row mt16">
                                         <label for="medecin_nom" class="col-lg-5 o_light_label"/>
                                         <field name="medecin_nom"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="medecin_specialite" class="col-lg-5 o_light_label"/>
+                                        <field name="medecin_specialite"/>
                                     </div>
                                     <div class="row">
                                         <label for="medecin_inpe" class="col-lg-5 o_light_label"/>
@@ -77,6 +84,10 @@
                                     <div class="row">
                                         <label for="medecin_code_convention" class="col-lg-5 o_light_label"/>
                                         <field name="medecin_code_convention"/>
+                                    </div>
+                                    <div class="row">
+                                        <label for="medecin_conventionne" class="col-lg-5 o_light_label"/>
+                                        <field name="medecin_conventionne"/>
                                     </div>
                                 </div>
                             </setting>

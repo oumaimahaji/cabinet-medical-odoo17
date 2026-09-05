@@ -29,6 +29,18 @@ class Consultation(models.Model):
     diagnostic = fields.Text(string='Diagnostic', groups='cabinet_medical.group_medecin')
     notes_medicales = fields.Text(string='Notes médicales', groups='cabinet_medical.group_medecin')
     
+    # Prise en charge ciblée APCI (Décret n° 2005-1367 art. 19)
+    is_consultation_apci = fields.Boolean(
+        string='Consultation liée à l\'APCI',
+        default=False,
+        help='Cocher uniquement si les soins de cette consultation se rapportent directement à l\'affection de longue durée (APCI) prise en charge à 100% par la CNAM.'
+    )
+    apci_pathologie_consultation = fields.Selection(
+        related='patient_id.apci_pathologie',
+        string='Pathologie ALD / APCI',
+        readonly=True
+    )
+
     # US16 - Prescription/Ordonnance
     prescription_ids = fields.One2many('cabinet.prescription', 'consultation_id', string='Prescriptions')
     facture_ids = fields.One2many('cabinet.facture', 'consultation_id', string='Factures')
@@ -88,6 +100,32 @@ class Consultation(models.Model):
                 if rec.date_consultation > now + timedelta(days=7):
                     raise ValidationError("La date de consultation ne peut pas être à plus de 7 jours dans le futur")
     
+    @api.onchange('is_consultation_apci')
+    def _onchange_is_consultation_apci(self):
+        if self.is_consultation_apci and self.patient_id and not self.patient_id.is_apci:
+            self.is_consultation_apci = False
+            return {
+                'warning': {
+                    'title': 'Patient non APCI',
+                    'message': "Ce patient n'est pas enregistré comme bénéficiaire d'une prise en charge APCI."
+                }
+            }
+        # Répercuter sur les actes de la consultation
+        for acte in self.acte_ids:
+            acte.is_acte_apci = self.is_consultation_apci
+
+    @api.constrains('is_consultation_apci', 'patient_id', 'date_consultation')
+    def _check_apci_consultation_validity(self):
+        for rec in self:
+            if rec.is_consultation_apci:
+                if not rec.patient_id.is_apci:
+                    raise ValidationError(f"Le patient {rec.patient_id.name} n'est pas enregistré comme bénéficiaire de l'APCI.")
+                if not rec.patient_id.numero_decision_apci:
+                    raise ValidationError(f"Numéro de décision APCI obligatoire pour une consultation APCI (Patient: {rec.patient_id.name}).")
+                consult_date = rec.date_consultation.date() if rec.date_consultation else fields.Date.today()
+                if rec.patient_id.date_fin_apci and rec.patient_id.date_fin_apci < consult_date:
+                    raise ValidationError(f"La prise en charge APCI de {rec.patient_id.name} a expiré le {rec.patient_id.date_fin_apci}.")
+
     @api.constrains('motif')
     def _check_motif(self):
         """Vérifier que le motif n'est pas vide"""

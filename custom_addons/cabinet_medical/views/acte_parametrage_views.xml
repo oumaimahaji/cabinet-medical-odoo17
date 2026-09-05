@@ -5,14 +5,18 @@
         <field name="name">cabinet.acte.parametrage.tree</field>
         <field name="model">cabinet.acte.parametrage</field>
         <field name="arch" type="xml">
-            <tree string="Tarifs CNAM">
-                <field name="name" string="Nom de l'acte"/>
+            <tree string="Tarifs CNAM &amp; Nomenclature NGAP">
                 <field name="code_cnam"/>
+                <field name="lettre_cle" optional="show"/>
+                <field name="coefficient" optional="show"/>
+                <field name="name" string="Nom de l'acte"/>
                 <field name="type_acte"/>
                 <field name="tarif" string="Tarif conventionné (DT)"/>
                 <field name="taux_cnam" string="Taux CNAM (%)"/>
                 <field name="tarif_cnam" string="Part CNAM (DT)"/>
                 <field name="part_patient" string="Ticket modérateur (DT)"/>
+                <field name="necessite_accord_prealable" widget="boolean_toggle" optional="show"/>
+                <field name="date_debut_validite" optional="hide"/>
                 <field name="is_remboursable" widget="boolean_toggle"/>
                 <field name="active" widget="boolean_toggle"/>
             </tree>
@@ -24,27 +28,42 @@
         <field name="name">cabinet.acte.parametrage.form</field>
         <field name="model">cabinet.acte.parametrage</field>
         <field name="arch" type="xml">
-            <form string="Tarif CNAM">
+            <form string="Tarif CNAM &amp; Nomenclature NGAP">
                 <sheet>
                     <div class="oe_title">
+                        <label for="name" string="Nom de l'acte"/>
                         <h1>
                             <field name="name" placeholder="Nom de l'acte..."/>
                         </h1>
                     </div>
                     <group>
-                        <group string="Identification">
+                        <group string="Identification &amp; Nomenclature NGAP">
                             <field name="code_cnam"/>
+                            <field name="lettre_cle"/>
+                            <field name="coefficient"/>
+                            <field name="valeur_cle"/>
                             <field name="type_acte"/>
                             <field name="is_remboursable"/>
                             <field name="active" widget="boolean_toggle"/>
                         </group>
-                        <group string="Tarification CNAM">
+                        <group string="Tarification Conventionnelle CNAM">
                             <field name="tarif" widget="monetary" options="{'currency_field': 'currency_id'}"
                                    string="Tarif conventionné (DT)"/>
                             <field name="taux_cnam" readonly="1" string="Taux CNAM (%)"/>
                             <field name="tarif_cnam" readonly="1" string="Part CNAM (DT)"
                                    decoration-success="tarif_cnam &gt; 0"/>
                             <field name="part_patient" readonly="1" string="Ticket modérateur patient (DT)"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Validité &amp; Accord Préalable (AP)">
+                        <group>
+                            <field name="date_debut_validite"/>
+                            <field name="date_fin_validite"/>
+                            <field name="necessite_accord_prealable" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="conditions_prise_en_charge" placeholder="Conditions ou restrictions conventionnelles..."/>
                         </group>
                     </group>
                 </sheet>

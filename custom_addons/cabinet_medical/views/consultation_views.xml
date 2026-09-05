@@ -107,6 +107,8 @@
                                     <field name="currency_id" invisible="1"/>
                                     <field name="total_actes" readonly="1" widget="badge" string="Total actes"/>
                                     <field name="total_montant_actes" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1" string="Total actes (DT)"/>
+                                    <field name="is_consultation_apci" widget="boolean_toggle" readonly="state == 'done'"/>
+                                    <field name="apci_pathologie_consultation" invisible="not is_consultation_apci"/>
                                 </group>
                             </div>
                         </div>
@@ -144,10 +146,14 @@
                                         <field name="description" string="Description"/>
                                         <field name="date_acte" widget="datetime" string="Date"/>
                                         <field name="code_acte" string="Code"/>
-                                        <field name="montant" widget="monetary" string="Montant (DT)"/>
+                                        <field name="tarif_conventionnel" widget="monetary" string="Tarif Conv. (DT)" optional="show"/>
+                                        <field name="montant" widget="monetary" string="Honoraires (DT)"/>
+                                        <field name="depassement_honoraire" widget="monetary" string="Dépassement (DT)" optional="show"/>
+                                        <field name="is_acte_apci" string="APCI" widget="boolean_toggle" optional="show"/>
+                                        <field name="statut_accord_prealable" string="Statut AP" optional="hide"/>
                                         <button name="action_archive" type="object" icon="fa-archive" title="Archiver" invisible="not active"/>
                                     </tree>
-                                <form>
+                                    <form>
                                         <sheet>
                                             <group>
                                                 <field name="parametrage_id" placeholder="Rechercher un acte configuré..." options="{'no_create': True}"/>
@@ -155,7 +161,12 @@
                                                 <field name="description" placeholder="Description détaillée de l'acte..."/>
                                                 <field name="date_acte" widget="datetime"/>
                                                 <field name="code_acte" placeholder="Code de l'acte..."/>
-                                                <field name="montant" widget="monetary"/>
+                                                <field name="tarif_conventionnel" widget="monetary"/>
+                                                <field name="montant" widget="monetary" string="Honoraires facturés"/>
+                                                <field name="depassement_honoraire" widget="monetary" readonly="1"/>
+                                                <field name="is_acte_apci" widget="boolean_toggle"/>
+                                                <field name="statut_accord_prealable"/>
+                                                <field name="numero_accord_prealable" invisible="statut_accord_prealable not in ('demande', 'accorde')"/>
                                             </group>
                                         </sheet>
                                     </form>

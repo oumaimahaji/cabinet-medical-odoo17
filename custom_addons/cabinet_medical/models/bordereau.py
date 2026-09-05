@@ -21,7 +21,16 @@ class BordereauCNAM(models.Model):
         help='Période du bordereau sous forme lisible (Mois Année)'
     )
     
-    motif_rejet = fields.Text(string='Motif de rejet', help='Indiquez pourquoi la CNAM a rejeté ce bordereau')
+    code_motif_rejet = fields.Selection([
+        ('droits_expires', 'Droits de l\'assuré expirés / non ouverts'),
+        ('depassement_plafond', 'Dépassement du plafond annuel de prise en charge'),
+        ('hors_filiere', 'Consultation hors filière de soins / médecin non référent'),
+        ('sans_accord_prealable', 'Accord préalable obligatoire manquant ou refusé'),
+        ('incoherence_acte', 'Acte non conforme à la nomenclature NGAP'),
+        ('apci_non_reconnue', 'Affection non reconnue au titre de l\'APCI / prise en charge échue'),
+        ('autre', 'Autre motif réglementaire'),
+    ], string='Motif réglementaire de rejet', help='Code normalisé du motif de rejet CNAM')
+    motif_rejet = fields.Text(string='Précisions du rejet', help='Indiquez les détails ou motifs complémentaires de la CNAM')
     date_envoi = fields.Date(string='Date d\'envoi')
 
     @api.depends('date_debut')
@@ -124,8 +133,26 @@ class BordereauCNAM(models.Model):
         for f in self.facture_ids:
             f.statut_cnam = 'paye'
 
+    def unlink(self):
+        for rec in self:
+            if rec.state != 'draft':
+                state_label = dict(self._fields['state'].selection).get(rec.state, rec.state)
+                raise ValidationError(f"Suppression interdite : Le bordereau {rec.name or ''} est dans l'état '{state_label}' et ne peut pas être supprimé.")
+        return super(BordereauCNAM, self).unlink()
+
+    def write(self, vals):
+        for rec in self:
+            if rec.state != 'draft' and not self.env.context.get('bypass_bordereau_lock'):
+                if 'date_debut' in vals and str(vals['date_debut']) != str(rec.date_debut):
+                    raise ValidationError("Modification interdite : Impossible de modifier la date de début d'un bordereau non-brouillon.")
+                if 'date_fin' in vals and str(vals['date_fin']) != str(rec.date_fin):
+                    raise ValidationError("Modification interdite : Impossible de modifier la date de fin d'un bordereau non-brouillon.")
+        return super(BordereauCNAM, self).write(vals)
+
     def action_rejeter(self):
         self.ensure_one()
+        if not self.code_motif_rejet:
+            self.code_motif_rejet = 'autre'
         self.state = 'rejected'
         for f in self.facture_ids:
             f.statut_cnam = 'rejete'
@@ -176,9 +203,11 @@ class BordereauCNAM(models.Model):
         rejetes_list = []
         for r in rejetes:
             patients = list(set(r.facture_ids.mapped('patient_id.name')))
+            code_label = dict(r._fields['code_motif_rejet'].selection).get(r.code_motif_rejet, '') if hasattr(r, 'code_motif_rejet') and r.code_motif_rejet else ''
+            motif_final = r.motif_rejet or code_label or 'Motif non spécifié'
             rejetes_list.append({
                 'name': r.name,
-                'motif': r.motif_rejet or 'Motif non spécifié',
+                'motif': motif_final,
                 'patients': patients,
                 'montant': r.montant_cnam_demande
             })

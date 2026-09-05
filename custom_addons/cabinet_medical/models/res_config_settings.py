@@ -6,6 +6,7 @@ class ResConfigSettings(models.TransientModel):
     cabinet_nom = fields.Char(related='company_id.name', readonly=False, string='Nom du cabinet')
     cabinet_adresse = fields.Char(related='company_id.street', readonly=False, string='Adresse')
     cabinet_telephone = fields.Char(related='company_id.phone', readonly=False, string='Téléphone')
+    cabinet_logo = fields.Binary(related='company_id.logo', readonly=False, string='Logo du cabinet')
 
     cnam_actif = fields.Boolean(
         string='Activer la gestion CNAM',
@@ -84,6 +85,8 @@ class ResConfigSettings(models.TransientModel):
     medecin_nom = fields.Char(related='company_id.medecin_nom', readonly=False, string='Nom du Médecin')
     medecin_inpe = fields.Char(related='company_id.medecin_inpe', readonly=False, string='INPE Médecin')
     medecin_code_convention = fields.Char(related='company_id.medecin_code_convention', readonly=False, string='Code Convention CNAM')
+    medecin_specialite = fields.Selection(related='company_id.medecin_specialite', readonly=False, string='Spécialité du Médecin')
+    medecin_conventionne = fields.Boolean(related='company_id.medecin_conventionne', readonly=False, string='Médecin Conventionné CNAM')
 
     work_days = fields.Char(
         string='Jours de travail',
