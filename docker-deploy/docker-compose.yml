@@ -33,7 +33,7 @@ services:
     volumes:
       - odoo-web-data:/var/lib/odoo
       - /vagrant/custom_addons:/mnt/extra-addons
-      - ./odoo.conf:/etc/odoo/odoo.conf
+      - /vagrant/docker-deploy/odoo.conf:/etc/odoo/odoo.conf
     restart: unless-stopped
 
   # =========================================================================

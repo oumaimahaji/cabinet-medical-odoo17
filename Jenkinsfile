@@ -152,7 +152,7 @@ pipeline {
                 sh '''
                     docker stop cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
                     docker rm cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
-                    cd docker-deploy
+                    cd /vagrant/docker-deploy
                     if docker compose version >/dev/null 2>&1; then
                         docker compose -p cabinet-deploy up -d --force-recreate odoo
                     else
