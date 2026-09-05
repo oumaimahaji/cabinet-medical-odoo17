@@ -1,3 +1,5 @@
+name: cabinet-deploy
+
 services:
   # =========================================================================
   # 1. APPLICATION MÉDICALE : BASE DE DONNÉES POSTGRESQL 15
@@ -25,6 +27,7 @@ services:
       - HOST=db
       - USER=odoo
       - PASSWORD=odoo_secret_pwd
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
     ports:
       - "8069:8069"
     volumes:
@@ -42,6 +45,19 @@ services:
     ports:
       - "8025:8025"
       - "1025:1025"
+    restart: unless-stopped
+
+  # =========================================================================
+  # 4. ASSISTANT IA LOCAL : OLLAMA (LLM MÉDICAL PHI-3 / TINYLLAMA)
+  # =========================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cabinet_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - /vagrant/docker-deploy/ollama_data:/root/.ollama
+    mem_limit: 2.5g
     restart: unless-stopped
 
 volumes:
