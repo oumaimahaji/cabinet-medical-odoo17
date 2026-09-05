@@ -33,6 +33,17 @@ services:
       - ./odoo.conf:/etc/odoo/odoo.conf
     restart: unless-stopped
 
+  # =========================================================================
+  # 3. SERVEUR DE TEST SMTP & INTERFACE WEB : MAILPIT
+  # =========================================================================
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: cabinet_mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    restart: unless-stopped
+
 volumes:
   odoo-db-data:
   odoo-web-data:
