@@ -78,10 +78,9 @@ pipeline {
                         timeout(time: 1, unit: 'MINUTES') {
                             def qg = waitForQualityGate()
                             if (qg.status != 'OK') {
-                                echo "⚠️ SonarQube Quality Gate : Statut = ${qg.status}. Avertissement levé, poursuite du pipeline CI/CD..."
-                            } else {
-                                echo "✅ SonarQube Quality Gate validé via Webhook (Statut = ${qg.status}) !"
+                                error "❌ Échec du Quality Gate SonarQube : Statut = ${qg.status}. Le pipeline est interrompu."
                             }
+                            echo "✅ SonarQube Quality Gate validé via Webhook (Statut = ${qg.status}) !"
                         }
                     } catch (Exception e) {
                         echo "⚠️ Webhook SonarQube non reçu après 1 minute, bascule sur la vérification directe par API REST..."
@@ -100,9 +99,8 @@ pipeline {
                                         echo "✅ Quality Gate validé avec succès (Statut = OK) !"
                                         exit 0
                                     elif [ "$STATUS" = "ERROR" ]; then
-                                        echo "⚠️ SonarQube Quality Gate : Statut = ERROR (Seuils Clean as You Code non atteints)."
-                                        echo "ℹ️ Métriques enregistrées dans le dashboard SonarQube. Poursuite du pipeline vers le déploiement..."
-                                        exit 0
+                                        echo "❌ Échec du Quality Gate SonarQube : Statut = ERROR."
+                                        exit 1
                                     fi
                                     sleep $DELAY
                                 done
