@@ -2,8 +2,10 @@ from dateutil.relativedelta import relativedelta  # type: ignore
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 
+BORDEREAU_MODEL = 'cabinet.bordereau'
+
 class BordereauCNAM(models.Model):
-    _name = 'cabinet.bordereau'
+    _name = BORDEREAU_MODEL
     _description = 'Bordereau d\'envoi CNAM'
     _order = 'date_creation desc'
 
@@ -79,7 +81,7 @@ class BordereauCNAM(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get('name', 'Nouveau') == 'Nouveau':
-                vals['name'] = self.env['ir.sequence'].next_by_code('cabinet.bordereau') or 'Nouveau'
+                vals['name'] = self.env['ir.sequence'].next_by_code(BORDEREAU_MODEL) or 'Nouveau'
         return super(BordereauCNAM, self).create(vals_list)
 
     def action_recuperer_factures(self):
@@ -113,7 +115,7 @@ class BordereauCNAM(models.Model):
         if not self.facture_ids:
             raise ValidationError("Impossible de valider un bordereau vide.")
         if self.name == 'Nouveau':
-            self.name = self.env['ir.sequence'].next_by_code('cabinet.bordereau') or 'Nouveau'
+            self.name = self.env['ir.sequence'].next_by_code(BORDEREAU_MODEL) or 'Nouveau'
         self.state = 'done'
 
     def action_envoyer(self):

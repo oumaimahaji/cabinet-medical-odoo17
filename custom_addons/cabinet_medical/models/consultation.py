@@ -2,6 +2,9 @@ from odoo import models, fields, api  # type: ignore
 from odoo.exceptions import ValidationError, AccessError, UserError  # type: ignore
 from datetime import datetime, timedelta
 
+GROUP_MEDECIN = 'cabinet_medical.group_medecin'
+FACTURE_MODEL = 'cabinet.facture'
+
 class Consultation(models.Model):
     _name = 'cabinet.consultation'
     _description = 'Consultation'
@@ -14,7 +17,7 @@ class Consultation(models.Model):
     patient_id = fields.Many2one('cabinet.patient', string='Patient', required=True, ondelete='restrict')
     rdv_id = fields.Many2one('cabinet.rendezvous', string='Rendez-vous associé')
     date_consultation = fields.Datetime(string='Date de consultation', required=True, default=fields.Datetime.now)
-    motif = fields.Text(string='Motif de la consultation', required=True, groups='cabinet_medical.group_medecin')
+    motif = fields.Text(string='Motif de la consultation', required=True, groups=GROUP_MEDECIN)
     
     # Alertes médicales (liées au patient)
     allergies = fields.Text(related='patient_id.allergies', string='Allergies', readonly=True)
@@ -26,8 +29,8 @@ class Consultation(models.Model):
     acte_ids = fields.One2many('cabinet.acte', 'consultation_id', string='Actes médicaux')
     
     # US15 - Diagnostic et notes
-    diagnostic = fields.Text(string='Diagnostic', groups='cabinet_medical.group_medecin')
-    notes_medicales = fields.Text(string='Notes médicales', groups='cabinet_medical.group_medecin')
+    diagnostic = fields.Text(string='Diagnostic', groups=GROUP_MEDECIN)
+    notes_medicales = fields.Text(string='Notes médicales', groups=GROUP_MEDECIN)
     
     # Prise en charge ciblée APCI (Décret n° 2005-1367 art. 19)
     is_consultation_apci = fields.Boolean(
@@ -43,7 +46,7 @@ class Consultation(models.Model):
 
     # US16 - Prescription/Ordonnance
     prescription_ids = fields.One2many('cabinet.prescription', 'consultation_id', string='Prescriptions')
-    facture_ids = fields.One2many('cabinet.facture', 'consultation_id', string='Factures')
+    facture_ids = fields.One2many(FACTURE_MODEL, 'consultation_id', string='Factures')
     
     # État de la consultation
     state = fields.Selection([
@@ -166,7 +169,7 @@ class Consultation(models.Model):
     def action_terminer(self):
         """Marque la consultation comme terminée et met à jour le RDV"""
         self.ensure_one()
-        if not (self.env.user._is_superuser() or self.env.user.id == 1 or self.env.user.has_group('cabinet_medical.group_medecin')):
+        if not (self.env.user._is_superuser() or self.env.user.id == 1 or self.env.user.has_group(GROUP_MEDECIN)):
             raise AccessError("Seul le Médecin peut terminer une consultation.")
         self.state = 'done'
         if self.rdv_id:
@@ -191,7 +194,7 @@ class Consultation(models.Model):
     def action_planifier_suivi(self):
         """Ouvre le calendrier interactif de suivi avec le patient de la consultation verrouillé et pré-rempli"""
         self.ensure_one()
-        if not (self.env.user._is_superuser() or self.env.user.id == 1 or self.env.user.has_group('cabinet_medical.group_medecin')):
+        if not (self.env.user._is_superuser() or self.env.user.id == 1 or self.env.user.has_group(GROUP_MEDECIN)):
             raise AccessError("Seul le Médecin peut planifier un suivi.")
         
         wizard = self.env['cabinet.suivi.wizard'].create({
@@ -220,14 +223,14 @@ class Consultation(models.Model):
             raise UserError("Impossible de générer une facture pour une consultation qui n'est pas terminée.")
         if self.has_facture:
             raise UserError("Une facture existe déjà pour cette consultation.")
-        facture = self.env['cabinet.facture'].create({
+        facture = self.env[FACTURE_MODEL].create({
             'patient_id': self.patient_id.id,
             'consultation_id': self.id,  # type: ignore
         })
         return {
             'name': 'Facture générée',
             'type': 'ir.actions.act_window',
-            'res_model': 'cabinet.facture',
+            'res_model': FACTURE_MODEL,
             'res_id': facture.id,
             'views': [(False, 'form')],
             'view_mode': 'form',
