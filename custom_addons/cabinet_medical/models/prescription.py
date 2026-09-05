@@ -19,8 +19,105 @@ import threading
 # CONSTANTES & BASE DE CONNAISSANCES PHARMACOLOGIQUES
 # -------------------------------------------------------------------------
 
+# Modèles & Actions
+PRESCRIPTION_MODEL = 'cabinet.prescription'
+PRESCRIPTION_LINE_MODEL = 'cabinet.prescription.line'
+CONSULTATION_MODEL = 'cabinet.consultation'
+NOTIFICATION_MODEL = 'cabinet.notification'
+ACTION_ACT_WINDOW = 'ir.actions.act_window'
+ACTION_WINDOW_CLOSE = 'ir.actions.act_window_close'
+DATE_FORMAT = '%d/%m/%Y'
+
+# Rôles & Sécurité
+GROUP_MEDECIN = 'cabinet_medical.group_medecin'
+
+# Clés de dictionnaires (Interactions, Détections, Notifications)
+KEY_TYPE = 'type'
+KEY_GRAVITE = 'gravite'
+KEY_TITRE = 'titre'
+KEY_RAISON = 'raison'
+KEY_FAMILLE_A = 'famille_a'
+KEY_FAMILLE_B = 'famille_b'
+KEY_MEDICAMENT = 'medicament'
+KEY_MEDICAMENT_A = 'medicament_a'
+KEY_MEDICAMENT_B = 'medicament_b'
+KEY_FAMILLE = 'famille'
+KEY_SOURCE = 'source'
+KEY_SOURCE_TYPE = 'source_type'
+KEY_SCORE = 'score'
+KEY_TITLE = 'title'
+KEY_MESSAGE = 'message'
+KEY_CONTEXTE = 'contexte'
+KEY_TYPE_LABEL = 'type_label'
+KEY_DUREE = 'duree'
+KEY_IS_ACTIVE = 'is_active'
+KEY_DATE_PRESCRIPTION = 'date_prescription'
+
+# Types d'alertes & Niveaux de gravité
+TYPE_INTERACTION = 'interaction'
+TYPE_ALLERGIE = 'allergie'
+TYPE_DOUBLON = 'doublon'
+GRAVITE_MAJEURE = 'majeure'
+GRAVITE_MODEREE = 'moderee'
+
+LEVEL_DANGER = 'danger'
+LEVEL_WARNING = 'warning'
+LEVEL_INFO = 'info'
+LEVEL_SUCCESS = 'success'
+
+# États & Statuts de prescription / IA
+STATE_DRAFT = 'draft'
+STATE_SIGNED = 'signed'
+
+IA_STATUT_NON_VERIFIE = 'non_verifie'
+IA_STATUT_SAFE = 'safe'
+IA_STATUT_ALLERGY_RISK = 'allergy_risk'
+
+FIELD_STATE = 'state'
+FIELD_ACTIVE = 'active'
+FIELD_MEDICAMENT = 'medicament'
+FIELD_POSOLOGIE = 'posologie'
+FIELD_DOSAGE = 'dosage'
+FIELD_DUREE = 'duree'
+FIELD_PRESCRIPTION_ID = 'prescription_id'
+FIELD_IA_STATUT = 'ia_statut'
+FIELD_IA_MESSAGE = 'ia_message'
+FIELD_IA_FINGERPRINT = 'ia_fingerprint'
+FIELD_IA_VERIFIED_BY_USER = 'ia_verified_by_user'
+FIELD_ORDONNANCE_LINE_IDS = 'ordonnance_line_ids'
+FIELD_PATIENT_ID = 'patient_id'
+FIELD_DATE_PRESCRIPTION = 'date_prescription'
+FIELD_IS_VALIDATED = 'is_validated'
+FIELD_IS_IA_TEMPORARY_DRAFT = 'is_ia_temporary_draft'
+FIELD_IN_SIGNATURE_PROCESS = 'in_signature_process'
+
+# Familles pharmacologiques
+FAMILLE_PENICILLINE = 'penicilline'
+FAMILLE_ASPIRINE = 'aspirine'
+FAMILLE_IBUPROFENE = 'ibuprofene'
+FAMILLE_PARACETAMOL = 'paracetamol'
+FAMILLE_SULFAMIDE = 'sulfamide'
+FAMILLE_MACROLIDE = 'macrolide'
+FAMILLE_QUINOLONE = 'quinolone'
+FAMILLE_CEPHALOSPORINE = 'cephalosporine'
+
+FAMILLE_IEC = 'iec'
+FAMILLE_ARA2 = 'ara2'
+FAMILLE_DIURETIQUE_EPARGNEUR_POTASSIUM = 'diuretique_epargneur_potassium'
+FAMILLE_AVK = 'avk'
+FAMILLE_AINS = 'ains'
+FAMILLE_STATINE = 'statine'
+FAMILLE_ISRS = 'isrs'
+FAMILLE_BENZODIAZEPINE = 'benzodiazepine'
+FAMILLE_OPIOIDE = 'opioide'
+FAMILLE_CORTICOIDE = 'corticoide'
+FAMILLE_METHOTREXATE = 'methotrexate'
+FAMILLE_LITHIUM = 'lithium'
+FAMILLE_DIGOXINE = 'digoxine'
+FAMILLE_AMIODARONE = 'amiodarone'
+
 FAMILLES_ALLERGIES = {
-    "penicilline": [
+    FAMILLE_PENICILLINE: [
         "penicilline", "pénicilline", "penecilline", "peniciline", "penicillin", "pénicillines", "penicillines", "penecillines",
         "amoxicilline", "amoxcilline", "amoxycilline", "amoxicillina", "amoxicillin", "amox", "amoxil",
         "augmentin", "clamoxyl", "ampicilline", "oxacilline", "cloxacilline", "piperacilline", "ticarcilline",
@@ -28,38 +125,38 @@ FAMILLES_ALLERGIES = {
         "choc penicilline", "reaction penicilline", "allergie penicilline",
         "بنسلين", "البنسلين", "أموكسيسيلين", "اموكسيسيلين", "أوجمنتين", "اوجمنتين", "كلاموكسيل", "مضاد حيوي بنسلين"
     ],
-    "aspirine": [
+    FAMILLE_ASPIRINE: [
         "acide acetylsalicylique", "acide acétylsalicylique", "aspirine", "aspirin", "aspegic", "aspégic", "kardegic", "kardégic", "salicyle", "salicylates",
         "salicylate", "intolerance aspirine", "allergie aspirine", "reaction aspirine",
         "أسبرين", "الأسبرين", "اسبرين"
     ],
-    "ibuprofene": [
+    FAMILLE_IBUPROFENE: [
         "ibuprofene", "ibuprofène", "ibuprofen", "advil", "nurofen", "upfen", "antarene", "antarène", "ketoprofene", "kétoprofène", "profanid", "profenid", "flurbiprofene",
         "ains", "anti-inflammatoire", "anti-inflammatoires", "anti inflammatoire", "anti inflammatoires", "antiinflammatoire", "antiinflammatoires",
         "intolerance aux ains", "intolerance ains", "allergie anti-inflammatoire", "allergie aux ains", "reaction anti-inflammatoire",
         "أيبوبروفين", "ايبوبروفين", "بروفين", "مضاد التهاب"
     ],
-    "paracetamol": [
+    FAMILLE_PARACETAMOL: [
         "paracetamol", "paracétamol", "paracetamolum", "acetaminophen", "acétaminophène", "doliprane", "dafalgan", "efferalgan", "panadol", "perfalgan",
         "intolerance paracetamol", "allergie paracetamol", "reaction doliprane", "allergie doliprane",
         "باراسيتامول", "الباراسيتامول", "دولبران", "بانادول"
     ],
-    "sulfamide": [
+    FAMILLE_SULFAMIDE: [
         "sulfamide", "sulfamides", "sulfonamide", "sulfonamides", "bactrim", "sulfamethoxazole", "sulfadiazine", "cotrimoxazole",
         "allergie sulfamides", "reaction sulfamide", "intolerance sulfamides", "allergie bactrim",
         "سلفاميد", "السلفاميد"
     ],
-    "macrolide": [
+    FAMILLE_MACROLIDE: [
         "macrolide", "macrolides", "azithromycine", "clarithromycine", "erythromycine", "érythromycine", "josamycine", "spiramycine", "zithromax", "rovamycine", "zeclar",
         "allergie macrolides", "reaction macrolide",
         "ماكروليد", "أزيثروميسين", "ازيثروميسين"
     ],
-    "quinolone": [
+    FAMILLE_QUINOLONE: [
         "quinolone", "quinolones", "fluoroquinolone", "fluoroquinolones", "ciprofloxacine", "levofloxacine", "lévofloxacine", "ofloxacine", "ciflox", "tavanic", "norfloxacine",
         "allergie quinolones", "reaction fluoroquinolone",
         "كينولون", "سيبروفلوكساسين"
     ],
-    "cephalosporine": [
+    FAMILLE_CEPHALOSPORINE: [
         "cephalosporine", "céphalosporine", "cephalosporines", "céphalosporines", "ceftriaxone", "cefixime", "céfixime", "cefuroxime", "céfuroxime", "rocephine", "rocéphine", "oroken", "cefotaxime", "keforal",
         "allergie cephalosporines", "reaction cephalosporine",
         "سيفالوسبورين", "سفترياكسون"
@@ -67,7 +164,7 @@ FAMILLES_ALLERGIES = {
 }
 
 CLASSES_PHARMACOLOGIQUES = {
-    "iec": [
+    FAMILLE_IEC: [
         "ramipril", "triatec", "altace",
         "captopril", "lopril", "capoten",
         "enalapril", "énalapril", "renitec", "vasotec",
@@ -81,7 +178,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "iec", "inhibiteur de l'enzyme de conversion", "inhibiteurs de l'enzyme de conversion",
         "راميبريل", "كابتوبريل", "إنالابريل", "بيريندوبريل", "ليسينوبريل"
     ],
-    "ara2": [
+    FAMILLE_ARA2: [
         "losartan", "cozaar",
         "valsartan", "tareg", "diovan",
         "candesartan", "candésartan", "atacand", "kenzen",
@@ -93,7 +190,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "sartan", "sartans", "ara2", "araii", "ara ii", "antagoniste des recepteurs de l'angiotensine",
         "لوسارتان", "فالسارتان", "كانديسارتان", "إربيسارتان", "تيلميسارتان"
     ],
-    "diuretique_epargneur_potassium": [
+    FAMILLE_DIURETIQUE_EPARGNEUR_POTASSIUM: [
         "spironolactone", "aldactone", "spironone",
         "eplerenone", "éplérénone", "inspra",
         "amiloride", "modamide",
@@ -102,7 +199,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "diuretique epargneur de potassium", "diuretiques epargneurs de potassium", "epargneur de potassium", "anti-aldosterone", "antialdosterone",
         "سبيرونولاكتون", "إبليرينون", "أميلوريد"
     ],
-    "avk": [
+    FAMILLE_AVK: [
         "warfarine", "coumadine", "marevan", "jantoven",
         "fluindione", "previscan", "préviscan",
         "acenocoumarol", "acénocoumarol", "sintrom", "sinthrome",
@@ -111,7 +208,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "avk", "antivitamine k", "antivitamines k", "anticoagulant oral", "anticoagulants oraux", "anticoagulant", "anticoagulants",
         "وارفارين", "سينتروم", "بريفيسكان", "مضاد تخثر"
     ],
-    "ains": [
+    FAMILLE_AINS: [
         "ibuprofene", "ibuprofène", "ibuprofen", "advil", "nurofen", "upfen", "antarene", "antarène", "brufen",
         "ketoprofene", "kétoprofène", "ketoprofen", "profenid", "profanid", "bi-profenid", "biprofenid", "toprec", "ketum",
         "diclofenac", "diclofénac", "voltarene", "voltarène", "cataflam", "dicloreum", "flector",
@@ -126,7 +223,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "ains", "anti-inflammatoire non steroidien", "anti-inflammatoires non steroidiens", "anti inflammatoire non steroidien",
         "إيبوبروفين", "كيتوبروفين", "ديكلوفيناك", "نابروكسين", "مضاد التهاب"
     ],
-    "statine": [
+    FAMILLE_STATINE: [
         "atorvastatine", "tahor", "lipitor",
         "simvastatine", "zocor", "lodales", "simvax",
         "rosuvastatine", "rosuvastatine", "crestor",
@@ -137,7 +234,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "statine", "statines", "inhibiteur hmg-coa",
         "أتورفاستاتين", "سيمفاستاتين", "روزوفاستاتين", "ستاتين"
     ],
-    "isrs": [
+    FAMILLE_ISRS: [
         "fluoxetine", "fluoxétine", "prozac",
         "sertraline", "zoloft",
         "paroxetine", "paroxétine", "deroxat", "deroxate", "paxil", "divarius",
@@ -147,7 +244,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "isrs", "irss", "antidepresseur isrs", "inhibiteur selectif de la recapture de la serotonine",
         "فلوكسيتين", "سيرترالين", "باروكسيتين", "سيتالوبرام", "إسيتالوبرام", "مضاد اكتئاب"
     ],
-    "benzodiazepine": [
+    FAMILLE_BENZODIAZEPINE: [
         "alprazolam", "xanax", "alprax",
         "diazepam", "diazépam", "valium",
         "lorazepam", "lorazépam", "temesta", "témesta", "ativan",
@@ -163,7 +260,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "benzodiazepine", "benzodiazépine", "benzodiazepines", "benzodiazépines", "bzd", "anxiolytique",
         "ألبرازولام", "ديازيبام", "لورازيبام", "برومازيبام", "كلونازيبام", "زولبيديم", "بنزوديازيبين"
     ],
-    "opioide": [
+    FAMILLE_OPIOIDE: [
         "tramadol", "topalgic", "contramal", "zamadol", "monoalgic",
         "ixprim", "zaldiar",
         "codeine", "codéine", "codoliprane", "dafalgan codeine", "efferalgan codeine", "paderyl", "neocodion",
@@ -177,7 +274,7 @@ CLASSES_PHARMACOLOGIQUES = {
         "opioide", "opioïde", "opioides", "opioïdes", "morphinique", "morphiniques", "antalgique palier 2", "antalgique palier 3", "derive morphinique",
         "ترامادول", "كودايين", "مورفين", "فينتانيل", "أوكسيكودون", "أفيونيات"
     ],
-    "corticoide": [
+    FAMILLE_CORTICOIDE: [
         "prednisone", "cortancyl",
         "prednisolone", "solupred",
         "methylprednisolone", "méthylprednisolone", "medrol", "médrol", "solu-medrol",
@@ -187,19 +284,19 @@ CLASSES_PHARMACOLOGIQUES = {
         "corticoide", "corticoïde", "corticoides", "corticoïdes", "corticosteroide", "corticostéroïde",
         "بريدنيزون", "بريدنيزولون", "ديكساميثازون", "بيتاميثازون", "كورتيزون"
     ],
-    "methotrexate": [
+    FAMILLE_METHOTREXATE: [
         "methotrexate", "méthotrexate", "novatrex", "metoject", "imeth", "ledertrexate",
         "ميثوتريكسات"
     ],
-    "lithium": [
+    FAMILLE_LITHIUM: [
         "lithium", "teralithe", "téralithe", "carbonate de lithium", "gluconate de lithium",
         "ليثيوم"
     ],
-    "digoxine": [
+    FAMILLE_DIGOXINE: [
         "digoxine", "digoxin", "digoxine nativelle", "hemigoxine",
         "ديجوكسين"
     ],
-    "amiodarone": [
+    FAMILLE_AMIODARONE: [
         "amiodarone", "cordarone", "amiofar",
         "أميودارون"
     ]
@@ -207,112 +304,112 @@ CLASSES_PHARMACOLOGIQUES = {
 
 INTERACTIONS_MEDICAMENTEUSES = [
     {
-        'famille_a': 'iec',
-        'famille_b': 'diuretique_epargneur_potassium',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "IEC + Diurétique épargneur de potassium",
-        'raison': "Risque d'hyperkaliémie sévère potentiellement mortelle (synergie sur la rétention potassique rénale).",
+        KEY_FAMILLE_A: FAMILLE_IEC,
+        KEY_FAMILLE_B: FAMILLE_DIURETIQUE_EPARGNEUR_POTASSIUM,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "IEC + Diurétique épargneur de potassium",
+        KEY_RAISON: "Risque d'hyperkaliémie sévère potentiellement mortelle (synergie sur la rétention potassique rénale).",
     },
     {
-        'famille_a': 'ara2',
-        'famille_b': 'diuretique_epargneur_potassium',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "ARA2 + Diurétique épargneur de potassium",
-        'raison': "Risque d'hyperkaliémie sévère potentiellement mortelle (synergie sur la rétention potassique rénale).",
+        KEY_FAMILLE_A: FAMILLE_ARA2,
+        KEY_FAMILLE_B: FAMILLE_DIURETIQUE_EPARGNEUR_POTASSIUM,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "ARA2 + Diurétique épargneur de potassium",
+        KEY_RAISON: "Risque d'hyperkaliémie sévère potentiellement mortelle (synergie sur la rétention potassique rénale).",
     },
     {
-        'famille_a': 'avk',
-        'famille_b': 'ains',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "Anticoagulant (AVK/AOD) + AINS",
-        'raison': "Majoration majeure du risque hémorragique (lésions muqueuses gastro-intestinales et inhibition de l'agrégation plaquettaire).",
+        KEY_FAMILLE_A: FAMILLE_AVK,
+        KEY_FAMILLE_B: FAMILLE_AINS,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Anticoagulant (AVK/AOD) + AINS",
+        KEY_RAISON: "Majoration majeure du risque hémorragique (lésions muqueuses gastro-intestinales et inhibition de l'agrégation plaquettaire).",
     },
     {
-        'famille_a': 'iec',
-        'famille_b': 'ara2',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "IEC + ARA2 (Double blocage du SRAA)",
-        'raison': "Double blocage du système rénine-angiotensine contre-indiqué : risque accru d'hypotension artérielle sévère, d'hyperkaliémie et d'insuffisance rénale aiguë.",
+        KEY_FAMILLE_A: FAMILLE_IEC,
+        KEY_FAMILLE_B: FAMILLE_ARA2,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "IEC + ARA2 (Double blocage du SRAA)",
+        KEY_RAISON: "Double blocage du système rénine-angiotensine contre-indiqué : risque accru d'hypotension artérielle sévère, d'hyperkaliémie et d'insuffisance rénale aiguë.",
     },
     {
-        'famille_a': 'macrolide',
-        'famille_b': 'statine',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "Macrolide + Statine",
-        'raison': "Inhibition enzymatique majeure du CYP3A4 : augmentation des concentrations plasmatiques de la statine avec risque élevé de rhabdomyolyse et de toxicité musculaire sévère.",
+        KEY_FAMILLE_A: FAMILLE_MACROLIDE,
+        KEY_FAMILLE_B: FAMILLE_STATINE,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Macrolide + Statine",
+        KEY_RAISON: "Inhibition enzymatique majeure du CYP3A4 : augmentation des concentrations plasmatiques de la statine avec risque élevé de rhabdomyolyse et de toxicité musculaire sévère.",
     },
     {
-        'famille_a': 'isrs',
-        'famille_b': 'ains',
-        'gravite': 'moderee',
-        'type': 'interaction',
-        'titre': "Antidépresseur ISRS + AINS",
-        'raison': "Augmentation du risque de saignement gastro-intestinal par synergie sur l'hémostase primaire (inhibition de la recapture plaquettaire de sérotonine + effet antiagrégant/ulcérogène des AINS).",
+        KEY_FAMILLE_A: FAMILLE_ISRS,
+        KEY_FAMILLE_B: FAMILLE_AINS,
+        KEY_GRAVITE: GRAVITE_MODEREE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Antidépresseur ISRS + AINS",
+        KEY_RAISON: "Augmentation du risque de saignement gastro-intestinal par synergie sur l'hémostase primaire (inhibition de la recapture plaquettaire de sérotonine + effet antiagrégant/ulcérogène des AINS).",
     },
     {
-        'famille_a': 'benzodiazepine',
-        'famille_b': 'opioide',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "Benzodiazépine + Opioïde",
-        'raison': "Risque majeur de dépression respiratoire sévère, sédation profonde, coma et décès par effet dépresseur central synergique.",
+        KEY_FAMILLE_A: FAMILLE_BENZODIAZEPINE,
+        KEY_FAMILLE_B: FAMILLE_OPIOIDE,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Benzodiazépine + Opioïde",
+        KEY_RAISON: "Risque majeur de dépression respiratoire sévère, sédation profonde, coma et décès par effet dépresseur central synergique.",
     },
     {
-        'famille_a': 'methotrexate',
-        'famille_b': 'ains',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "Méthotrexate + AINS",
-        'raison': "Diminution de l'excrétion rénale du méthotrexate par les AINS : risque de toxicité hématologique grave et de néphrotoxicité aiguë.",
+        KEY_FAMILLE_A: FAMILLE_METHOTREXATE,
+        KEY_FAMILLE_B: FAMILLE_AINS,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Méthotrexate + AINS",
+        KEY_RAISON: "Diminution de l'excrétion rénale du méthotrexate par les AINS : risque de toxicité hématologique grave et de néphrotoxicité aiguë.",
     },
     {
-        'famille_a': 'lithium',
-        'famille_b': 'ains',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "Lithium + AINS",
-        'raison': "Diminution de la clairance rénale du lithium par les AINS : augmentation de la lithémie pouvant atteindre des seuils toxiques (neurotoxicité, insuffisance rénale).",
+        KEY_FAMILLE_A: FAMILLE_LITHIUM,
+        KEY_FAMILLE_B: FAMILLE_AINS,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Lithium + AINS",
+        KEY_RAISON: "Diminution de la clairance rénale du lithium par les AINS : augmentation de la lithémie pouvant atteindre des seuils toxiques (neurotoxicité, insuffisance rénale).",
     },
     {
-        'famille_a': 'quinolone',
-        'famille_b': 'corticoide',
-        'gravite': 'moderee',
-        'type': 'interaction',
-        'titre': "Fluoroquinolone + Corticoïde",
-        'raison': "Majoration significative du risque de tendinopathie et de rupture du tendon d'Achille.",
+        KEY_FAMILLE_A: FAMILLE_QUINOLONE,
+        KEY_FAMILLE_B: FAMILLE_CORTICOIDE,
+        KEY_GRAVITE: GRAVITE_MODEREE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Fluoroquinolone + Corticoïde",
+        KEY_RAISON: "Majoration significative du risque de tendinopathie et de rupture du tendon d'Achille.",
     },
     {
-        'famille_a': 'digoxine',
-        'famille_b': 'amiodarone',
-        'gravite': 'moderee',
-        'type': 'interaction',
-        'titre': "Digoxine + Amiodarone",
-        'raison': "Inhibition de la P-glycoprotéine et réduction de la clairance rénale de la digoxine : risque accru d'intoxication digitalique (nausées, troubles du rythme ventriculaire).",
+        KEY_FAMILLE_A: FAMILLE_DIGOXINE,
+        KEY_FAMILLE_B: FAMILLE_AMIODARONE,
+        KEY_GRAVITE: GRAVITE_MODEREE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Digoxine + Amiodarone",
+        KEY_RAISON: "Inhibition de la P-glycoprotéine et réduction de la clairance rénale de la digoxine : risque accru d'intoxication digitalique (nausées, troubles du rythme ventriculaire).",
     },
     {
-        'famille_a': 'digoxine',
-        'famille_b': 'macrolide',
-        'gravite': 'moderee',
-        'type': 'interaction',
-        'titre': "Digoxine + Macrolide",
-        'raison': "Inactivation de la flore intestinale inactivatrice de la digoxine par les macrolides : élévation de la digoxinémie et risque de toxicité.",
+        KEY_FAMILLE_A: FAMILLE_DIGOXINE,
+        KEY_FAMILLE_B: FAMILLE_MACROLIDE,
+        KEY_GRAVITE: GRAVITE_MODEREE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Digoxine + Macrolide",
+        KEY_RAISON: "Inactivation de la flore intestinale inactivatrice de la digoxine par les macrolides : élévation de la digoxinémie et risque de toxicité.",
     },
     {
-        'famille_a': 'avk',
-        'famille_b': 'aspirine',
-        'gravite': 'majeure',
-        'type': 'interaction',
-        'titre': "Anticoagulant (AVK/AOD) + Aspirine",
-        'raison': "Majoration très importante du risque hémorragique par double inhibition de la coagulation et de l'agrégation plaquettaire.",
+        KEY_FAMILLE_A: FAMILLE_AVK,
+        KEY_FAMILLE_B: FAMILLE_ASPIRINE,
+        KEY_GRAVITE: GRAVITE_MAJEURE,
+        KEY_TYPE: TYPE_INTERACTION,
+        KEY_TITRE: "Anticoagulant (AVK/AOD) + Aspirine",
+        KEY_RAISON: "Majoration très importante du risque hémorragique par double inhibition de la coagulation et de l'agrégation plaquettaire.",
     },
 ]
 
-FAMILLES_ANTIBIOTIQUES = {"penicilline", "cephalosporine", "macrolide", "quinolone", "sulfamide"}
+FAMILLES_ANTIBIOTIQUES = {FAMILLE_PENICILLINE, FAMILLE_CEPHALOSPORINE, FAMILLE_MACROLIDE, FAMILLE_QUINOLONE, FAMILLE_SULFAMIDE}
 TERMES_GENERIQUE_ANTIBIO = {"antibiotique", "antibiotiques", "antibio", "antibios", "مضاد حيوي"}
 
 _BDPM_CACHE = None
@@ -714,18 +811,18 @@ def _analyser_duree_traitement(date_presc, duree_str, ref_date=None):
 # -------------------------------------------------------------------------
 
 class Prescription(models.Model):
-    _name = 'cabinet.prescription'
+    _name = PRESCRIPTION_MODEL
     _description = 'Prescription/Ordonnance'
     _order = 'date_prescription desc'
 
     active = fields.Boolean(string='Actif', default=True, help='Désactiver pour archiver sans supprimer')
 
-    consultation_id = fields.Many2one('cabinet.consultation', string='Consultation', required=True, ondelete='cascade')
+    consultation_id = fields.Many2one(CONSULTATION_MODEL, string='Consultation', required=True, ondelete='cascade')
     patient_id = fields.Many2one(related='consultation_id.patient_id', string='Patient', readonly=True)
     date_prescription = fields.Date(string='Date de prescription', required=True, default=fields.Date.today)
 
     # Lignes de prescription (médicaments)
-    ordonnance_line_ids = fields.One2many('cabinet.prescription.line', 'prescription_id', string='Médicaments prescrits')
+    ordonnance_line_ids = fields.One2many(PRESCRIPTION_LINE_MODEL, 'prescription_id', string='Médicaments prescrits')
     medicaments_resume = fields.Char(
         string='Résumé des médicaments',
         compute='_compute_medicaments_resume',
@@ -738,19 +835,19 @@ class Prescription(models.Model):
 
     # Intelligence Artificielle
     ia_statut = fields.Selection([
-        ('non_verifie', 'Non Vérifié'),
-        ('safe', 'Aucun Risque Allergique'),
-        ('allergy_risk', 'Risque Allergique Détecté')
-    ], string="Statut IA", default='non_verifie', copy=False)
+        (IA_STATUT_NON_VERIFIE, 'Non Vérifié'),
+        (IA_STATUT_SAFE, 'Aucun Risque Allergique'),
+        (IA_STATUT_ALLERGY_RISK, 'Risque Allergique Détecté')
+    ], string="Statut IA", default=IA_STATUT_NON_VERIFIE, copy=False)
     ia_message = fields.Text(string="Avis de l'IA", copy=False)
     ia_fingerprint = fields.Char(string="Empreinte IA", copy=False)
     ia_verified_by_user = fields.Boolean(string="Vérifié par l'utilisateur", default=False, copy=False)
 
     # État de l'ordonnance & Signature
     state = fields.Selection([
-        ('draft', 'Brouillon'),
-        ('signed', 'Signée'),
-    ], string='Statut', default='draft', required=True, copy=False)
+        (STATE_DRAFT, 'Brouillon'),
+        (STATE_SIGNED, 'Signée'),
+    ], string='Statut', default=STATE_DRAFT, required=True, copy=False)
     is_signed = fields.Boolean(string='Est Signée', default=False, copy=False)
     medecin_signataire_id = fields.Many2one('res.users', string='Médecin Signataire', readonly=True, copy=False)
     date_signature = fields.Datetime(string='Date et Heure de Signature', readonly=True, copy=False)
@@ -1014,12 +1111,12 @@ class Prescription(models.Model):
 
                 if score_max >= seuil_fuzzy:
                     alertes_n1.append({
-                        'medicament': med,
+                        KEY_MEDICAMENT: med,
                         'allergie': phrase_allergie,
-                        'score': score_max,
-                        'type': type_detection,
-                        'raison': raison,
-                        'famille': famille_med,
+                        KEY_SCORE: score_max,
+                        KEY_TYPE: type_detection,
+                        KEY_RAISON: raison,
+                        KEY_FAMILLE: famille_med,
                     })
 
         return alertes_n1
@@ -1059,11 +1156,11 @@ class Prescription(models.Model):
                         score = cosine_scores[i][j].item()
                         if score >= seuil_transformer:
                             alertes_n2.append({
-                                'medicament': med,
+                                KEY_MEDICAMENT: med,
                                 'allergie': allergie,
-                                'score': score,
-                                'type': 'nlp_semantique',
-                                'raison': "Similarité Sémantique IA Multilingue (Transformer NLP)",
+                                KEY_SCORE: score,
+                                KEY_TYPE: 'nlp_semantique',
+                                KEY_RAISON: "Similarité Sémantique IA Multilingue (Transformer NLP)",
                             })
         except Exception:
             pass
@@ -1093,12 +1190,12 @@ class Prescription(models.Model):
             lignes = [l.strip() for l in re.split(r'[\n;,/]+| - ', str(tc_text)) if len(l.strip()) >= 2]
             for l in lignes:
                 traitements.append({
-                    'medicament': l,
-                    'source': 'Traitement chronique (Dossier patient)',
-                    'source_type': 'chronique',
-                    'date_prescription': False,
-                    'duree': 'Chronique',
-                    'is_active': True,
+                    KEY_MEDICAMENT: l,
+                    KEY_SOURCE: 'Traitement chronique (Dossier patient)',
+                    KEY_SOURCE_TYPE: 'chronique',
+                    KEY_DATE_PRESCRIPTION: False,
+                    KEY_DUREE: 'Chronique',
+                    KEY_IS_ACTIVE: True,
                 })
 
         # 2. Prescriptions antérieures en base / relationnelles
@@ -1127,7 +1224,7 @@ class Prescription(models.Model):
                 presc_domain = [('patient_id', '=', pat.id), ('active', '=', True)]
                 if current_id:
                     presc_domain.append(('id', '!=', current_id))
-                res = self.env['cabinet.prescription'].search(presc_domain)
+                res = self.env[PRESCRIPTION_MODEL].search(presc_domain)
                 if res and hasattr(res, '__iter__') and type(res).__name__ not in ('MagicMock', 'Mock'):
                     prescriptions = res
             except Exception:
@@ -1147,14 +1244,14 @@ class Prescription(models.Model):
                         duree_val = getattr(line, 'duree', '')
                         is_active, d_fin, libelle_duree = _analyser_duree_traitement(d_presc, duree_val, ref_date)
                         if is_active:
-                            date_str = d_presc.strftime('%d/%m/%Y') if hasattr(d_presc, 'strftime') else str(d_presc)
+                            date_str = d_presc.strftime(DATE_FORMAT) if hasattr(d_presc, 'strftime') else str(d_presc)
                             traitements.append({
-                                'medicament': med_name,
-                                'source': f"Ordonnance du {date_str} (durée: {duree_val or 'N/C'})",
-                                'source_type': 'prescription_recente',
-                                'date_prescription': d_presc,
-                                'duree': duree_val,
-                                'is_active': True,
+                                KEY_MEDICAMENT: med_name,
+                                KEY_SOURCE: f"Ordonnance du {date_str} (durée: {duree_val or 'N/C'})",
+                                KEY_SOURCE_TYPE: 'prescription_recente',
+                                KEY_DATE_PRESCRIPTION: d_presc,
+                                KEY_DUREE: duree_val,
+                                KEY_IS_ACTIVE: True,
                             })
 
         return traitements
@@ -1208,8 +1305,8 @@ class Prescription(models.Model):
         # Index des interactions connues (clé symétrique ordonnée)
         interactions_map = {}
         for inter in INTERACTIONS_MEDICAMENTEUSES:
-            f_a = inter['famille_a']
-            f_b = inter['famille_b']
+            f_a = inter[KEY_FAMILLE_A]
+            f_b = inter[KEY_FAMILLE_B]
             key = tuple(sorted([f_a, f_b]))
             interactions_map[key] = inter
 
@@ -1223,121 +1320,121 @@ class Prescription(models.Model):
             for j in range(i + 1, n):
                 m1 = meds_prescrits_classes[i]
                 m2 = meds_prescrits_classes[j]
-                fam1 = m1['famille']
-                fam2 = m2['famille']
+                fam1 = m1[KEY_FAMILLE]
+                fam2 = m2[KEY_FAMILLE]
 
                 if not fam1 or not fam2:
                     continue
 
-                pair_key = tuple(sorted([_normalize_text(m1['medicament']), _normalize_text(m2['medicament'])]))
+                pair_key = tuple(sorted([_normalize_text(m1[KEY_MEDICAMENT]), _normalize_text(m2[KEY_MEDICAMENT])]))
 
                 # 1. Doublon thérapeutique intra-ordonnance (même famille, ex: 2 AINS ou 2 IEC)
-                is_same_family = (fam1 == fam2) or (fam1 in ('ains', 'ibuprofene') and fam2 in ('ains', 'ibuprofene'))
+                is_same_family = (fam1 == fam2) or (fam1 in (FAMILLE_AINS, FAMILLE_IBUPROFENE) and fam2 in (FAMILLE_AINS, FAMILLE_IBUPROFENE))
                 if is_same_family:
-                    dedup_key = ('doublon', pair_key)
+                    dedup_key = (TYPE_DOUBLON, pair_key)
                     if dedup_key not in vus:
                         vus.add(dedup_key)
                         fam_nom = _format_family_name(fam1)
                         alertes.append({
-                            'type': 'doublon',
-                            'type_label': 'Doublon Thérapeutique',
-                            'gravite': 'moderee',
-                            'medicament_a': m1['medicament'],
-                            'medicament_b': m2['medicament'],
-                            'famille_a': fam1,
-                            'famille_b': fam2,
-                            'titre': f"Doublon thérapeutique : {fam_nom}",
-                            'raison': f"Prescription simultanée de deux médicaments de la même famille pharmacologique ('{m1['medicament']}' et '{m2['medicament']}'). Risque de surdosage ou d'effets indésirables cumulatifs sans bénéfice thérapeutique démontré.",
-                            'contexte': "Même ordonnance",
+                            KEY_TYPE: TYPE_DOUBLON,
+                            KEY_TYPE_LABEL: 'Doublon Thérapeutique',
+                            KEY_GRAVITE: GRAVITE_MODEREE,
+                            KEY_MEDICAMENT_A: m1[KEY_MEDICAMENT],
+                            KEY_MEDICAMENT_B: m2[KEY_MEDICAMENT],
+                            KEY_FAMILLE_A: fam1,
+                            KEY_FAMILLE_B: fam2,
+                            KEY_TITRE: f"Doublon thérapeutique : {fam_nom}",
+                            KEY_RAISON: f"Prescription simultanée de deux médicaments de la même famille pharmacologique ('{m1[KEY_MEDICAMENT]}' et '{m2[KEY_MEDICAMENT]}'). Risque de surdosage ou d'effets indésirables cumulatifs sans bénéfice thérapeutique démontré.",
+                            KEY_CONTEXTE: "Même ordonnance",
                         })
 
                 # 2. Interaction dangereuse intra-ordonnance
                 inter_key = tuple(sorted([fam1, fam2]))
                 if inter_key not in interactions_map:
-                    f1_equiv = 'ains' if fam1 == 'ibuprofene' else fam1
-                    f2_equiv = 'ains' if fam2 == 'ibuprofene' else fam2
+                    f1_equiv = FAMILLE_AINS if fam1 == FAMILLE_IBUPROFENE else fam1
+                    f2_equiv = FAMILLE_AINS if fam2 == FAMILLE_IBUPROFENE else fam2
                     inter_key = tuple(sorted([f1_equiv, f2_equiv]))
 
                 if inter_key in interactions_map:
                     inter = interactions_map[inter_key]
-                    dedup_key = ('interaction', pair_key)
+                    dedup_key = (TYPE_INTERACTION, pair_key)
                     if dedup_key not in vus:
                         vus.add(dedup_key)
                         alertes.append({
-                            'type': 'interaction',
-                            'type_label': 'Interaction Dangereuse',
-                            'gravite': inter['gravite'],
-                            'medicament_a': m1['medicament'],
-                            'medicament_b': m2['medicament'],
-                            'famille_a': fam1,
-                            'famille_b': fam2,
-                            'titre': inter['titre'],
-                            'raison': inter['raison'],
-                            'contexte': "Même ordonnance",
+                            KEY_TYPE: TYPE_INTERACTION,
+                            KEY_TYPE_LABEL: 'Interaction Dangereuse',
+                            KEY_GRAVITE: inter[KEY_GRAVITE],
+                            KEY_MEDICAMENT_A: m1[KEY_MEDICAMENT],
+                            KEY_MEDICAMENT_B: m2[KEY_MEDICAMENT],
+                            KEY_FAMILLE_A: fam1,
+                            KEY_FAMILLE_B: fam2,
+                            KEY_TITRE: inter[KEY_TITRE],
+                            KEY_RAISON: inter[KEY_RAISON],
+                            KEY_CONTEXTE: "Même ordonnance",
                         })
 
         # ---------------------------------------------------------------------
         # B. VÉRIFICATION AVEC L'HISTORIQUE & TRAITEMENTS ACTIFS DU PATIENT
         # ---------------------------------------------------------------------
         for m in meds_prescrits_classes:
-            fam_presc = m['famille']
+            fam_presc = m[KEY_FAMILLE]
             if not fam_presc:
                 continue
 
             for t in traitements_classes:
-                fam_trait = t['famille']
+                fam_trait = t[KEY_FAMILLE]
                 if not fam_trait:
                     continue
 
-                pair_key = tuple(sorted([_normalize_text(m['medicament']), _normalize_text(t['medicament'])]))
+                pair_key = tuple(sorted([_normalize_text(m[KEY_MEDICAMENT]), _normalize_text(t[KEY_MEDICAMENT])]))
 
                 # 1. Doublon thérapeutique avec traitement actif
-                is_same_family = (fam_presc == fam_trait) or (fam_presc in ('ains', 'ibuprofene') and fam_trait in ('ains', 'ibuprofene'))
+                is_same_family = (fam_presc == fam_trait) or (fam_presc in (FAMILLE_AINS, FAMILLE_IBUPROFENE) and fam_trait in (FAMILLE_AINS, FAMILLE_IBUPROFENE))
                 if is_same_family:
-                    dedup_key = ('doublon', pair_key)
+                    dedup_key = (TYPE_DOUBLON, pair_key)
                     if dedup_key not in vus:
                         vus.add(dedup_key)
                         fam_nom = _format_family_name(fam_presc)
                         alertes.append({
-                            'type': 'doublon',
-                            'type_label': 'Doublon Thérapeutique',
-                            'gravite': 'moderee',
-                            'medicament_a': m['medicament'],
-                            'medicament_b': t['medicament'],
-                            'famille_a': fam_presc,
-                            'famille_b': fam_trait,
-                            'titre': f"Doublon thérapeutique : {fam_nom}",
-                            'raison': f"Le patient prend déjà '{t['medicament']}' ({t['source']}) appartenant à la même famille des {fam_nom}. La nouvelle prescription de '{m['medicament']}' entraîne un doublon thérapeutique redondant.",
-                            'contexte': t['source'],
+                            KEY_TYPE: TYPE_DOUBLON,
+                            KEY_TYPE_LABEL: 'Doublon Thérapeutique',
+                            KEY_GRAVITE: GRAVITE_MODEREE,
+                            KEY_MEDICAMENT_A: m[KEY_MEDICAMENT],
+                            KEY_MEDICAMENT_B: t[KEY_MEDICAMENT],
+                            KEY_FAMILLE_A: fam_presc,
+                            KEY_FAMILLE_B: fam_trait,
+                            KEY_TITRE: f"Doublon thérapeutique : {fam_nom}",
+                            KEY_RAISON: f"Le patient prend déjà '{t[KEY_MEDICAMENT]}' ({t[KEY_SOURCE]}) appartenant à la même famille des {fam_nom}. La nouvelle prescription de '{m[KEY_MEDICAMENT]}' entraîne un doublon thérapeutique redondant.",
+                            KEY_CONTEXTE: t[KEY_SOURCE],
                         })
 
                 # 2. Interaction dangereuse avec traitement actif
                 inter_key = tuple(sorted([fam_presc, fam_trait]))
                 if inter_key not in interactions_map:
-                    f1_equiv = 'ains' if fam_presc == 'ibuprofene' else fam_presc
-                    f2_equiv = 'ains' if fam_trait == 'ibuprofene' else fam_trait
+                    f1_equiv = FAMILLE_AINS if fam_presc == FAMILLE_IBUPROFENE else fam_presc
+                    f2_equiv = FAMILLE_AINS if fam_trait == FAMILLE_IBUPROFENE else fam_trait
                     inter_key = tuple(sorted([f1_equiv, f2_equiv]))
 
                 if inter_key in interactions_map:
                     inter = interactions_map[inter_key]
-                    dedup_key = ('interaction', pair_key)
+                    dedup_key = (TYPE_INTERACTION, pair_key)
                     if dedup_key not in vus:
                         vus.add(dedup_key)
                         alertes.append({
-                            'type': 'interaction',
-                            'type_label': 'Interaction Dangereuse',
-                            'gravite': inter['gravite'],
-                            'medicament_a': m['medicament'],
-                            'medicament_b': t['medicament'],
-                            'famille_a': fam_presc,
-                            'famille_b': fam_trait,
-                            'titre': inter['titre'],
-                            'raison': inter['raison'],
-                            'contexte': t['source'],
+                            KEY_TYPE: TYPE_INTERACTION,
+                            KEY_TYPE_LABEL: 'Interaction Dangereuse',
+                            KEY_GRAVITE: inter[KEY_GRAVITE],
+                            KEY_MEDICAMENT_A: m[KEY_MEDICAMENT],
+                            KEY_MEDICAMENT_B: t[KEY_MEDICAMENT],
+                            KEY_FAMILLE_A: fam_presc,
+                            KEY_FAMILLE_B: fam_trait,
+                            KEY_TITRE: inter[KEY_TITRE],
+                            KEY_RAISON: inter[KEY_RAISON],
+                            KEY_CONTEXTE: t[KEY_SOURCE],
                         })
 
-        gravite_ordre = {'majeure': 0, 'moderee': 1, 'mineure': 2}
-        alertes.sort(key=lambda x: gravite_ordre.get(x.get('gravite', 'moderee'), 9))
+        gravite_ordre = {GRAVITE_MAJEURE: 0, GRAVITE_MODEREE: 1, 'mineure': 2}
+        alertes.sort(key=lambda x: gravite_ordre.get(x.get(KEY_GRAVITE, GRAVITE_MODEREE), 9))
         return alertes
 
     # -------------------------------------------------------------------------
@@ -1354,28 +1451,28 @@ class Prescription(models.Model):
         if not medicaments_prescrits:
             return 'non_verifie', "Veuillez d'abord ajouter au moins un médicament.", {
                 'title': "IA : Prescription vide",
-                'message': "Veuillez ajouter au moins un médicament à l'ordonnance.",
-                'type': 'warning'
+                KEY_MESSAGE: "Veuillez ajouter au moins un médicament à l'ordonnance.",
+                KEY_TYPE: LEVEL_WARNING
             }
 
         # Dictionnaire pour consolider les alertes allergies par clé normalisée (med, allergie)
         dedup_map_allergies = {}
         for a in (alertes_n1 or []):
-            key = (_normalize_text(a['medicament']), _normalize_text(a['allergie']))
+            key = (_normalize_text(a[KEY_MEDICAMENT]), _normalize_text(a['allergie']))
             dedup_map_allergies[key] = {
-                'medicament': a['medicament'],
+                KEY_MEDICAMENT: a[KEY_MEDICAMENT],
                 'allergie': a['allergie'],
                 'n1': a,
                 'n2': None,
             }
 
         for a in (alertes_n2 or []):
-            key = (_normalize_text(a['medicament']), _normalize_text(a['allergie']))
+            key = (_normalize_text(a[KEY_MEDICAMENT]), _normalize_text(a['allergie']))
             if key in dedup_map_allergies:
                 dedup_map_allergies[key]['n2'] = a
             else:
                 dedup_map_allergies[key] = {
-                    'medicament': a['medicament'],
+                    KEY_MEDICAMENT: a[KEY_MEDICAMENT],
                     'allergie': a['allergie'],
                     'n1': None,
                     'n2': a,
@@ -1392,10 +1489,10 @@ class Prescription(models.Model):
                 "• Niveau 1 (Ontologie BDPM & Fuzzy Matching) : Validé (0 risque)\n"
                 "• Niveau 2 (Analyse Sémantique Transformer NLP) : Validé (0 risque)"
             )
-            return 'safe', msg, {
-                'title': "IA Locale : Sécurisé",
-                'message': "Aucun risque allergique détecté (Vérification multi-niveaux validée).",
-                'type': 'success'
+            return IA_STATUT_SAFE, msg, {
+                KEY_TITLE: "IA Locale : Sécurisé",
+                KEY_MESSAGE: "Aucun risque allergique détecté (Vérification multi-niveaux validée).",
+                KEY_TYPE: LEVEL_SUCCESS
             }
 
         sections = []
@@ -1405,28 +1502,28 @@ class Prescription(models.Model):
         if has_allergy_risk:
             lignes_al = []
             for item in dedup_map_allergies.values():
-                med = item['medicament']
+                med = item[KEY_MEDICAMENT]
                 allergie = item['allergie']
                 noms_meds_risques.add(med)
 
                 if item['n1'] and item['n2']:
-                    score_n1 = int(item['n1']['score'] * 100)
-                    score_n2 = int(item['n2']['score'] * 100)
-                    detail_n1 = item['n1']['raison']
+                    score_n1 = int(item['n1'][KEY_SCORE] * 100)
+                    score_n2 = int(item['n2'][KEY_SCORE] * 100)
+                    detail_n1 = item['n1'][KEY_RAISON]
                     lignes_al.append(
                         f"⚠️ [Niveau 1 & 2 Confirmé] '{med}' vs allergie '{allergie}'\n"
                         f"   - Niveau 1 (Ontologie/Fuzzy) : {score_n1}% ({detail_n1})\n"
                         f"   - Niveau 2 (NLP Sémantique)  : {score_n2}% (Similarité cosinus Transformer)"
                     )
                 elif item['n1']:
-                    score_n1 = int(item['n1']['score'] * 100)
-                    detail_n1 = item['n1']['raison']
+                    score_n1 = int(item['n1'][KEY_SCORE] * 100)
+                    detail_n1 = item['n1'][KEY_RAISON]
                     lignes_al.append(
                         f"⚠️ [Niveau 1 — Ontologie/Règle] '{med}' vs allergie '{allergie}'\n"
                         f"   - Confiance de la correspondance : {score_n1}% ({detail_n1})"
                     )
                 else:
-                    score_n2 = int(item['n2']['score'] * 100)
+                    score_n2 = int(item['n2'][KEY_SCORE] * 100)
                     lignes_al.append(
                         f"⚠️ [Niveau 2 — Analyse Sémantique NLP] '{med}' vs allergie '{allergie}'\n"
                         f"   - Fiabilité Sémantique : {score_n2}% (Modèle Transformer multilingue)"
@@ -1445,17 +1542,17 @@ class Prescription(models.Model):
         if has_interaction_risk:
             lignes_inter = []
             for inter in interactions:
-                m_a = inter['medicament_a']
-                m_b = inter['medicament_b']
+                m_a = inter[KEY_MEDICAMENT_A]
+                m_b = inter[KEY_MEDICAMENT_B]
                 noms_meds_risques.add(m_a)
                 noms_meds_risques.add(m_b)
-                gravite = inter.get('gravite', 'moderee').upper()
-                titre = inter.get('titre', '')
-                raison = inter.get('raison', '')
-                contexte = inter.get('contexte', '')
-                t_label = inter.get('type_label', 'Interaction')
+                gravite = inter.get(KEY_GRAVITE, GRAVITE_MODEREE).upper()
+                titre = inter.get(KEY_TITRE, '')
+                raison = inter.get(KEY_RAISON, '')
+                contexte = inter.get(KEY_CONTEXTE, '')
+                t_label = inter.get(KEY_TYPE_LABEL, 'Interaction')
 
-                if inter['type'] == 'interaction':
+                if inter[KEY_TYPE] == TYPE_INTERACTION:
                     icone = "⛔" if gravite == "MAJEURE" else "⚠️"
                     lignes_inter.append(
                         f"{icone} [{t_label} - Gravité {gravite}] {titre}\n"
@@ -1489,10 +1586,10 @@ class Prescription(models.Model):
             notif_title = "⚠️ Interaction / Doublon médicamenteux"
             notif_msg = f"Interaction ou doublon détecté pour : {meds_str}."
 
-        return 'allergy_risk', message_final, {
-            'title': notif_title,
-            'message': notif_msg,
-            'type': 'danger'
+        return IA_STATUT_ALLERGY_RISK, message_final, {
+            KEY_TITLE: notif_title,
+            KEY_MESSAGE: notif_msg,
+            KEY_TYPE: LEVEL_DANGER
         }
 
     def _compute_ia_fingerprint(self, medicaments=None, allergies=None, patient_id=None, traitements=None):
@@ -1579,19 +1676,19 @@ class Prescription(models.Model):
                 if med and str(med).strip() and cmd.get('active', True) is not False:
                     medicaments.append(str(med).strip())
             elif isinstance(cmd, (list, tuple)) and len(cmd) >= 2 and cmd[0] == 4:
-                line_rec = self.env['cabinet.prescription.line'].browse(cmd[1])
+                line_rec = self.env[PRESCRIPTION_LINE_MODEL].browse(cmd[1])
                 if line_rec.exists() and line_rec.medicament:
                     medicaments.append(line_rec.medicament.strip())
 
         if not medicaments:
             return {
-                'ia_statut': 'non_verifie',
-                'ia_message': False,
-                'ia_fingerprint': False,
+                FIELD_IA_STATUT: IA_STATUT_NON_VERIFIE,
+                FIELD_IA_MESSAGE: False,
+                FIELD_IA_FINGERPRINT: False,
                 'notification': {
-                    'title': "Vérification IA",
-                    'message': "Aucun médicament n'a été ajouté à cette ordonnance.",
-                    'type': 'info',
+                    KEY_TITLE: "Vérification IA",
+                    KEY_MESSAGE: "Aucun médicament n'a été ajouté à cette ordonnance.",
+                    KEY_TYPE: LEVEL_INFO,
                     'sticky': False,
                 }
             }
@@ -1600,15 +1697,15 @@ class Prescription(models.Model):
         alertes_n2 = self._verifier_niveau_2(medicaments, allergies_text)
 
         traitements_actifs = self._extraire_traitements_actifs(patient=patient)
-        if traitements_chroniques_val and not any(t['source_type'] == 'chronique' for t in traitements_actifs):
+        if traitements_chroniques_val and not any(t[KEY_SOURCE_TYPE] == 'chronique' for t in traitements_actifs):
             for l in [x.strip() for x in re.split(r'[\n;,/]+| - ', str(traitements_chroniques_val)) if len(x.strip()) >= 2]:
                 traitements_actifs.append({
-                    'medicament': l,
-                    'source': 'Traitement chronique (Dossier patient)',
-                    'source_type': 'chronique',
-                    'date_prescription': False,
-                    'duree': 'Chronique',
-                    'is_active': True
+                    KEY_MEDICAMENT: l,
+                    KEY_SOURCE: 'Traitement chronique (Dossier patient)',
+                    KEY_SOURCE_TYPE: 'chronique',
+                    KEY_DATE_PRESCRIPTION: False,
+                    KEY_DUREE: 'Chronique',
+                    KEY_IS_ACTIVE: True
                 })
 
         alertes_interactions = self._verifier_interactions_medicamenteuses(medicaments, patient=patient, context_traitements=traitements_actifs)
@@ -1620,14 +1717,14 @@ class Prescription(models.Model):
         fp = self._compute_ia_fingerprint(medicaments, allergies_text, patient_id=patient_id, traitements=traitements_chroniques_val)
 
         return {
-            'ia_statut': statut,
-            'ia_message': message,
-            'ia_fingerprint': fp,
+            FIELD_IA_STATUT: statut,
+            FIELD_IA_MESSAGE: message,
+            FIELD_IA_FINGERPRINT: fp,
             'notification': {
-                'title': notif['title'],
-                'message': notif['message'],
-                'type': notif['type'],
-                'sticky': notif['type'] == 'danger',
+                KEY_TITLE: notif[KEY_TITLE],
+                KEY_MESSAGE: notif[KEY_MESSAGE],
+                KEY_TYPE: notif[KEY_TYPE],
+                'sticky': notif[KEY_TYPE] == LEVEL_DANGER,
             }
         }
 
@@ -1646,9 +1743,9 @@ class Prescription(models.Model):
         patient, medicaments, allergies = self._extract_verification_context()
         if not medicaments:
             self.write({
-                'ia_statut': 'non_verifie',
-                'ia_message': False,
-                'ia_fingerprint': False,
+                FIELD_IA_STATUT: IA_STATUT_NON_VERIFIE,
+                FIELD_IA_MESSAGE: False,
+                FIELD_IA_FINGERPRINT: False,
                 'ia_verified_by_user': True,
             })
             return True
@@ -1657,15 +1754,15 @@ class Prescription(models.Model):
         write_vals: dict[str, Any] = {'ia_verified_by_user': True}
         if not self.is_validated and (not self.create_date or (datetime.now() - self.create_date).total_seconds() < 300):
             if not self.is_ia_temporary_draft:
-                write_vals['is_ia_temporary_draft'] = True
+                write_vals[FIELD_IS_IA_TEMPORARY_DRAFT] = True
 
         current_fp = self._compute_ia_fingerprint(medicaments, allergies)
-        if self.ia_fingerprint != current_fp or self.ia_statut == 'non_verifie':
+        if self.ia_fingerprint != current_fp or self.ia_statut == IA_STATUT_NON_VERIFIE:
             statut, message, notif = self._calculate_ia_status()
             write_vals.update({
-                'ia_statut': statut,
-                'ia_message': message,
-                'ia_fingerprint': current_fp,
+                FIELD_IA_STATUT: statut,
+                FIELD_IA_MESSAGE: message,
+                FIELD_IA_FINGERPRINT: current_fp,
             })
             self.with_context(in_ia_check=True).write(write_vals)
         else:
@@ -1690,22 +1787,22 @@ class Prescription(models.Model):
                 if meds:
                     fp = record._compute_ia_fingerprint(meds, allergies)
                     # Si l'analyse n'a pas été effectuée avant sauvegarde ou si composition modifiée
-                    if record.ia_fingerprint != fp or record.ia_statut not in ('safe', 'allergy_risk'):
+                    if record.ia_fingerprint != fp or record.ia_statut not in (IA_STATUT_SAFE, IA_STATUT_ALLERGY_RISK):
                         statut, message, notif = record._calculate_ia_status()
                         record.with_context(in_ia_check=True).write({
-                            'ia_statut': statut,
-                            'ia_message': message,
-                            'ia_fingerprint': fp,
+                            FIELD_IA_STATUT: statut,
+                            FIELD_IA_MESSAGE: message,
+                            FIELD_IA_FINGERPRINT: fp,
                         })
                 else:
                     record.with_context(in_ia_check=True).write({
-                        'ia_statut': 'non_verifie',
-                        'ia_message': False,
-                        'ia_fingerprint': False,
+                        FIELD_IA_STATUT: IA_STATUT_NON_VERIFIE,
+                        FIELD_IA_MESSAGE: False,
+                        FIELD_IA_FINGERPRINT: False,
                     })
             if record.patient_id:
-                date_str = record.date_prescription.strftime('%d/%m/%Y') if record.date_prescription else ''
-                self.env['cabinet.notification'].create_notification(
+                date_str = record.date_prescription.strftime(DATE_FORMAT) if record.date_prescription else ''
+                self.env[NOTIFICATION_MODEL].create_notification(
                     patient_id=record.patient_id.id,
                     title="Nouvelle ordonnance disponible",
                     message=f"Une nouvelle ordonnance a été prescrite pour vous le {date_str}.",
@@ -1717,37 +1814,37 @@ class Prescription(models.Model):
     def write(self, vals):
         # VERROUILLAGE SERVEUR STRICT : Interdire toute modification d'une ordonnance signée (sauf archivage)
         for record in self:
-            if record.state == 'signed' and not self.env.context.get('in_signature_process'):
+            if record.state == STATE_SIGNED and not self.env.context.get(FIELD_IN_SIGNATURE_PROCESS):
                 # Autoriser uniquement la modification du champ 'active' (pour l'archivage)
-                if any(k != 'active' for k in vals):
+                if any(k != FIELD_ACTIVE for k in vals):
                     raise ValidationError(
                         "Cette ordonnance a été signée et est définitivement verrouillée. "
                         "Aucune modification (médicaments, posologies, instructions, date) n'est autorisée sur une ordonnance signée, à l'exception de l'archivage."
                     )
 
         res = super(Prescription, self).write(vals)
-        if not self.env.context.get('in_ia_check') and not self.env.context.get('in_signature_process') and any(k in vals for k in ('ordonnance_line_ids', 'patient_id', 'consultation_id', 'active')):
+        if not self.env.context.get('in_ia_check') and not self.env.context.get(FIELD_IN_SIGNATURE_PROCESS) and any(k in vals for k in (FIELD_ORDONNANCE_LINE_IDS, FIELD_PATIENT_ID, 'consultation_id', FIELD_ACTIVE)):
             for record in self:
                 patient, meds, allergies = record._extract_verification_context()
                 if not meds:
-                    if record.ia_statut != 'non_verifie' or record.ia_verified_by_user:
+                    if record.ia_statut != IA_STATUT_NON_VERIFIE or record.ia_verified_by_user:
                         record.with_context(in_ia_check=True).write({
-                            'ia_statut': 'non_verifie',
-                            'ia_message': False,
-                            'ia_fingerprint': False,
-                            'ia_verified_by_user': False,
+                            FIELD_IA_STATUT: IA_STATUT_NON_VERIFIE,
+                            FIELD_IA_MESSAGE: False,
+                            FIELD_IA_FINGERPRINT: False,
+                            FIELD_IA_VERIFIED_BY_USER: False,
                         })
                 else:
                     fp = record._compute_ia_fingerprint(meds, allergies)
-                    if record.ia_fingerprint != fp or record.ia_statut not in ('safe', 'allergy_risk'):
+                    if record.ia_fingerprint != fp or record.ia_statut not in (IA_STATUT_SAFE, IA_STATUT_ALLERGY_RISK):
                         statut, message, notif = record._calculate_ia_status()
                         write_data: dict[str, Any] = {
-                            'ia_statut': statut,
-                            'ia_message': message,
-                            'ia_fingerprint': fp,
+                            FIELD_IA_STATUT: statut,
+                            FIELD_IA_MESSAGE: message,
+                            FIELD_IA_FINGERPRINT: fp,
                         }
                         if record.ia_fingerprint != fp:
-                            write_data['ia_verified_by_user'] = False
+                            write_data[FIELD_IA_VERIFIED_BY_USER] = False
                         record.with_context(in_ia_check=True).write(write_data)
         return res
 
@@ -1757,11 +1854,11 @@ class Prescription(models.Model):
         current_user = self.env.user
         
         # 1. Vérification des droits
-        if not current_user.has_group('cabinet_medical.group_medecin'):
+        if not current_user.has_group(GROUP_MEDECIN):
             raise AccessError("Seul un médecin est autorisé à signer des ordonnances.")
 
         # 2. Vérification que l'ordonnance contient au moins 1 médicament
-        active_lines = self.ordonnance_line_ids.filtered(lambda l: getattr(l, 'active', True))
+        active_lines = self.ordonnance_line_ids.filtered(lambda l: getattr(l, FIELD_ACTIVE, True))
         if not active_lines:
             raise ValidationError("Impossible de signer une ordonnance vide. Veuillez ajouter au moins un médicament.")
 
@@ -1780,7 +1877,7 @@ class Prescription(models.Model):
 
         return {
             'name': 'Confirmation de signature',
-            'type': 'ir.actions.act_window',
+            KEY_TYPE: ACTION_ACT_WINDOW,
             'res_model': 'cabinet.prescription.sign.wizard',
             'view_mode': 'form',
             'target': 'new',
@@ -1792,7 +1889,7 @@ class Prescription(models.Model):
     def action_apply_signature(self, doctor_user):
         """Appose la signature immuable du médecin et verrouille définitivement l'ordonnance."""
         self.ensure_one()
-        if self.state == 'signed':
+        if self.state == STATE_SIGNED:
             raise ValidationError("Cette ordonnance est déjà signée.")
 
         if not doctor_user.signature_medecin:
@@ -1800,10 +1897,10 @@ class Prescription(models.Model):
 
         # Copie immuable de l'image de signature actuelle du médecin
         self.with_context(in_signature_process=True).write({
-            'state': 'signed',
+            FIELD_STATE: STATE_SIGNED,
             'is_signed': True,
-            'is_validated': True,
-            'is_ia_temporary_draft': False,
+            FIELD_IS_VALIDATED: True,
+            FIELD_IS_IA_TEMPORARY_DRAFT: False,
             'medecin_signataire_id': doctor_user.id,
             'date_signature': fields.Datetime.now(),
             'signature_image': doctor_user.signature_medecin,
@@ -1814,13 +1911,13 @@ class Prescription(models.Model):
         """Action du bouton '💾 Enregistrer l'ordonnance' : validation définitive."""
         self.ensure_one()
         lines = self.ordonnance_line_ids
-        active_lines = lines.filtered(lambda l: getattr(l, 'active', True)) if hasattr(lines, 'filtered') else [l for l in lines if getattr(l, 'active', True)]
+        active_lines = lines.filtered(lambda l: getattr(l, FIELD_ACTIVE, True)) if hasattr(lines, 'filtered') else [l for l in lines if getattr(l, FIELD_ACTIVE, True)]
         if not active_lines:
             raise ValidationError("Une ordonnance doit contenir au moins un médicament.")
         for line in active_lines:
-            med = getattr(line, 'medicament', False)
-            dos = getattr(line, 'dosage', False)
-            pos = getattr(line, 'posologie', False)
+            med = getattr(line, FIELD_MEDICAMENT, False)
+            dos = getattr(line, FIELD_DOSAGE, False)
+            pos = getattr(line, FIELD_POSOLOGIE, False)
             if not med or len(str(med).strip()) < 2:
                 raise ValidationError("Le nom du médicament doit contenir au moins 2 caractères.")
             if not dos or len(str(dos).strip()) < 1:
@@ -1828,10 +1925,10 @@ class Prescription(models.Model):
             if not pos or len(str(pos).strip()) < 5:
                 raise ValidationError("La posologie doit contenir au moins 5 caractères.")
         self.write({
-            'is_validated': True,
-            'is_ia_temporary_draft': False
+            FIELD_IS_VALIDATED: True,
+            FIELD_IS_IA_TEMPORARY_DRAFT: False
         })
-        return {'type': 'ir.actions.act_window_close'}
+        return {KEY_TYPE: ACTION_WINDOW_CLOSE}
 
     def action_cancel_prescription(self):
         """
@@ -1840,25 +1937,25 @@ class Prescription(models.Model):
         - Protection : si l'ordonnance est déjà signée ou validée, 0 modification.
         """
         for record in self:
-            if record.state == 'signed':
+            if record.state == STATE_SIGNED:
                 raise ValidationError("Une ordonnance signée ne peut pas être annulée.")
             if not record.is_validated:
-                record.ordonnance_line_ids.write({'active': False})
-                record.write({'active': False})
+                record.ordonnance_line_ids.write({FIELD_ACTIVE: False})
+                record.write({FIELD_ACTIVE: False})
 
-        return {'type': 'ir.actions.act_window_close'}
+        return {KEY_TYPE: ACTION_WINDOW_CLOSE}
 
     def unlink(self):
         """Bloquer la suppression physique directe des ordonnances."""
         for record in self:
-            if record.state == 'signed':
+            if record.state == STATE_SIGNED:
                 raise ValidationError("Impossible de supprimer une ordonnance médicale signée.")
         raise ValidationError("Les ordonnances médicales doivent être conservées à vie pour l'historique pharmacologique. Veuillez les archiver si elles ne sont plus valides.")
 
     def action_archive_prescription(self):
         self.ensure_one()
-        self.write({'active': False})
-        return {'type': 'ir.actions.act_window_close'}
+        self.write({FIELD_ACTIVE: False})
+        return {KEY_TYPE: ACTION_WINDOW_CLOSE}
 
     def action_unarchive(self):
         """Interdire le désarchivage via le menu Actions."""
@@ -1871,48 +1968,48 @@ class Prescription(models.Model):
 # -------------------------------------------------------------------------
 
 class PrescriptionLine(models.Model):
-    _rec_name = 'medicament'
-    _name = 'cabinet.prescription.line'
+    _rec_name = FIELD_MEDICAMENT
+    _name = PRESCRIPTION_LINE_MODEL
     _description = 'Ligne de prescription'
     _order = 'sequence'
 
     active = fields.Boolean(string='Actif', default=True)
-    prescription_id = fields.Many2one('cabinet.prescription', string='Prescription', required=True, ondelete='cascade')
+    prescription_id = fields.Many2one(PRESCRIPTION_MODEL, string='Prescription', required=True, ondelete='cascade')
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            presc_id = vals.get('prescription_id')
+            presc_id = vals.get(FIELD_PRESCRIPTION_ID)
             if presc_id:
-                presc = self.env['cabinet.prescription'].browse(presc_id)
+                presc = self.env[PRESCRIPTION_MODEL].browse(presc_id)
                 presc_exists = presc.exists() if hasattr(presc, 'exists') else bool(presc)
-                if presc_exists and getattr(presc, 'state', None) == 'signed' and not self.env.context.get('in_signature_process'):
+                if presc_exists and getattr(presc, FIELD_STATE, None) == STATE_SIGNED and not self.env.context.get(FIELD_IN_SIGNATURE_PROCESS):
                     raise ValidationError("Impossible d'ajouter un médicament à une ordonnance déjà signée et verrouillée.")
         return super(PrescriptionLine, self).create(vals_list)
 
     def write(self, vals):
         for line in self:
-            if line.prescription_id and line.prescription_id.state == 'signed' and not self.env.context.get('in_signature_process'):
+            if line.prescription_id and line.prescription_id.state == STATE_SIGNED and not self.env.context.get(FIELD_IN_SIGNATURE_PROCESS):
                 raise ValidationError("Impossible de modifier une ligne de médicament sur une ordonnance déjà signée et verrouillée.")
         return super(PrescriptionLine, self).write(vals)
 
     def unlink(self):
         for line in self:
-            if line.prescription_id and line.prescription_id.state == 'signed' and not self.env.context.get('in_signature_process'):
+            if line.prescription_id and line.prescription_id.state == STATE_SIGNED and not self.env.context.get(FIELD_IN_SIGNATURE_PROCESS):
                 raise ValidationError("Impossible de supprimer une ligne de médicament d'une ordonnance déjà signée et verrouillée.")
         return super(PrescriptionLine, self).unlink()
 
     def action_archive(self):
         for line in self:
-            if line.prescription_id and line.prescription_id.state == 'signed':
+            if line.prescription_id and line.prescription_id.state == STATE_SIGNED:
                 raise ValidationError("Impossible d'archiver une ligne d'une ordonnance déjà signée.")
-        self.write({'active': False})
+        self.write({FIELD_ACTIVE: False})
 
     def action_unarchive(self):
         for line in self:
-            if line.prescription_id and line.prescription_id.state == 'signed':
+            if line.prescription_id and line.prescription_id.state == STATE_SIGNED:
                 raise ValidationError("Impossible de modifier une ligne d'une ordonnance déjà signée.")
-        self.write({'active': True})
+        self.write({FIELD_ACTIVE: True})
 
     sequence = fields.Integer(string='Séquence', default=10)
 
@@ -1928,26 +2025,26 @@ class PrescriptionLine(models.Model):
     @api.model
     def default_get(self, fields_list):
         defaults = super().default_get(fields_list)
-        if 'posologie' in fields_list:
-            defaults['posologie'] = '1 comprimé par jour'
+        if FIELD_POSOLOGIE in fields_list:
+            defaults[FIELD_POSOLOGIE] = '1 comprimé par jour'
         return defaults
 
     # Contrôles de saisie
-    @api.constrains('medicament')
+    @api.constrains(FIELD_MEDICAMENT)
     def _check_medicament(self):
         """Vérifier que le nom du médicament n'est pas vide"""
         for rec in self:
             if rec.medicament and len(rec.medicament.strip()) < 2:
                 raise ValidationError("Le nom du médicament doit contenir au moins 2 caractères")
 
-    @api.constrains('dosage')
+    @api.constrains(FIELD_DOSAGE)
     def _check_dosage(self):
         """Vérifier que le dosage est valide"""
         for rec in self:
             if rec.dosage and len(rec.dosage.strip()) < 1:
                 raise ValidationError("Le dosage ne peut pas être vide")
 
-    @api.constrains('posologie')
+    @api.constrains(FIELD_POSOLOGIE)
     def _check_posologie(self):
         """Vérifier que la posologie est suffisamment détaillée"""
         for rec in self:

@@ -5,12 +5,45 @@ from odoo.exceptions import ValidationError # type: ignore
 
 _logger = logging.getLogger(__name__)
 
+CURRENCY_FIELD = 'currency_id'
+DEFAULT_SEQUENCE_NAME = 'Nouveau'
+DATE_FORMAT = '%d/%m/%Y'
+
+FACTURE_MODEL = 'cabinet.facture'
+NOTIFICATION_MODEL = 'cabinet.notification'
+CONFIG_PARAM_MODEL = 'ir.config_parameter'
+
+NOTIF_TITLE_FACTURE = 'Nouvelle facture disponible'
+NOTIF_TYPE_FACTURE = 'facture'
+NOTIF_URL_FACTURE = '/my/factures'
+
+STATE_DRAFT = 'draft'
+STATE_VALIDATED = 'validated'
+
+SCENARIO_SANS_COUVERTURE = 'sans_couverture'
+SCENARIO_CNAM_REMBOURSEMENT = 'cnam_remboursement'
+SCENARIO_CNAM_TIERS_PAYANT = 'cnam_tiers_payant'
+SCENARIO_APCI_TIERS_PAYANT = 'apci_tiers_payant'
+SCENARIO_APCI_REMBOURSEMENT = 'apci_remboursement'
+SCENARIO_CNAM_REMB_ASSUR = 'cnam_remb_assur'
+SCENARIO_CNAM_TP_ASSUR = 'cnam_tp_assur'
+SCENARIO_SANS_CNAM_ASSUR = 'sans_cnam_assur'
+
+STATUT_CNAM_NON_ENVOYE = 'non_envoye'
+STATUT_CNAM_ENVOYE = 'envoye'
+STATUT_CNAM_PAYE = 'paye'
+STATUT_CNAM_REJETE = 'rejete'
+
+FILIERE_REMBOURSEMENT = 'remboursement'
+FILIERE_PRIVEE = 'privee'
+STATUT_ACCORDE = 'accorde'
+
 class Facture(models.Model):
-    _name = 'cabinet.facture'
+    _name = FACTURE_MODEL
     _description = 'Facture Médicale'
     _order = 'date_facture desc'
 
-    name = fields.Char(string='Numéro facture', readonly=True, default='Nouveau')
+    name = fields.Char(string='Numéro facture', readonly=True, default=DEFAULT_SEQUENCE_NAME)
     active = fields.Boolean(string="Actif", default=True)
     patient_id = fields.Many2one('cabinet.patient', string='Patient', required=True)
     consultation_id = fields.Many2one('cabinet.consultation', string='Consultation', required=True)
@@ -26,29 +59,29 @@ class Facture(models.Model):
     )
     
     # Montants
-    montant_total = fields.Monetary(string='Montant total (DT)', currency_field='currency_id', compute='_compute_montant_total', store=True)
-    montant_paye_cabinet = fields.Monetary(string='Payé par le patient (DT)', currency_field='currency_id', compute='_compute_parts', store=True)
-    montant_cnam_cabinet = fields.Monetary(string='Payé par CNAM au cabinet (DT)', currency_field='currency_id', compute='_compute_parts', store=True)
-    reste_a_charge_final = fields.Monetary(string='Reste à charge final patient (DT)', currency_field='currency_id', compute='_compute_parts', store=True)
+    montant_total = fields.Monetary(string='Montant total (DT)', currency_field=CURRENCY_FIELD, compute='_compute_montant_total', store=True)
+    montant_paye_cabinet = fields.Monetary(string='Payé par le patient (DT)', currency_field=CURRENCY_FIELD, compute='_compute_parts', store=True)
+    montant_cnam_cabinet = fields.Monetary(string='Payé par CNAM au cabinet (DT)', currency_field=CURRENCY_FIELD, compute='_compute_parts', store=True)
+    reste_a_charge_final = fields.Monetary(string='Reste à charge final patient (DT)', currency_field=CURRENCY_FIELD, compute='_compute_parts', store=True)
 
     # Montants conventionnels et dépassement CNAM (Groupe 3)
     montant_conventionnel_total = fields.Monetary(
         string='Base conventionnelle totale (TCR DT)',
-        currency_field='currency_id',
+        currency_field=CURRENCY_FIELD,
         compute='_compute_montant_total',
         store=True,
         help='Montant de référence conventionnel opposable CNAM (Art. 3 Décret 2007-1367)'
     )
     depassement_total = fields.Monetary(
         string='Dépassement total d\'honoraires (DT)',
-        currency_field='currency_id',
+        currency_field=CURRENCY_FIELD,
         compute='_compute_montant_total',
         store=True,
         help='Part des honoraires excédant le tarif conventionnel à la charge du patient (Art. 17 & 21 Convention)'
     )
     ticket_moderateur_total = fields.Monetary(
         string='Ticket modérateur total (DT)',
-        currency_field='currency_id',
+        currency_field=CURRENCY_FIELD,
         compute='_compute_parts_display',
         store=True,
         help='Quote-part conventionnelle restant à charge hors dépassement (Art. 20-25 Décret 2007-1367)'
@@ -60,42 +93,35 @@ class Facture(models.Model):
     )
     
     # Champs d'affichage dynamiques pour la fiche Facture (US15/US16)
-    part_cnam_display = fields.Monetary(string='Part CNAM (DT)', currency_field='currency_id', compute='_compute_parts_display', store=True)
-    part_assurance_display = fields.Monetary(string='Part Assurance (DT)', currency_field='currency_id', compute='_compute_parts_display', store=True)
-    reste_apres_cnam_seule = fields.Monetary(string='Reste à charge après CNAM (DT)', currency_field='currency_id', compute='_compute_parts_display', store=True)
+    part_cnam_display = fields.Monetary(string='Part CNAM (DT)', currency_field=CURRENCY_FIELD, compute='_compute_parts_display', store=True)
+    part_assurance_display = fields.Monetary(string='Part Assurance (DT)', currency_field=CURRENCY_FIELD, compute='_compute_parts_display', store=True)
+    reste_apres_cnam_seule = fields.Monetary(string='Reste à charge après CNAM (DT)', currency_field=CURRENCY_FIELD, compute='_compute_parts_display', store=True)
 
     scenario = fields.Selection([
-        ('sans_couverture', 'Sans couverture'),
-        ('cnam_remboursement', 'CNAM Remboursement'),
-        ('cnam_tiers_payant', 'CNAM Tiers-payant'),
-        ('apci_tiers_payant', 'APCI Tiers-payant (Bordereau)'),
-        ('apci_remboursement', 'APCI Remboursement (BS1)'),
-        ('cnam_remb_assur', 'CNAM Remboursement + Assurance'),
-        ('cnam_tp_assur', 'CNAM Tiers-payant + Mutuelle (Remboursement Patient)'),
-        ('sans_cnam_assur', 'Sans CNAM + Assurance'),
+        (SCENARIO_SANS_COUVERTURE, 'Sans couverture'),
+        (SCENARIO_CNAM_REMBOURSEMENT, 'CNAM Remboursement'),
+        (SCENARIO_CNAM_TIERS_PAYANT, 'CNAM Tiers-payant'),
+        (SCENARIO_APCI_TIERS_PAYANT, 'APCI Tiers-payant (Bordereau)'),
+        (SCENARIO_APCI_REMBOURSEMENT, 'APCI Remboursement (BS1)'),
+        (SCENARIO_CNAM_REMB_ASSUR, 'CNAM Remboursement + Assurance'),
+        (SCENARIO_CNAM_TP_ASSUR, 'CNAM Tiers-payant + Mutuelle (Remboursement Patient)'),
+        (SCENARIO_SANS_CNAM_ASSUR, 'Sans CNAM + Assurance'),
     ], string='Scénario de Facturation', compute='_compute_scenario', store=True)
 
     state = fields.Selection([
-        ('draft', 'Brouillon'),
-        ('validated', 'Validée'),
-    ], string='État', default='draft')
+        (STATE_DRAFT, 'Brouillon'),
+        (STATE_VALIDATED, 'Validée'),
+    ], string='État', default=STATE_DRAFT)
 
     # Lien avec Bordereau M5
     bordereau_id = fields.Many2one('cabinet.bordereau', string='Bordereau CNAM', ondelete='set null')
     statut_cnam = fields.Selection([
-        ('non_envoye', 'Non Envoyé'),
-        ('envoye', 'Envoyé (En attente)'),
-        ('paye', 'Payé'),
-        ('rejete', 'Rejeté')
-    ], string='Statut Paiement CNAM', default='non_envoye')
+        (STATUT_CNAM_NON_ENVOYE, 'Non Envoyé'),
+        (STATUT_CNAM_ENVOYE, 'Envoyé (En attente)'),
+        (STATUT_CNAM_PAYE, 'Payé'),
+        (STATUT_CNAM_REJETE, 'Rejeté')
+    ], string='Statut Paiement CNAM', default=STATUT_CNAM_NON_ENVOYE)
 
-    @api.depends(
-        'consultation_id.acte_ids.montant',
-        'consultation_id.acte_ids.tarif_conventionnel',
-        'consultation_id.acte_ids.depassement_honoraire',
-        'consultation_id.acte_ids.parametrage_id.tarif',
-        'consultation_id.acte_ids.active',
-    )
     @api.depends(
         'consultation_id.acte_ids.montant',
         'consultation_id.acte_ids.tarif_conventionnel',
@@ -136,29 +162,29 @@ class Facture(models.Model):
     def _compute_scenario(self):
         for rec in self:
             p = rec.patient_id
-            if p.is_apci and p.filiere_cnam == 'remboursement':
-                rec.scenario = 'apci_remboursement'
+            if p.is_apci and p.filiere_cnam == FILIERE_REMBOURSEMENT:
+                rec.scenario = SCENARIO_APCI_REMBOURSEMENT
             elif p.is_apci:
-                rec.scenario = 'apci_tiers_payant'
-            elif p.is_cnam and p.filiere_cnam == 'privee' and p.has_assurance:
-                rec.scenario = 'cnam_tp_assur'
-            elif p.is_cnam and p.filiere_cnam == 'privee':
-                rec.scenario = 'cnam_tiers_payant'
-            elif p.is_cnam and p.filiere_cnam == 'remboursement' and p.has_assurance:
-                rec.scenario = 'cnam_remb_assur'
-            elif p.is_cnam and p.filiere_cnam == 'remboursement':
-                rec.scenario = 'cnam_remboursement'
+                rec.scenario = SCENARIO_APCI_TIERS_PAYANT
+            elif p.is_cnam and p.filiere_cnam == FILIERE_PRIVEE and p.has_assurance:
+                rec.scenario = SCENARIO_CNAM_TP_ASSUR
+            elif p.is_cnam and p.filiere_cnam == FILIERE_PRIVEE:
+                rec.scenario = SCENARIO_CNAM_TIERS_PAYANT
+            elif p.is_cnam and p.filiere_cnam == FILIERE_REMBOURSEMENT and p.has_assurance:
+                rec.scenario = SCENARIO_CNAM_REMB_ASSUR
+            elif p.is_cnam and p.filiere_cnam == FILIERE_REMBOURSEMENT:
+                rec.scenario = SCENARIO_CNAM_REMBOURSEMENT
             elif not p.is_cnam and p.has_assurance:
-                rec.scenario = 'sans_cnam_assur'
+                rec.scenario = SCENARIO_SANS_CNAM_ASSUR
             else:
-                rec.scenario = 'sans_couverture'
+                rec.scenario = SCENARIO_SANS_COUVERTURE
 
     def _get_part_cnam_reelle(self):
         self.ensure_one()
         m_total = getattr(self, 'montant_total', 0.0)
         total = m_total if isinstance(m_total, (int, float)) else 0.0
         p = getattr(self, 'patient_id', None)
-        if not p or not getattr(p, 'is_cnam', False) or self.scenario in ('sans_couverture', 'sans_cnam_assur'):
+        if not p or not getattr(p, 'is_cnam', False) or self.scenario in (SCENARIO_SANS_COUVERTURE, SCENARIO_SANS_CNAM_ASSUR):
             return 0.0
 
         part_cnam = 0.0
@@ -166,7 +192,7 @@ class Facture(models.Model):
         acte_ids = getattr(consult, 'acte_ids', None) if consult else None
         active_actes = acte_ids.filtered(lambda a: a.active) if hasattr(acte_ids, 'filtered') else (acte_ids or [])
         if active_actes:
-            ir_config_param = self.env['ir.config_parameter'].sudo()
+            ir_config_param = self.env[CONFIG_PARAM_MODEL].sudo()
             taux_default_consult = float(ir_config_param.get_param('cabinet.cnam_taux_consultation', '70.0')) / 100.0
             taux_default_tech = 0.80  # 80% actes médico-chirurgicaux (Art. 21 Décret 2007-1367)
             taux_default_rad_bio = 0.75  # 75% radiologie et biologie (Art. 21 Décret 2007-1367)
@@ -227,7 +253,7 @@ class Facture(models.Model):
 
                 part_cnam += base_tcr * taux
         else:
-            ir_config_param = self.env['ir.config_parameter'].sudo()
+            ir_config_param = self.env[CONFIG_PARAM_MODEL].sudo()
             taux_remb_pct = float(ir_config_param.get_param('cabinet.cnam_taux_remboursement', '70.0')) / 100.0
             m_conv = getattr(self, 'montant_conventionnel_total', None)
             base_tcr = m_conv if (isinstance(m_conv, (int, float)) and m_conv > 0) else total
@@ -281,24 +307,24 @@ class Facture(models.Model):
             part_mutuelle_dep = (depassement * taux_assur) if (couv_dep is True) else 0.0
             part_mutuelle_totale = part_mutuelle_tm + part_mutuelle_dep
 
-            if rec.scenario == 'sans_couverture':
+            if rec.scenario == SCENARIO_SANS_COUVERTURE:
                 rec.montant_paye_cabinet = round(total, 2)
                 rec.montant_cnam_cabinet = 0.0
                 rec.reste_a_charge_final = round(total, 2)
 
-            elif rec.scenario == 'apci_tiers_payant':
+            elif rec.scenario == SCENARIO_APCI_TIERS_PAYANT:
                 rec.montant_cnam_cabinet = round(part_cnam_reelle, 2)
                 rec.montant_paye_cabinet = round(ticket_mod_conventionnel + depassement, 2)
                 rec.reste_a_charge_final = round(ticket_mod_conventionnel + depassement, 2)
 
-            elif rec.scenario == 'apci_remboursement':
+            elif rec.scenario == SCENARIO_APCI_REMBOURSEMENT:
                 rec.montant_cnam_cabinet = 0.0
                 rec.montant_paye_cabinet = round(total, 2)
                 rec.reste_a_charge_final = round(ticket_mod_conventionnel + depassement, 2)
 
-            elif rec.scenario in ('cnam_tiers_payant', 'cnam_tp_assur'):
+            elif rec.scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR):
                 rec.montant_cnam_cabinet = round(part_cnam_reelle, 2)
-                if rec.scenario == 'cnam_tp_assur':
+                if rec.scenario == SCENARIO_CNAM_TP_ASSUR:
                     if tp_direct:
                         rec.montant_paye_cabinet = round((ticket_mod_conventionnel - part_mutuelle_tm) + (depassement - part_mutuelle_dep), 2)
                     else:
@@ -308,12 +334,12 @@ class Facture(models.Model):
                     rec.montant_paye_cabinet = round(ticket_mod_conventionnel + depassement, 2)
                     rec.reste_a_charge_final = round(ticket_mod_conventionnel + depassement, 2)
 
-            elif rec.scenario == 'cnam_remboursement':
+            elif rec.scenario == SCENARIO_CNAM_REMBOURSEMENT:
                 rec.montant_paye_cabinet = round(total, 2)
                 rec.montant_cnam_cabinet = 0.0
                 rec.reste_a_charge_final = round(ticket_mod_conventionnel + depassement, 2)
 
-            elif rec.scenario == 'cnam_remb_assur':
+            elif rec.scenario == SCENARIO_CNAM_REMB_ASSUR:
                 rec.montant_cnam_cabinet = 0.0
                 if tp_direct:
                     rec.montant_paye_cabinet = round(total - part_mutuelle_totale, 2)
@@ -321,7 +347,7 @@ class Facture(models.Model):
                     rec.montant_paye_cabinet = round(total, 2)
                 rec.reste_a_charge_final = round((ticket_mod_conventionnel - part_mutuelle_tm) + (depassement - part_mutuelle_dep), 2)
 
-            elif rec.scenario == 'sans_cnam_assur':
+            elif rec.scenario == SCENARIO_SANS_CNAM_ASSUR:
                 rec.montant_cnam_cabinet = 0.0
                 part_assur_sans_cnam = total * taux_assur
                 if tp_direct:
@@ -369,27 +395,27 @@ class Facture(models.Model):
             part_cnam = 0.0
             part_assurance = 0.0
 
-            if rec.scenario == 'sans_couverture':
+            if rec.scenario == SCENARIO_SANS_COUVERTURE:
                 part_cnam = 0.0
                 part_assurance = 0.0
-            elif rec.scenario in ('apci_tiers_payant', 'apci_remboursement'):
+            elif rec.scenario in (SCENARIO_APCI_TIERS_PAYANT, SCENARIO_APCI_REMBOURSEMENT):
                 part_cnam = part_cnam_reelle
                 part_assurance = 0.0
-            elif rec.scenario in ('cnam_tiers_payant', 'cnam_tp_assur'):
+            elif rec.scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR):
                 part_cnam = part_cnam_reelle
-                if rec.scenario == 'cnam_tp_assur':
+                if rec.scenario == SCENARIO_CNAM_TP_ASSUR:
                     couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False)
                     part_mutuelle_dep = (depassement * taux_assur) if (couv_dep is True) else 0.0
                     part_assurance = (ticket_mod * taux_assur) + part_mutuelle_dep
-            elif rec.scenario == 'cnam_remboursement':
+            elif rec.scenario == SCENARIO_CNAM_REMBOURSEMENT:
                 part_cnam = part_cnam_reelle
                 part_assurance = 0.0
-            elif rec.scenario == 'cnam_remb_assur':
+            elif rec.scenario == SCENARIO_CNAM_REMB_ASSUR:
                 part_cnam = part_cnam_reelle
                 couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False)
                 part_mutuelle_dep = (depassement * taux_assur) if (couv_dep is True) else 0.0
                 part_assurance = (ticket_mod * taux_assur) + part_mutuelle_dep
-            elif rec.scenario == 'sans_cnam_assur':
+            elif rec.scenario == SCENARIO_SANS_CNAM_ASSUR:
                 part_cnam = 0.0
                 part_assurance = total * taux_assur
 
@@ -401,17 +427,17 @@ class Facture(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            if vals.get('name', 'Nouveau') == 'Nouveau':
-                vals['name'] = self.env['ir.sequence'].next_by_code('cabinet.facture') or 'Nouveau'
+            if vals.get('name', DEFAULT_SEQUENCE_NAME) == DEFAULT_SEQUENCE_NAME:
+                vals['name'] = self.env['ir.sequence'].next_by_code(FACTURE_MODEL) or DEFAULT_SEQUENCE_NAME
         records = super(Facture, self).create(vals_list)
         for record in records:
-            if record.state == 'validated' and record.patient_id:
-                self.env['cabinet.notification'].create_notification(
+            if record.state == STATE_VALIDATED and record.patient_id:
+                self.env[NOTIFICATION_MODEL].create_notification(
                     patient_id=record.patient_id.id,
-                    title="Nouvelle facture disponible",
+                    title=NOTIF_TITLE_FACTURE,
                     message=f"La facture {record.name} d'un montant de {record.montant_total} DT est disponible.",
-                    notif_type='facture',
-                    res_url='/my/factures'
+                    notif_type=NOTIF_TYPE_FACTURE,
+                    res_url=NOTIF_URL_FACTURE
                 )
         return records
 
@@ -419,7 +445,7 @@ class Facture(models.Model):
 
     def unlink(self):
         for rec in self:
-            if rec.state == 'validated':
+            if rec.state == STATE_VALIDATED:
                 raise ValidationError("Suppression interdite : La facture %s est validée et constitue une pièce comptable immuable." % (rec.name or ''))
             if getattr(rec, 'bordereau_id', False):
                 raise ValidationError("Suppression interdite : La facture %s est rattachée au bordereau CNAM %s." % (rec.name or '', rec.bordereau_id.name or ''))
@@ -427,7 +453,7 @@ class Facture(models.Model):
 
     def write(self, vals):
         for rec in self:
-            if rec.state == 'validated' and not self.env.context.get('bypass_facture_lock'):
+            if rec.state == STATE_VALIDATED and not self.env.context.get('bypass_facture_lock'):
                 locked_modified = set(vals.keys()) & self.LOCKED_FIELDS_VALIDATED
                 if locked_modified:
                     raise ValidationError("Modification interdite : La facture %s est validée. Les champs suivants sont verrouillés : %s." % (rec.name or '', ', '.join(locked_modified)))
@@ -439,13 +465,13 @@ class Facture(models.Model):
         if 'state' in vals:
             for record in self:
                 old_state = pre_vals.get(getattr(record, 'id'))
-                if old_state != 'validated' and record.state == 'validated' and record.patient_id:
-                    self.env['cabinet.notification'].create_notification(
+                if old_state != STATE_VALIDATED and record.state == STATE_VALIDATED and record.patient_id:
+                    self.env[NOTIFICATION_MODEL].create_notification(
                         patient_id=record.patient_id.id,
-                        title="Nouvelle facture disponible",
+                        title=NOTIF_TITLE_FACTURE,
                         message=f"La facture {record.name} d'un montant de {record.montant_total} DT est disponible.",
-                        notif_type='facture',
-                        res_url='/my/factures'
+                        notif_type=NOTIF_TYPE_FACTURE,
+                        res_url=NOTIF_URL_FACTURE
                     )
         return res
 
@@ -459,7 +485,7 @@ class Facture(models.Model):
         date_ref = getattr(self, 'date_facture', False) or fields.Date.context_today(self)
         p = getattr(self, 'patient_id', None)
 
-        if self.scenario in ('cnam_tiers_payant', 'apci_tiers_payant', 'cnam_tp_assur'):
+        if self.scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_APCI_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR):
             if not p:
                 raise ValidationError("Validation impossible : Aucun patient rattaché à la facture.")
             if not getattr(p, 'is_cnam', False):
@@ -468,8 +494,8 @@ class Facture(models.Model):
             # 1. Vérification de la date d'expiration des droits CNAM
             validite_cnam = getattr(p, 'date_validite_cnam', False)
             if validite_cnam and validite_cnam < date_ref:
-                date_str = validite_cnam.strftime('%d/%m/%Y') if hasattr(validite_cnam, 'strftime') else str(validite_cnam)
-                ref_str = date_ref.strftime('%d/%m/%Y') if hasattr(date_ref, 'strftime') else str(date_ref)
+                date_str = validite_cnam.strftime(DATE_FORMAT) if hasattr(validite_cnam, 'strftime') else str(validite_cnam)
+                ref_str = date_ref.strftime(DATE_FORMAT) if hasattr(date_ref, 'strftime') else str(date_ref)
                 raise ValidationError(f"Validation impossible en Tiers-payant : Les droits CNAM de l'assuré {p.name} sont expirés depuis le {date_str} (date de facturation : {ref_str}). Le tiers-payant ne peut pas être appliqué.")
 
             # 2. Vérification APCI : Décision et date de validité
@@ -478,14 +504,14 @@ class Facture(models.Model):
             active_actes = acte_ids.filtered(lambda a: a.active) if hasattr(acte_ids, 'filtered') else (acte_ids or [])
             has_apci_acte = any(getattr(a, 'is_acte_apci', False) for a in active_actes)
 
-            if self.scenario == 'apci_tiers_payant' or has_apci_acte:
+            if self.scenario == SCENARIO_APCI_TIERS_PAYANT or has_apci_acte:
                 if not getattr(p, 'is_apci', False):
                     raise ValidationError(f"Validation impossible en APCI : Le patient {p.name} n'est pas enregistré comme bénéficiaire de l'APCI.")
                 if not getattr(p, 'numero_decision_apci', False):
                     raise ValidationError(f"Validation impossible : Le patient {p.name} n'a aucun numéro de décision APCI valide.")
                 date_fin_apci = getattr(p, 'date_fin_apci', False)
                 if date_fin_apci and date_fin_apci < date_ref:
-                    date_fin_str = date_fin_apci.strftime('%d/%m/%Y') if hasattr(date_fin_apci, 'strftime') else str(date_fin_apci)
+                    date_fin_str = date_fin_apci.strftime(DATE_FORMAT) if hasattr(date_fin_apci, 'strftime') else str(date_fin_apci)
                     raise ValidationError(f"Validation impossible en APCI : La prise en charge APCI de {p.name} est expirée depuis le {date_fin_str}.")
 
             # 3. Contrôle Accord préalable obligatoire pour les actes conventionnés
@@ -493,11 +519,11 @@ class Facture(models.Model):
                 if getattr(a, 'necessite_accord_prealable', False):
                     statut_ap = getattr(a, 'statut_accord_prealable', 'non_requis')
                     num_ap = getattr(a, 'numero_accord_prealable', False)
-                    if statut_ap != 'accorde' and not num_ap:
+                    if statut_ap != STATUT_ACCORDE and not num_ap:
                         desc = getattr(a, 'description', '') or getattr(a, 'type_acte', 'Acte conventionné')
                         raise ValidationError(f"Validation impossible en Tiers-payant : L'acte '{desc}' requiert un accord préalable obligatoire de la CNAM (statut actuel : '{statut_ap}'). Un accord préalable accordé est obligatoire pour la prise en charge en tiers-payant.")
 
-        self.state = 'validated'
+        self.state = STATE_VALIDATED
 
     # --- IA n°3 : Assistant LLM pour la reformulation des alertes ---
     @api.model

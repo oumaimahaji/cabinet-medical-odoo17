@@ -3,6 +3,14 @@ from odoo.tools.float_utils import float_is_zero
 from odoo.exceptions import ValidationError  # type: ignore
 from datetime import datetime
 
+GROUP_MEDECIN = 'cabinet_medical.group_medecin'
+GROUP_SECRETAIRE = 'cabinet_medical.group_secretaire'
+TYPE_CONSULTATION = 'consultation'
+TYPE_ACTE_TECHNIQUE = 'acte_technique'
+FILIERE_PRIVEE = 'privee'
+STATUT_ACCORDE = 'accorde'
+STATE_DONE = 'done'
+
 # Note : le modèle cabinet.acte.parametrage est défini dans acte_parametrage.py
 # (classe supprimée ici pour éviter le conflit de doublon)
 
@@ -31,8 +39,8 @@ class ActeMedical(models.Model):
 
     # Types d'actes médicaux (conservé pour rétrocompatibilité)
     type_acte = fields.Selection([
-        ('consultation', 'Consultation médicale'),
-        ('acte_technique', 'Acte technique / Médical'),
+        (TYPE_CONSULTATION, 'Consultation médicale'),
+        (TYPE_ACTE_TECHNIQUE, 'Acte technique / Médical'),
         ('biologie', 'Analyse biologique'),
         ('radiologie', 'Radiologie / Imagerie'),
         ('dentaire', 'Acte dentaire'),
@@ -152,7 +160,7 @@ class ActeMedical(models.Model):
             if patient.is_apci and (rec.is_acte_apci or not rec.consultation_id.is_consultation_apci):
                 # Exonération totale APCI — patient ne paie rien
                 rec.total_acte_dt = 0.0
-            elif patient.is_cnam and patient.filiere_cnam == 'privee':
+            elif patient.is_cnam and patient.filiere_cnam == FILIERE_PRIVEE:
                 # Tiers-payant : patient paie uniquement le ticket modérateur
                 if rec.parametrage_id and rec.parametrage_id.taux_cnam is not False and rec.parametrage_id.taux_cnam is not None:
                     taux_cnam = float(rec.parametrage_id.taux_cnam)
@@ -190,10 +198,10 @@ class ActeMedical(models.Model):
     def _check_accord_prealable(self):
         """Vérifier l'accord préalable obligatoire pour les actes conventionnés (Convention sectorielle art. 22)."""
         for rec in self:
-            if rec.state == 'done' and rec.parametrage_id and rec.parametrage_id.necessite_accord_prealable:
+            if rec.state == STATE_DONE and rec.parametrage_id and rec.parametrage_id.necessite_accord_prealable:
                 patient = rec.consultation_id.patient_id
-                if patient and patient.is_cnam and patient.filiere_cnam == 'privee':
-                    if rec.statut_accord_prealable != 'accorde' or not rec.numero_accord_prealable:
+                if patient and patient.is_cnam and patient.filiere_cnam == FILIERE_PRIVEE:
+                    if rec.statut_accord_prealable != STATUT_ACCORDE or not rec.numero_accord_prealable:
                         raise ValidationError(
                             f"L'acte '{rec.parametrage_id.name}' requiert un accord préalable écrit de la CNAM avec son numéro avant validation (art. 22 Convention sectorielle)."
                         )
@@ -208,4 +216,4 @@ class ActeMedical(models.Model):
     def action_valider(self):
         """Valider l'acte médical (accessible uniquement au médecin)"""
         self.ensure_one()
-        self.state = 'done'
+        self.state = STATE_DONE
