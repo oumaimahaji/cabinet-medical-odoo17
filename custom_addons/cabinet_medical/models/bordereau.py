@@ -4,6 +4,25 @@ from odoo.exceptions import ValidationError
 
 BORDEREAU_MODEL = 'cabinet.bordereau'
 
+BORDEREAU_STATES = [
+    ('draft', 'Brouillon'),
+    ('done', 'Validé'),
+    ('sent', 'Envoyé'),
+    ('partially_paid', 'Partiellement payé'),
+    ('paid', 'Payé'),
+    ('rejected', 'Rejeté'),
+]
+
+CODE_MOTIF_REJET_SELECTION = [
+    ('droits_expires', 'Droits de l\'assuré expirés / non ouverts'),
+    ('depassement_plafond', 'Dépassement du plafond annuel de prise en charge'),
+    ('hors_filiere', 'Consultation hors filière de soins / médecin non référent'),
+    ('sans_accord_prealable', 'Accord préalable obligatoire manquant ou refusé'),
+    ('incoherence_acte', 'Acte non conforme à la nomenclature NGAP'),
+    ('apci_non_reconnue', 'Affection non reconnue au titre de l\'APCI / prise en charge échue'),
+    ('autre', 'Autre motif réglementaire'),
+]
+
 class BordereauCNAM(models.Model):
     _name = BORDEREAU_MODEL
     _description = 'Bordereau d\'envoi CNAM'
@@ -23,15 +42,11 @@ class BordereauCNAM(models.Model):
         help='Période du bordereau sous forme lisible (Mois Année)'
     )
     
-    code_motif_rejet = fields.Selection([
-        ('droits_expires', 'Droits de l\'assuré expirés / non ouverts'),
-        ('depassement_plafond', 'Dépassement du plafond annuel de prise en charge'),
-        ('hors_filiere', 'Consultation hors filière de soins / médecin non référent'),
-        ('sans_accord_prealable', 'Accord préalable obligatoire manquant ou refusé'),
-        ('incoherence_acte', 'Acte non conforme à la nomenclature NGAP'),
-        ('apci_non_reconnue', 'Affection non reconnue au titre de l\'APCI / prise en charge échue'),
-        ('autre', 'Autre motif réglementaire'),
-    ], string='Motif réglementaire de rejet', help='Code normalisé du motif de rejet CNAM')
+    code_motif_rejet = fields.Selection(
+        CODE_MOTIF_REJET_SELECTION,
+        string='Motif réglementaire de rejet',
+        help='Code normalisé du motif de rejet CNAM'
+    )
     motif_rejet = fields.Text(string='Précisions du rejet', help='Indiquez les détails ou motifs complémentaires de la CNAM')
     date_envoi = fields.Date(string='Date d\'envoi')
 
@@ -49,14 +64,12 @@ class BordereauCNAM(models.Model):
                 rec.periode_label = ''
 
 
-    state = fields.Selection([
-        ('draft', 'Brouillon'),
-        ('done', 'Validé'),
-        ('sent', 'Envoyé'),
-        ('partially_paid', 'Partiellement payé'),
-        ('paid', 'Payé'),
-        ('rejected', 'Rejeté')
-    ], string='Statut', default='draft', required=True)
+    state = fields.Selection(
+        BORDEREAU_STATES,
+        string='Statut',
+        default='draft',
+        required=True
+    )
 
     facture_ids = fields.One2many('cabinet.facture', 'bordereau_id', string='Factures associées')
     
@@ -138,7 +151,8 @@ class BordereauCNAM(models.Model):
     def unlink(self):
         for rec in self:
             if rec.state != 'draft':
-                state_label = dict(self._fields['state'].selection).get(rec.state, rec.state)
+                state_key = str(rec.state or '')
+                state_label = dict(BORDEREAU_STATES).get(state_key, state_key)
                 raise ValidationError(f"Suppression interdite : Le bordereau {rec.name or ''} est dans l'état '{state_label}' et ne peut pas être supprimé.")
         return super(BordereauCNAM, self).unlink()
 
@@ -205,7 +219,7 @@ class BordereauCNAM(models.Model):
         rejetes_list = []
         for r in rejetes:
             patients = list(set(r.facture_ids.mapped('patient_id.name')))
-            code_label = dict(r._fields['code_motif_rejet'].selection).get(r.code_motif_rejet, '') if hasattr(r, 'code_motif_rejet') and r.code_motif_rejet else ''
+            code_label = dict(CODE_MOTIF_REJET_SELECTION).get(r.code_motif_rejet, '') if getattr(r, 'code_motif_rejet', False) else ''
             motif_final = r.motif_rejet or code_label or 'Motif non spécifié'
             rejetes_list.append({
                 'name': r.name,

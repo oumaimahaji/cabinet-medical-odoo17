@@ -42,8 +42,10 @@ class MockRecordSet(list):
 
 class MockModel:
     _name = ''
+    _parent_record = None
     def __init__(self, **kwargs):
         self._context = {}
+        self._parent_record = None
         self.env = MagicMock()
         self.env.context = self._context
         self.env.user = self # default to self
@@ -89,6 +91,8 @@ class MockModel:
     def write(self, vals):
         for k, v in vals.items():
             setattr(self, k, v)
+            if getattr(self, '_parent_record', None):
+                setattr(self._parent_record, k, v)
         return True
 
     def unlink(self):
@@ -134,6 +138,7 @@ import importlib.util
 
 res_users_path = os.path.join(addon_dir, 'models', 'res_users.py')
 spec_r = importlib.util.spec_from_file_location("models.res_users", res_users_path)
+assert spec_r is not None and spec_r.loader is not None
 res_users_module = importlib.util.module_from_spec(spec_r)
 sys.modules['models.res_users'] = res_users_module
 spec_r.loader.exec_module(res_users_module)

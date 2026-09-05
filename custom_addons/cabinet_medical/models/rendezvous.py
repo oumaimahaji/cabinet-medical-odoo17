@@ -24,6 +24,7 @@ class Appointment(models.Model):
     _rec_name = 'display_patient_name'
 
     active = fields.Boolean(string='Actif', default=True, help='Désactiver pour archiver le rendez-vous sans le supprimer')
+    create_date = fields.Datetime(string='Date de création', readonly=True)
 
     # Patient (optionnel pour création rapide)
     patient_id = fields.Many2one(
@@ -283,7 +284,7 @@ class Appointment(models.Model):
                     rec.portal_state_label = "Absent"
                     rec.portal_state_badge_class = "bg-secondary text-white"
                 else:
-                    rec.portal_state_label = dict(self._fields['state'].selection).get(rec.state, rec.state or '')
+                    rec.portal_state_label = dict(self._fields['state'].selection).get(rec.state, rec.state or '')  # type: ignore
                     rec.portal_state_badge_class = "text-bg-light"
 
     # -------------------------------------------------------------
@@ -361,7 +362,7 @@ class Appointment(models.Model):
         """Helper pour calculer l'historique d'absentéisme du patient."""
         if not rec.patient_id:
             return 0, 0.0
-        rec_id = rec._origin.id if (hasattr(rec, '_origin') and rec._origin and rec._origin.id) else (rec.id or 0)
+        rec_id = getattr(getattr(rec, '_origin', False), 'id', False) or getattr(rec, 'id', False) or 0
         past_rdvs = self.search([
             ('patient_id', '=', rec.patient_id.id),
             ('id', '!=', rec_id),
@@ -445,19 +446,7 @@ class Appointment(models.Model):
             is_urgence = 1 if rec.is_urgence else 0
             is_nouveau = 1 if (rec.is_nouveau_patient or not rec.patient_id) else 0
 
-            prev_count = 0
-            hist_rate = 0.0
-            if rec.patient_id:
-                rec_id = rec._origin.id if (hasattr(rec, '_origin') and rec._origin and rec._origin.id) else (rec.id or 0)
-                past_rdvs = self.search([
-                    ('patient_id', '=', rec.patient_id.id),
-                    ('id', '!=', rec_id),
-                    ('state', 'in', ['present', 'en_consultation', 'termine', 'absent', 'annule'])
-                ])
-                prev_count = len(past_rdvs)
-                if prev_count > 0:
-                    absent_count = len(past_rdvs.filtered(lambda r: r.state == 'absent'))
-                    hist_rate = float(absent_count) / float(prev_count)
+            prev_count, hist_rate = self._calculate_patient_rdv_history(rec)
 
             _, _, factors = predict_no_show_risk(
                 lead_days=lead_days,

@@ -225,7 +225,7 @@ class Patient(models.Model):
         if self.is_cnam_expired and self.is_apci_expired:
             jours_cnam = (fields.Date.today() - self.date_validite_cnam).days if self.date_validite_cnam else 'inconnu'
             jours_apci = (fields.Date.today() - self.date_fin_apci).days if self.date_fin_apci else 'inconnu'
-            patho_label = dict(self._fields['apci_pathologie'].selection).get(self.apci_pathologie, self.apci_pathologie or 'Non spécifiée')
+            patho_label = dict(self._fields['apci_pathologie'].selection).get(self.apci_pathologie, self.apci_pathologie or 'Non spécifiée')  # type: ignore
             contexte = (
                 f"Patient: {self.name}, "
                 f"CNAM expiré depuis {jours_cnam} jours ({self.date_validite_cnam}), Filière: {self.filiere_cnam or 'Non spécifiée'}, Régime: {self.regime_cnam or 'Non spécifié'} | "
@@ -297,7 +297,7 @@ class Patient(models.Model):
             }
         
         jours_retard = (fields.Date.today() - self.date_fin_apci).days
-        patho_label = dict(self._fields['apci_pathologie'].selection).get(self.apci_pathologie, self.apci_pathologie or 'Non spécifiée')
+        patho_label = dict(self._fields['apci_pathologie'].selection).get(self.apci_pathologie, self.apci_pathologie or 'Non spécifiée')  # type: ignore
         contexte = f"Patient: {self.name}, Prise en charge APCI expiree depuis {jours_retard} jours ({self.date_fin_apci}), Pathologie: {patho_label}, Decision: {self.numero_decision_apci or 'Non renseignee'}"
         default_msg = f"La prise en charge APCI ({patho_label}) du patient {self.name} est échue depuis {jours_retard} jours ({self.date_fin_apci}). Veuillez solliciter le renouvellement de la décision auprès de la CNAM."
         
@@ -396,11 +396,11 @@ class Patient(models.Model):
         existing_user = self.env[USERS_MODEL].sudo().search(['|', ('login', '=', email_clean), ('email', '=', email_clean)], limit=1)
         if existing_user:
             # Vérifier si cet utilisateur est déjà lié à un autre patient
-            other_patient = self.env['cabinet.patient'].sudo().search([('user_id', '=', existing_user.id), ('id', '!=', self.id)], limit=1)
+            other_patient = self.env['cabinet.patient'].sudo().search([('user_id', '=', existing_user.id), ('id', '!=', self.id)], limit=1)  # type: ignore
             if other_patient:
                 raise ValidationError(
                     f"Impossible de créer ou lier cet accès : Le compte utilisateur ({existing_user.name} - {existing_user.login}) "
-                    f"est déjà lié au dossier patient '{other_patient.name}' (ID: {other_patient.id}). "
+                    f"est déjà lié au dossier patient '{other_patient.name}' (ID: {other_patient.id}). "  # type: ignore
                     f"Chaque patient doit disposer d'une adresse email et d'un compte portail uniques."
                 )
             self.sudo().user_id = existing_user.id

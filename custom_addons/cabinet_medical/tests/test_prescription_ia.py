@@ -137,6 +137,7 @@ import importlib.util
 
 presc_path = os.path.join(addon_dir, 'models', 'prescription.py')
 spec_p = importlib.util.spec_from_file_location("models.prescription", presc_path)
+assert spec_p is not None and spec_p.loader is not None
 prescription_module = importlib.util.module_from_spec(spec_p)
 sys.modules["models.prescription"] = prescription_module
 spec_p.loader.exec_module(prescription_module)
@@ -928,6 +929,7 @@ class TestPrescriptionORMExecutionCount(unittest.TestCase):
 # -------------------------------------------------------------------------
 facture_path = os.path.join(addon_dir, 'models', 'facture.py')
 spec_f = importlib.util.spec_from_file_location("models.facture", facture_path)
+assert spec_f is not None and spec_f.loader is not None
 facture_module = importlib.util.module_from_spec(spec_f)
 sys.modules["models.facture"] = facture_module
 spec_f.loader.exec_module(facture_module)
@@ -1475,7 +1477,10 @@ class TestSecurityAccessRules(unittest.TestCase):
         ]
 
         # Requête pour l'utilisateur A
-        accessible_par_a = [r for r in records_db if r['patient_id'].user_id.id == user_a_id]
+        accessible_par_a = [
+            r for r in records_db
+            if getattr(getattr(r.get('patient_id'), 'user_id', None), 'id', None) == user_a_id
+        ]
         self.assertEqual(len(accessible_par_a), 1)
         self.assertEqual(accessible_par_a[0]['titre'], 'Ordonnance Patient A')
         self.assertNotIn(11, [r['id'] for r in accessible_par_a], "Le patient A ne doit en aucun cas voir les données de B")
@@ -1695,10 +1700,9 @@ class TestPrescriptionCoverageBranches(unittest.TestCase):
         self.assertTrue(act)
 
     def test_compute_ia_fingerprint_deterministic(self):
-        from models.prescription import Prescription
-        p = Prescription()
+        p = object.__new__(Prescription)
         p.env = MagicMock()
-        p._context = {}
+        p.env.context = {}
         fp1 = p._compute_ia_fingerprint(["Augmentin"], "Pénicilline", patient_id=1)
         fp2 = p._compute_ia_fingerprint(["Augmentin"], "Pénicilline", patient_id=1)
         self.assertEqual(fp1, fp2)

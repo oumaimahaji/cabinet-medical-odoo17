@@ -55,7 +55,7 @@ class MockFactureGroupe4(MockRecord):
 
             # 1. Droits CNAM expirés
             validite_cnam = getattr(p, 'date_validite_cnam', None)
-            if validite_cnam and validite_cnam < date_ref:
+            if isinstance(validite_cnam, date) and isinstance(date_ref, date) and validite_cnam < date_ref:
                 raise ValidationError(f"Validation impossible en Tiers-payant : Les droits CNAM de l'assuré {p.name} sont expirés.")
 
             # 2. Prise en charge APCI
@@ -70,7 +70,7 @@ class MockFactureGroupe4(MockRecord):
                 if not getattr(p, 'numero_decision_apci', False):
                     raise ValidationError(f"Validation impossible : Le patient {p.name} n'a aucun numéro de décision APCI valide.")
                 date_fin_apci = getattr(p, 'date_fin_apci', None)
-                if date_fin_apci and date_fin_apci < date_ref:
+                if isinstance(date_fin_apci, date) and isinstance(date_ref, date) and date_fin_apci < date_ref:
                     raise ValidationError(f"Validation impossible en APCI : La prise en charge APCI de {p.name} est expirée.")
 
             # 3. Accord préalable obligatoire

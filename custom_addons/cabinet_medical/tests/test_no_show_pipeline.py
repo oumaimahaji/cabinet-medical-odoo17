@@ -7,13 +7,7 @@ from unittest.mock import MagicMock
 addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(addon_dir)
 
-try:
-    from odoo.tests.common import TransactionCase  # type: ignore
-    BaseTestCase = TransactionCase
-except Exception:
-    BaseTestCase = unittest.TestCase
-
-class TestNoShowPipeline(BaseTestCase):
+class TestNoShowPipeline(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -30,15 +24,15 @@ class TestNoShowPipeline(BaseTestCase):
                     self.state = 'en_attente'
                     self.date = date.today()
                     self.heure = 9.0
-                    self.allergies = ''
-                    self.antecedents = ''
-                    self.traitements_chroniques = ''
-                    self.no_show_risk_score = 0.0
-                    self.no_show_risk_level = False
-                    self.no_show_risk_factors = False
-                    self.no_show_risk_badge = ""
-                    self.patient_id = False
-                    self.patient_name = False
+                    self.allergies: str = ''
+                    self.antecedents: str = ''
+                    self.traitements_chroniques: str = ''
+                    self.no_show_risk_score: float = 0.0
+                    self.no_show_risk_level: str | bool = False
+                    self.no_show_risk_factors: str | bool = False
+                    self.no_show_risk_badge: str = ""
+                    self.patient_id: object = False
+                    self.patient_name: object = False
                     self._fields = {
                         'allergies': MagicMock(),
                         'antecedents': MagicMock(),
@@ -182,6 +176,8 @@ class TestNoShowPipeline(BaseTestCase):
         import importlib.util
         ml_path = os.path.join(addon_dir, 'models', 'ml_no_show.py')
         spec_ml = importlib.util.spec_from_file_location("models.ml_no_show", ml_path)
+        self.assertIsNotNone(spec_ml, "Le spec du module ml_no_show doit exister.")
+        assert spec_ml is not None and spec_ml.loader is not None
         ml_module = importlib.util.module_from_spec(spec_ml)
         sys.modules["models.ml_no_show"] = ml_module
         spec_ml.loader.exec_module(ml_module)

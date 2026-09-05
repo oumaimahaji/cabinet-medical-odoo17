@@ -124,6 +124,7 @@ sys.modules['odoo.exceptions'].ValidationError = type('ValidationError', (Except
 import importlib.util
 presc_path = os.path.join(addon_dir, 'models', 'prescription.py')
 spec = importlib.util.spec_from_file_location("models.prescription", presc_path)
+assert spec is not None and spec.loader is not None
 prescription_module = importlib.util.module_from_spec(spec)
 sys.modules["models.prescription"] = prescription_module
 spec.loader.exec_module(prescription_module)

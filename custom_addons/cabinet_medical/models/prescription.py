@@ -1886,7 +1886,7 @@ class Prescription(models.Model):
             'view_mode': 'form',
             'target': 'new',
             'context': {
-                'default_prescription_id': self.id,
+                'default_prescription_id': self.id,  # type: ignore
             }
         }
 

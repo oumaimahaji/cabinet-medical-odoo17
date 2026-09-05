@@ -59,6 +59,18 @@ class WizardImportPatients(models.TransientModel):
         return False
 
     @staticmethod
+    def _clean_genre(value):
+        """Map flexible user inputs to valid genre Selection keys ('homme', 'femme')."""
+        if not value:
+            return None
+        v = str(value).strip().lower()
+        if v in ('homme', 'h', 'm', 'masculin', 'male'):
+            return 'homme'
+        if v in ('femme', 'f', 'feminin', 'féminin', 'female'):
+            return 'femme'
+        return v if v in ('homme', 'femme') else None
+
+    @staticmethod
     def _clean_regime_cnam(value):
         """Map flexible user inputs to valid regime_cnam Selection keys."""
         if not value:
@@ -238,7 +250,7 @@ class WizardImportPatients(models.TransientModel):
                     vals = {
                         'name': name,
                         'date_naissance': self._to_date(row[COL['date_naissance']].value),
-                        'genre': self._safe_str(row[COL['genre']].value).lower() if self._safe_str(row[COL['genre']].value) else None,
+                        'genre': self._clean_genre(row[COL['genre']].value),
                         'telephone': self._safe_str(row[COL['telephone']].value) or None,
                         'cin': cin,
                         'adresse': self._safe_str(row[COL['adresse']].value) or None,

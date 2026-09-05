@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+from datetime import date
 from odoo import models, fields, api # type: ignore
 from odoo.exceptions import ValidationError # type: ignore
 
@@ -490,7 +491,7 @@ class Facture(models.Model):
 
             # 1. Vérification de la date d'expiration des droits CNAM
             validite_cnam = getattr(p, 'date_validite_cnam', False)
-            if validite_cnam and validite_cnam < date_ref:
+            if isinstance(validite_cnam, date) and isinstance(date_ref, date) and validite_cnam < date_ref:
                 date_str = validite_cnam.strftime(DATE_FORMAT) if hasattr(validite_cnam, 'strftime') else str(validite_cnam)
                 ref_str = date_ref.strftime(DATE_FORMAT) if hasattr(date_ref, 'strftime') else str(date_ref)
                 raise ValidationError(f"Validation impossible en Tiers-payant : Les droits CNAM de l'assuré {p.name} sont expirés depuis le {date_str} (date de facturation : {ref_str}). Le tiers-payant ne peut pas être appliqué.")
@@ -507,7 +508,7 @@ class Facture(models.Model):
                 if not getattr(p, 'numero_decision_apci', False):
                     raise ValidationError(f"Validation impossible : Le patient {p.name} n'a aucun numéro de décision APCI valide.")
                 date_fin_apci = getattr(p, 'date_fin_apci', False)
-                if date_fin_apci and date_fin_apci < date_ref:
+                if isinstance(date_fin_apci, date) and isinstance(date_ref, date) and date_fin_apci < date_ref:
                     date_fin_str = date_fin_apci.strftime(DATE_FORMAT) if hasattr(date_fin_apci, 'strftime') else str(date_fin_apci)
                     raise ValidationError(f"Validation impossible en APCI : La prise en charge APCI de {p.name} est expirée depuis le {date_fin_str}.")
 
