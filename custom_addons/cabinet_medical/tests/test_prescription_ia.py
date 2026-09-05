@@ -1638,6 +1638,76 @@ class TestFacturationExhaustiveScenariosEtIncoherences(unittest.TestCase):
         self.assertEqual(facture.montant_cnam_cabinet + facture.montant_paye_cabinet, 100.0, "Conservation stricte de la somme des montants")
 
 
+class TestPrescriptionCoverageBranches(unittest.TestCase):
+    """Complément de couverture pour les branches spécifiques et helpers de prescription.py."""
+
+    def test_classify_dci_all_families(self):
+        from models.prescription import _classify_dci
+        self.assertIsNone(_classify_dci(None))
+        self.assertIsNone(_classify_dci(""))
+        self.assertEqual(_classify_dci("Lithium"), "lithium")
+        self.assertEqual(_classify_dci("Teralithe"), "lithium")
+        self.assertEqual(_classify_dci("Digoxine"), "digoxine")
+        self.assertEqual(_classify_dci("Cordarone"), "amiodarone")
+        self.assertEqual(_classify_dci("Amiodarone"), "amiodarone")
+        self.assertEqual(_classify_dci("Metoject"), "methotrexate")
+        self.assertEqual(_classify_dci("Novatrex"), "methotrexate")
+        self.assertEqual(_classify_dci("Cefixime"), "cephalosporine")
+        self.assertEqual(_classify_dci("Bactrim"), "sulfamide")
+        self.assertEqual(_classify_dci("Sulfadiazine"), "sulfamide")
+        self.assertEqual(_classify_dci("Triatec"), "iec")
+        self.assertEqual(_classify_dci("Cozaar"), "ara2")
+        self.assertEqual(_classify_dci("Aldactone"), "diuretique_epargneur_potassium")
+        self.assertEqual(_classify_dci("Tahor"), "statine")
+        self.assertEqual(_classify_dci("Zoloft"), "isrs")
+        self.assertEqual(_classify_dci("Xanax"), "benzodiazepine")
+        self.assertEqual(_classify_dci("Tramadol"), "opioide")
+        self.assertEqual(_classify_dci("Solupred"), "corticoide")
+        self.assertEqual(_classify_dci("Ciprofloxacine"), "quinolone")
+        self.assertIsNone(_classify_dci("Inconnu12345"))
+
+    def test_analyser_duree_traitement_branches(self):
+        from models.prescription import _analyser_duree_traitement
+        from datetime import date, datetime, timedelta
+        ref = date.today()
+        ref_dt = datetime.now()
+        act, _, _ = _analyser_duree_traitement(ref, "7 jours", ref_date=ref_dt)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(None, "7 jours")
+        self.assertTrue(act)
+        future = ref + timedelta(days=5)
+        act, _, _ = _analyser_duree_traitement(future, "7 jours", ref_date=ref)
+        self.assertTrue(act)
+        past = ref - timedelta(days=10)
+        act, _, _ = _analyser_duree_traitement(past, "", ref_date=ref)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(past, "traitement continu", ref_date=ref)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(past, "2 semaines", ref_date=ref)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(past, "1 mois", ref_date=ref)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(past, "1 an", ref_date=ref)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(past, "15", ref_date=ref)
+        self.assertTrue(act)
+        act, _, _ = _analyser_duree_traitement(past, "indéterminé", ref_date=ref)
+        self.assertTrue(act)
+
+    def test_compute_ia_fingerprint_deterministic(self):
+        from models.prescription import Prescription
+        p = Prescription()
+        p.env = MagicMock()
+        p._context = {}
+        fp1 = p._compute_ia_fingerprint(["Augmentin"], "Pénicilline", patient_id=1)
+        fp2 = p._compute_ia_fingerprint(["Augmentin"], "Pénicilline", patient_id=1)
+        self.assertEqual(fp1, fp2)
+        fp3 = p._compute_ia_fingerprint(["Augmentin"], "Pénicilline", patient_id=2)
+        self.assertNotEqual(fp1, fp3)
+        fp4 = p._compute_ia_fingerprint(["Augmentin"], "Pénicilline", patient_id=None, traitements="Tahor")
+        self.assertTrue(fp4)
+
+
 if __name__ == '__main__':
     unittest.main()
 

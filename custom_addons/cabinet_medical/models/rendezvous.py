@@ -357,6 +357,22 @@ class Appointment(models.Model):
         store=False
     )
 
+    def _calculate_patient_rdv_history(self, rec):
+        """Helper pour calculer l'historique d'absentéisme du patient."""
+        if not rec.patient_id:
+            return 0, 0.0
+        rec_id = rec._origin.id if (hasattr(rec, '_origin') and rec._origin and rec._origin.id) else (rec.id or 0)
+        past_rdvs = self.search([
+            ('patient_id', '=', rec.patient_id.id),
+            ('id', '!=', rec_id),
+            ('state', 'in', ['present', 'en_consultation', 'termine', 'absent', 'annule'])
+        ])
+        prev_count = len(past_rdvs)
+        if prev_count == 0:
+            return 0, 0.0
+        absent_count = len(past_rdvs.filtered(lambda r: r.state == 'absent'))
+        return prev_count, float(absent_count) / float(prev_count)
+
     @api.depends('date', 'heure', 'create_date', 'patient_id', 'patient_name', 'is_urgence', 'is_nouveau_patient', 'state')
     def _compute_no_show_risk(self):
         from .ml_no_show import predict_no_show_risk
@@ -381,19 +397,7 @@ class Appointment(models.Model):
             is_urgence = 1 if rec.is_urgence else 0
             is_nouveau = 1 if (rec.is_nouveau_patient or not rec.patient_id) else 0
 
-            prev_count = 0
-            hist_rate = 0.0
-            if rec.patient_id:
-                rec_id = rec._origin.id if (hasattr(rec, '_origin') and rec._origin and rec._origin.id) else (rec.id or 0)
-                past_rdvs = self.search([
-                    ('patient_id', '=', rec.patient_id.id),
-                    ('id', '!=', rec_id),
-                    ('state', 'in', ['present', 'en_consultation', 'termine', 'absent', 'annule'])
-                ])
-                prev_count = len(past_rdvs)
-                if prev_count > 0:
-                    absent_count = len(past_rdvs.filtered(lambda r: r.state == 'absent'))
-                    hist_rate = float(absent_count) / float(prev_count)
+            prev_count, hist_rate = self._calculate_patient_rdv_history(rec)
 
             score, level, _ = predict_no_show_risk(
                 lead_days=lead_days,
@@ -833,31 +837,28 @@ class Appointment(models.Model):
     def _onchange_date_heure(self):
         """Avertir immédiatement si le créneau est déjà pris par un autre patient"""
         for rec in self:
-            if rec.date and rec.heure:
-                domain = [
-                    ('date', '=', rec.date),
-                    ('heure', '=', rec.heure),
-                    ('state', 'not in', ['annule', 'absent'])
-                ]
-                rec_id = False
-                if getattr(rec, '_origin', False) and getattr(rec._origin, 'id', False):
-                    rec_id = rec._origin.id
-                elif getattr(rec, 'id', False):
-                    rec_id = rec.id
-                if isinstance(rec_id, int):
-                    domain.append(('id', '!=', rec_id))  # type: ignore
-                
-                duplicate = self.env[RENDEZVOUS_MODEL].search(domain, limit=1)
-                if duplicate:
-                    patient_name = duplicate.display_patient_name or "un autre patient"
-                    date_str = rec.date_fr or rec.date.strftime(DATE_FORMAT_DISPLAY)
-                    time_str = self._format_float_time(rec.heure)
-                    return {
-                        'warning': {
-                            'title': '⚠️ Créneau déjà occupé !',
-                            'message': f"Ce créneau ({date_str} à {time_str}) est déjà réservé pour {patient_name}."
-                        }
+            if not (rec.date and rec.heure):
+                continue
+            rec_id = getattr(getattr(rec, '_origin', False), 'id', False) or getattr(rec, 'id', False)
+            domain = [
+                ('date', '=', rec.date),
+                ('heure', '=', rec.heure),
+                ('state', 'not in', ['annule', 'absent'])
+            ]
+            if isinstance(rec_id, int) and rec_id:
+                domain.append(('id', '!=', rec_id))
+
+            duplicate = self.env[RENDEZVOUS_MODEL].search(domain, limit=1)
+            if duplicate:
+                patient_name = duplicate.display_patient_name or "un autre patient"
+                date_str = rec.date_fr or (rec.date.strftime(DATE_FORMAT_DISPLAY) if rec.date else "")
+                time_str = self._format_float_time(rec.heure)
+                return {
+                    'warning': {
+                        'title': '⚠️ Créneau déjà occupé !',
+                        'message': f"Ce créneau ({date_str} à {time_str}) est déjà réservé pour {patient_name}."
                     }
+                }
 
     @api.onchange('date')
     def _onchange_date_past_check(self):

@@ -8,7 +8,7 @@ from odoo.exceptions import ValidationError, AccessError  # type: ignore
 from datetime import date, datetime, timedelta
 import re
 import difflib
-import hashlib
+import zlib
 from odoo.modules import get_module_resource  # type: ignore
 from types import MappingProxyType
 from typing import Any
@@ -950,11 +950,11 @@ class Prescription(models.Model):
                 self.env.context.get('default_consultation_id')
                 or self.env.context.get('consultation_id')
                 or self._context.get('default_consultation_id')
-                or (self._context.get('active_model') == 'cabinet.consultation' and self._context.get('active_id'))
+                or (self._context.get('active_model') == CONSULTATION_MODEL and self._context.get('active_id'))
                 or self._context.get('active_id')
             )
             if consultation_id_val:
-                consultation = self.env['cabinet.consultation'].browse(consultation_id_val)
+                consultation = self.env[CONSULTATION_MODEL].browse(consultation_id_val)
                 if consultation.exists():
                     patient = consultation.patient_id
 
@@ -1617,7 +1617,7 @@ class Prescription(models.Model):
         tc_key = _normalize_text(tc_val or '')
 
         raw = f"{pat_id}::{meds_key}::{al_key}::{tc_key}"
-        return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+        return f"{zlib.crc32(raw.encode('utf-8')):08x}"
 
     def _calculate_ia_status(self):
         """Méthode de calcul unifiée séquentielle (Niveau 1 -> Niveau 2 -> Interactions -> Fusion)."""

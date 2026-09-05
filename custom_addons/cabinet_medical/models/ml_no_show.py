@@ -58,7 +58,7 @@ def predict_no_show_risk(lead_days=0, day_of_week=0, is_afternoon=0, is_urgence=
                 'patient_historical_noshow_rate'
             ]
             
-            X_df = pd.DataFrame([{
+            features_df = pd.DataFrame([{
                 'lead_days': max(0, int(lead_days)),
                 'day_of_week': int(day_of_week),
                 'is_afternoon': int(bool(is_afternoon)),
@@ -68,7 +68,7 @@ def predict_no_show_risk(lead_days=0, day_of_week=0, is_afternoon=0, is_urgence=
                 'patient_historical_noshow_rate': float(np.clip(patient_historical_noshow_rate, 0.0, 1.0))
             }])[features]
             
-            proba = model.predict_proba(X_df)[0][1]
+            proba = model.predict_proba(features_df)[0][1]
             risk_score = round(float(proba * 100.0), 1)
         except Exception as e:
             _logger.warning("Erreur inférence ML No-Show: %s. Utilisation de la formule heuristique.", e)
@@ -90,7 +90,7 @@ def predict_no_show_risk(lead_days=0, day_of_week=0, is_afternoon=0, is_urgence=
         
     if patient_historical_noshow_rate > 0.25:
         top_factors.append(f"Antécédents d'absence ({int(patient_historical_noshow_rate*100)}% de no-show)")
-    elif patient_previous_rdv_count >= 3 and patient_historical_noshow_rate == 0.0:
+    elif patient_previous_rdv_count >= 3 and patient_historical_noshow_rate <= 1e-6:
         top_factors.append("Patient assidu et régulier")
         
     if is_nouveau_patient:

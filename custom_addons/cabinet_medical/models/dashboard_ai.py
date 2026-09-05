@@ -8,6 +8,9 @@ from odoo import models, fields, api
 
 _logger = logging.getLogger(__name__)
 
+JSON_BLOCK_DELIMITER = "```json"
+CODE_BLOCK_DELIMITER = "```"
+
 class DashboardAI(models.AbstractModel):
     _name = 'cabinet.dashboard.ai'
     _description = 'Assistant IA du Tableau de Bord'
@@ -445,8 +448,8 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
             if response.status_code == 200:
                 result = response.json()
                 json_str = result.get('content', [{}])[0].get('text', '')
-                if "```json" in json_str: json_str = json_str.split("```json")[1].split("```")[0]
-                elif "```" in json_str: json_str = json_str.split("```")[1].split("```")[0]
+                if JSON_BLOCK_DELIMITER in json_str: json_str = json_str.split(JSON_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
+                elif CODE_BLOCK_DELIMITER in json_str: json_str = json_str.split(CODE_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
                 
                 ai_data = json.loads(json_str.strip())
                 metrics['health_score'] = ai_data.get('global_health_score', metrics['health_score'])
@@ -488,10 +491,10 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
                 result = response.json()
                 raw_text = result.get('response', '').strip()
                 json_str = raw_text
-                if "```json" in json_str:
-                    json_str = json_str.split("```json")[1].split("```")[0]
-                elif "```" in json_str:
-                    json_str = json_str.split("```")[1].split("```")[0]
+                if JSON_BLOCK_DELIMITER in json_str:
+                    json_str = json_str.split(JSON_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
+                elif CODE_BLOCK_DELIMITER in json_str:
+                    json_str = json_str.split(CODE_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
                 try:
                     ai_data = json.loads(json_str.strip())
                     metrics['health_score'] = ai_data.get('global_health_score', metrics['health_score'])

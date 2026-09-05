@@ -1,5 +1,10 @@
 from odoo import models
 
+KEY_RESTRICTED = 'is_cabinet_restricted'
+GROUP_MEDECIN = 'cabinet_medical.group_medecin'
+GROUP_SECRETAIRE = 'cabinet_medical.group_secretaire'
+GROUP_SYSTEM = 'base.group_system'
+
 class Http(models.AbstractModel):
     _inherit = 'ir.http'  # type: ignore
 
@@ -7,16 +12,9 @@ class Http(models.AbstractModel):
         try:
             result = super(Http, self).session_info()  # type: ignore
             user = self.env.user
-            is_admin = user.has_group('base.group_system')
-            if not is_admin:
-                is_medecin = user.has_group('cabinet_medical.group_medecin')
-                is_secretaire = user.has_group('cabinet_medical.group_secretaire')
-                if is_medecin or is_secretaire:
-                    result['is_cabinet_restricted'] = True
-                else:
-                    result['is_cabinet_restricted'] = False
-            else:
-                result['is_cabinet_restricted'] = False
+            is_admin = user.has_group(GROUP_SYSTEM)
+            is_staff = user.has_group(GROUP_MEDECIN) or user.has_group(GROUP_SECRETAIRE)
+            result[KEY_RESTRICTED] = bool(not is_admin and is_staff)
             return result
         except Exception:
             import logging
