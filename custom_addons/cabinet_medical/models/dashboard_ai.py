@@ -469,9 +469,9 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
     def _call_ollama_fallback(self, metrics, prompt, is_medecin):
         """Secours Ollama local : appelle le LLM local (phi3 ou tinyllama) si Claude n'est pas disponible."""
         import requests
-        IrParam = self.env['ir.config_parameter'].sudo()
-        url = IrParam.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
-        model = IrParam.get_param('cabinet_medical.ollama_model', 'tinyllama')
+        ir_config_param = self.env['ir.config_parameter'].sudo()
+        url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
+        model = ir_config_param.get_param('cabinet_medical.ollama_model', 'tinyllama')
 
         try:
             payload = {

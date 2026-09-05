@@ -1,4 +1,5 @@
 from odoo import models, fields, api  # type: ignore
+from odoo.tools.float_utils import float_is_zero
 from odoo.exceptions import ValidationError  # type: ignore
 from datetime import datetime
 
@@ -120,7 +121,7 @@ class ActeMedical(models.Model):
             self.description = self.parametrage_id.name
             self.code_acte = self.parametrage_id.code_cnam
             self.tarif_conventionnel = self.parametrage_id.tarif
-            if not self.montant or self.montant == 0.0:
+            if not self.montant or float_is_zero(self.montant, precision_digits=3):
                 self.montant = self.parametrage_id.tarif
             if self.parametrage_id.necessite_accord_prealable:
                 self.statut_accord_prealable = 'demande'
@@ -156,8 +157,8 @@ class ActeMedical(models.Model):
                 if rec.parametrage_id and rec.parametrage_id.taux_cnam is not False and rec.parametrage_id.taux_cnam is not None:
                     taux_cnam = float(rec.parametrage_id.taux_cnam)
                 else:
-                    IrConfigParam = rec.env['ir.config_parameter'].sudo()
-                    taux_cnam = float(IrConfigParam.get_param('cabinet.cnam_taux_consultation', '70.0'))
+                    ir_config_param = rec.env['ir.config_parameter'].sudo()
+                    taux_cnam = float(ir_config_param.get_param('cabinet.cnam_taux_consultation', '70.0'))
                 rec.total_acte_dt = rec.montant * (1.0 - taux_cnam / 100.0)
             else:
                 # Remboursement ou sans CNAM : patient avance la totalité

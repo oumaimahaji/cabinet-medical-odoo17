@@ -115,14 +115,14 @@ class ActeParametrage(models.Model):
     @api.depends('type_acte')
     def _compute_taux_cnam(self):
         """Calcule le taux CNAM selon le type d'acte — réalité tunisienne 2025."""
-        IrParam = self.env['ir.config_parameter'].sudo()
+        ir_config_param = self.env['ir.config_parameter'].sudo()
         taux_map = {
-            'consultation':   float(IrParam.get_param('cabinet.cnam_taux_consultation',   '70.0')),
-            'acte_technique': float(IrParam.get_param('cabinet.cnam_taux_acte_technique', '80.0')),
-            'biologie':       float(IrParam.get_param('cabinet.cnam_taux_biologie',       '75.0')),
-            'radiologie':     float(IrParam.get_param('cabinet.cnam_taux_radiologie',     '75.0')),
-            'dentaire':       float(IrParam.get_param('cabinet.cnam_taux_dentaire',       '50.0')),
-            'autre':          float(IrParam.get_param('cabinet.cnam_taux_consultation',   '70.0')),
+            'consultation':   float(ir_config_param.get_param('cabinet.cnam_taux_consultation',   '70.0')),
+            'acte_technique': float(ir_config_param.get_param('cabinet.cnam_taux_acte_technique', '80.0')),
+            'biologie':       float(ir_config_param.get_param('cabinet.cnam_taux_biologie',       '75.0')),
+            'radiologie':     float(ir_config_param.get_param('cabinet.cnam_taux_radiologie',     '75.0')),
+            'dentaire':       float(ir_config_param.get_param('cabinet.cnam_taux_dentaire',       '50.0')),
+            'autre':          float(ir_config_param.get_param('cabinet.cnam_taux_consultation',   '70.0')),
         }
         for rec in self:
             rec.taux_cnam = taux_map.get(str(rec.type_acte or ''), 70.0)

@@ -166,8 +166,8 @@ class Facture(models.Model):
         acte_ids = getattr(consult, 'acte_ids', None) if consult else None
         active_actes = acte_ids.filtered(lambda a: a.active) if hasattr(acte_ids, 'filtered') else (acte_ids or [])
         if active_actes:
-            IrConfigParam = self.env['ir.config_parameter'].sudo()
-            taux_default_consult = float(IrConfigParam.get_param('cabinet.cnam_taux_consultation', '70.0')) / 100.0
+            ir_config_param = self.env['ir.config_parameter'].sudo()
+            taux_default_consult = float(ir_config_param.get_param('cabinet.cnam_taux_consultation', '70.0')) / 100.0
             taux_default_tech = 0.80  # 80% actes médico-chirurgicaux (Art. 21 Décret 2007-1367)
             taux_default_rad_bio = 0.75  # 75% radiologie et biologie (Art. 21 Décret 2007-1367)
 
@@ -227,8 +227,8 @@ class Facture(models.Model):
 
                 part_cnam += base_tcr * taux
         else:
-            IrConfigParam = self.env['ir.config_parameter'].sudo()
-            taux_remb_pct = float(IrConfigParam.get_param('cabinet.cnam_taux_remboursement', '70.0')) / 100.0
+            ir_config_param = self.env['ir.config_parameter'].sudo()
+            taux_remb_pct = float(ir_config_param.get_param('cabinet.cnam_taux_remboursement', '70.0')) / 100.0
             m_conv = getattr(self, 'montant_conventionnel_total', None)
             base_tcr = m_conv if (isinstance(m_conv, (int, float)) and m_conv > 0) else total
             part_cnam = base_tcr * taux_remb_pct
@@ -505,9 +505,9 @@ class Facture(models.Model):
         """ Envoie le contexte à Ollama en local pour reformuler l'alerte en langage naturel """
         import requests # type: ignore
         import time
-        IrParam = self.env['ir.config_parameter'].sudo()
-        url = IrParam.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
-        model = IrParam.get_param('cabinet_medical.ollama_model', 'tinyllama')
+        ir_config_param = self.env['ir.config_parameter'].sudo()
+        url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
+        model = ir_config_param.get_param('cabinet_medical.ollama_model', 'tinyllama')
         prompt = f"""Tu es l'assistant médical intelligent d'un cabinet médical Odoo.
 Alerte : {anomaly_type}
 Contexte technique : {context_data}
