@@ -5,7 +5,7 @@
         <field name="name">cabinet.acte.parametrage.tree</field>
         <field name="model">cabinet.acte.parametrage</field>
         <field name="arch" type="xml">
-            <tree string="Actes Médicaux">
+            <tree string="Actes Médicaux" export_xlsx="1">
                 <field name="name"/>
                 <field name="type_acte"/>
                 <field name="code_cnam"/>

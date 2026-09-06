@@ -5,7 +5,7 @@
         <field name="name">cabinet.facture.tree</field>
         <field name="model">cabinet.facture</field>
         <field name="arch" type="xml">
-            <tree create="0" decoration-info="state == 'draft'" decoration-success="state == 'validated'">
+            <tree create="0" decoration-info="state == 'draft'" decoration-success="state == 'validated'" export_xlsx="1">
                 <field name="name"/>
                 <field name="date_facture"/>
                 <field name="patient_id"/>

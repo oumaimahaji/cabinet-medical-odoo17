@@ -5,7 +5,7 @@
         <field name="name">cabinet.bordereau.tree</field>
         <field name="model">cabinet.bordereau</field>
         <field name="arch" type="xml">
-            <tree string="Bordereaux CNAM" default_order="date_creation desc" decoration-info="state == 'draft'" decoration-success="state == 'paid'" decoration-warning="state == 'sent'">
+            <tree string="Bordereaux CNAM" default_order="date_creation desc" decoration-info="state == 'draft'" decoration-success="state == 'paid'" decoration-warning="state == 'sent'" export_xlsx="1">
                 <field name="name"/>
                 <field name="periode_label" string="Période"/>
                 <field name="date_creation"/>

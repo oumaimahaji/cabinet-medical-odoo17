@@ -5,7 +5,7 @@
         <field name="name">cabinet.acte.parametrage.tree</field>
         <field name="model">cabinet.acte.parametrage</field>
         <field name="arch" type="xml">
-            <tree string="Tarifs CNAM &amp; Nomenclature NGAP">
+            <tree string="Tarifs CNAM &amp; Nomenclature NGAP" export_xlsx="1">
                 <field name="code_cnam"/>
                 <field name="lettre_cle" optional="show"/>
                 <field name="coefficient" optional="show"/>
