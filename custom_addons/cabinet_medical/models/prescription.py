@@ -773,18 +773,42 @@ def _analyser_duree_traitement(date_presc, duree_str, ref_date=None):
     if any(tc in duree_norm for tc in termes_chroniques):
         return True, None, "Traitement chronique / continu"
 
-    # Extraction numérique + unité (sécurisée contre ReDoS / backtracking polynomial S5852)
-    match = re.search(r'\b(\d{1,4})\s*(semaines?|sem|annees?|ans?|jours?|j|mois|m)\b', duree_norm)
-    if match:
-        val = int(match.group(1))
-        unit = match.group(2)
-        if unit.startswith('jour') or unit == 'j':
+    # Extraction numérique + unité sans regex (Zero ReDoS / Zero Hotspot SonarQube S5852)
+    val = None
+    unit = None
+    clean_duree = duree_norm.replace(',', ' ').replace(';', ' ').replace('.', ' ')
+    tokens = clean_duree.split()
+
+    for i, token in enumerate(tokens):
+        digits = "".join(c for c in token if c.isdigit())
+        letters = "".join(c for c in token if c.isalpha())
+        if digits:
+            try:
+                candidate_val = int(digits)
+                if 0 < candidate_val <= 9999:
+                    if letters:
+                        val = candidate_val
+                        unit = letters
+                        break
+                    elif i + 1 < len(tokens):
+                        next_token = "".join(c for c in tokens[i + 1] if c.isalpha())
+                        if next_token:
+                            val = candidate_val
+                            unit = next_token
+                            break
+                    elif val is None:
+                        val = candidate_val
+            except ValueError:
+                pass
+
+    if val is not None and unit:
+        if unit.startswith(('jour', 'j')):
             date_fin = d_presc + timedelta(days=val)
-        elif unit.startswith('sem'):
+        elif unit.startswith(('sem', 'w')):
             date_fin = d_presc + timedelta(weeks=val)
-        elif unit.startswith('mois') or unit == 'm':
+        elif unit.startswith(('mois', 'm')):
             date_fin = d_presc + timedelta(days=int(val * 30.5))
-        elif unit.startswith('an'):
+        elif unit.startswith(('an', 'y')):
             date_fin = d_presc + timedelta(days=int(val * 365.25))
         else:
             date_fin = d_presc + timedelta(days=val)
@@ -793,9 +817,7 @@ def _analyser_duree_traitement(date_presc, duree_str, ref_date=None):
         return is_active, date_fin, f"{val} {unit}(s)"
 
     # Fallback si un nombre simple sans unité (considéré en jours)
-    num_match = re.search(r'\b(\d+)\b', duree_norm)
-    if num_match:
-        val = int(num_match.group(1))
+    if val is not None:
         date_fin = d_presc + timedelta(days=val)
         return date_fin >= ref, date_fin, f"{val} jours"
 
