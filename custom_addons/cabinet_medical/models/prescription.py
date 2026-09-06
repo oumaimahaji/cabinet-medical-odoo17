@@ -774,7 +774,7 @@ def _analyser_duree_traitement(date_presc, duree_str, ref_date=None):
         return True, None, "Traitement chronique / continu"
 
     # Extraction numérique + unité (sécurisée contre ReDoS / backtracking polynomial S5852)
-    match = re.search(r'\b(\d{1,4})\s*(semaines?|sem|annees?|ans?|jours?|j|mois|m)\b', duree_norm)  # NOSONAR
+    match = re.search(r'\b(\d{1,4})\s*(semaines?|sem|annees?|ans?|jours?|j|mois|m)\b', duree_norm)
     if match:
         val = int(match.group(1))
         unit = match.group(2)
