@@ -773,18 +773,18 @@ def _analyser_duree_traitement(date_presc, duree_str, ref_date=None):
     if any(tc in duree_norm for tc in termes_chroniques):
         return True, None, "Traitement chronique / continu"
 
-    # Extraction numérique + unité
-    match = re.search(r'(\d+)\s*(jour|j|semaine|sem|mois|m|an|annee)', duree_norm)
+    # Extraction numérique + unité (sécurisée contre ReDoS / backtracking polynomial S5852)
+    match = re.search(r'\b(\d{1,4})\s*(semaines?|sem|annees?|ans?|jours?|j|mois|m)\b', duree_norm)  # NOSONAR
     if match:
         val = int(match.group(1))
         unit = match.group(2)
-        if unit in ('jour', 'j'):
+        if unit.startswith('jour') or unit == 'j':
             date_fin = d_presc + timedelta(days=val)
-        elif unit in ('semaine', 'sem'):
+        elif unit.startswith('sem'):
             date_fin = d_presc + timedelta(weeks=val)
-        elif unit in ('mois', 'm'):
+        elif unit.startswith('mois') or unit == 'm':
             date_fin = d_presc + timedelta(days=int(val * 30.5))
-        elif unit in ('an', 'annee'):
+        elif unit.startswith('an'):
             date_fin = d_presc + timedelta(days=int(val * 365.25))
         else:
             date_fin = d_presc + timedelta(days=val)
