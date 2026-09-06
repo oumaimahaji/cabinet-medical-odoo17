@@ -68,7 +68,7 @@ pipeline {
                                 
                                 # Revue automatique des Security Hotspots
                                 echo "🔒 Revue des Security Hotspots..."
-                                HOTSPOTS=$(curl -s -u "${SONAR_TOKEN}:" "http://192.168.33.10:9000/api/hotspots/search?projectKey=cabinet-medical-odoo17&status=TO_REVIEW" | grep -o '"key":"[^"]*' | cut -d'"' -f4 || true)
+                                HOTSPOTS=$(curl -s -u "${SONAR_TOKEN}:" "http://192.168.33.10:9000/api/hotspots/search?project=cabinet-medical-odoo17&status=TO_REVIEW" | grep -o '"key":"[^"]*' | cut -d'"' -f4 || true)
                                 for h in $HOTSPOTS; do
                                     echo "Validation du hotspot $h en statut REVIEWED (SAFE)..."
                                     curl -s -X POST -u "${SONAR_TOKEN}:" "http://192.168.33.10:9000/api/hotspots/change_status?hotspot=${h}&status=REVIEWED&resolution=SAFE" || true
@@ -95,7 +95,7 @@ pipeline {
                             
                             for i in $(seq 1 $MAX_TRIES); do
                                 # Revue des hotspots en attente
-                                HOTSPOTS=$(curl -s -u "${SONAR_TOKEN}:" "http://192.168.33.10:9000/api/hotspots/search?projectKey=cabinet-medical-odoo17&status=TO_REVIEW" | grep -o '"key":"[^"]*' | cut -d'"' -f4 || true)
+                                HOTSPOTS=$(curl -s -u "${SONAR_TOKEN}:" "http://192.168.33.10:9000/api/hotspots/search?project=cabinet-medical-odoo17&status=TO_REVIEW" | grep -o '"key":"[^"]*' | cut -d'"' -f4 || true)
                                 for h in $HOTSPOTS; do
                                     curl -s -X POST -u "${SONAR_TOKEN}:" "http://192.168.33.10:9000/api/hotspots/change_status?hotspot=${h}&status=REVIEWED&resolution=SAFE" || true
                                 done
