@@ -13,7 +13,7 @@ vagrant up
 
 echo.
 echo [2/3] 🐳 Démarrage de tous les conteneurs Docker (Jenkins, Sonar, Nexus, Grafana, Odoo)...
-vagrant ssh -c "docker start sonar nexus jenkins-ci prometheus grafana cabinet_db cabinet-deploy-odoo-1 2>/dev/null || true"
+vagrant ssh -c "sudo mount -a; docker start sonar nexus jenkins-ci prometheus grafana cabinet_db cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true"
 
 echo.
 echo [3/3] 🌐 Ouverture du Portail de Soutenance Live...
