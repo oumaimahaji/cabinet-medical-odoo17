@@ -194,7 +194,7 @@ class TestNoShowPipeline(unittest.TestCase):
         )
         self.assertIsInstance(score, float)
         self.assertIn(level, ['faible', 'moyen', 'eleve'])
-        self.assertTrue(len(factors) > 0)
+        self.assertGreater(len(factors), 0)
 
     def test_05_robustesse_scoring_urgence_vs_haut_risque(self):
         """Test 5: Vérifie la calibration des scores : Urgence (< 25%) vs Patient régulier (< 25%) vs Haut Risque (> 45%)"""

@@ -123,6 +123,21 @@ class Facture(models.Model):
         (STATUT_CNAM_REJETE, 'Rejeté')
     ], string='Statut Paiement CNAM', default=STATUT_CNAM_NON_ENVOYE)
 
+    def _calculate_acte_tcr_and_dep(self, acte):
+        tcr = getattr(acte, 'tarif_conventionnel', 0.0)
+        param = getattr(acte, 'parametrage_id', None)
+        param_tarif = getattr(param, 'tarif', 0.0) if param else 0.0
+        a_montant = getattr(acte, 'montant', 0.0) or 0.0
+        if isinstance(tcr, (int, float)) and tcr > 0.0:
+            chosen_tcr = tcr
+        elif isinstance(param_tarif, (int, float)) and param_tarif > 0.0:
+            chosen_tcr = param_tarif
+        else:
+            chosen_tcr = a_montant if isinstance(a_montant, (int, float)) else 0.0
+        actual_montant = a_montant if isinstance(a_montant, (int, float)) else 0.0
+        dep = max(0.0, actual_montant - chosen_tcr)
+        return chosen_tcr, dep
+
     @api.depends(
         'consultation_id.acte_ids.montant',
         'consultation_id.acte_ids.tarif_conventionnel',
@@ -135,29 +150,19 @@ class Facture(models.Model):
             consult = getattr(rec, 'consultation_id', None)
             acte_ids = getattr(consult, 'acte_ids', None) if consult else None
             active_actes = acte_ids.filtered(lambda a: a.active) if hasattr(acte_ids, 'filtered') else (acte_ids or [])
-            if active_actes:
-                rec.montant_total = sum((getattr(a, 'montant', 0.0) or 0.0) for a in active_actes)
-                tcr_sum = 0.0
-                dep_sum = 0.0
-                for a in active_actes:
-                    tcr = getattr(a, 'tarif_conventionnel', 0.0)
-                    param = getattr(a, 'parametrage_id', None)
-                    param_tarif = getattr(param, 'tarif', 0.0) if param else 0.0
-                    a_montant = getattr(a, 'montant', 0.0) or 0.0
-                    if tcr and isinstance(tcr, (int, float)) and tcr > 0.0:
-                        chosen_tcr = tcr
-                    elif param_tarif and isinstance(param_tarif, (int, float)) and param_tarif > 0.0:
-                        chosen_tcr = param_tarif
-                    else:
-                        chosen_tcr = a_montant
-                    tcr_sum += chosen_tcr
-                    dep_sum += max(0.0, (a_montant if isinstance(a_montant, (int, float)) else 0.0) - chosen_tcr)
-                rec.montant_conventionnel_total = round(tcr_sum, 2)
-                rec.depassement_total = round(dep_sum, 2)
-            else:
+            if not active_actes:
                 rec.montant_total = 0.0
                 rec.montant_conventionnel_total = 0.0
                 rec.depassement_total = 0.0
+                continue
+            rec.montant_total = sum((getattr(a, 'montant', 0.0) or 0.0) for a in active_actes)
+            tcr_sum, dep_sum = 0.0, 0.0
+            for a in active_actes:
+                chosen_tcr, dep = rec._calculate_acte_tcr_and_dep(a)
+                tcr_sum += chosen_tcr
+                dep_sum += dep
+            rec.montant_conventionnel_total = round(tcr_sum, 2)
+            rec.depassement_total = round(dep_sum, 2)
 
     @api.depends('patient_id.is_cnam', 'patient_id.filiere_cnam', 'patient_id.is_apci', 'patient_id.has_assurance')
     def _compute_scenario(self):
@@ -180,6 +185,42 @@ class Facture(models.Model):
             else:
                 rec.scenario = SCENARIO_SANS_COUVERTURE
 
+    def _is_acte_eligible_apci(self, acte, patient, consult, has_explicit_apci_acte):
+        if not getattr(patient, 'is_apci', False):
+            return False
+        if getattr(acte, 'is_acte_apci', False):
+            return True
+        if has_explicit_apci_acte:
+            return False
+        if getattr(consult, 'is_consultation_apci', False):
+            return True
+        desc = (getattr(acte, 'description', '') or '').lower()
+        motif = (getattr(consult, 'motif', '') or '').lower()
+        if 'non_apci' in desc or 'non_apci' in motif or self.env.context.get('apci_non_liee'):
+            return False
+        return True
+
+    def _get_acte_standard_cnam_rate(self, acte, default_consult, default_tech, default_rad_bio):
+        param = getattr(acte, 'parametrage_id', None)
+        taux_cnam = getattr(param, 'taux_cnam', None) if param else None
+        if param and taux_cnam is not None and taux_cnam is not False:
+            return float(taux_cnam) / 100.0
+        type_a = getattr(acte, 'type_acte', 'consultation')
+        if type_a in ('acte_technique', 'chirurgie', 'suture'):
+            return default_tech
+        if type_a in ('radiologie', 'biologie'):
+            return default_rad_bio
+        return default_consult
+
+    def _calculate_single_acte_cnam_part(self, acte, patient, consult, has_explicit_apci, rates):
+        chosen_tcr, _ = self._calculate_acte_tcr_and_dep(acte)
+        if getattr(acte, 'necessite_accord_prealable', False) and getattr(acte, 'statut_accord_prealable', 'non_requis') in ('refuse', 'demande'):
+            return 0.0
+        if self._is_acte_eligible_apci(acte, patient, consult, has_explicit_apci):
+            return chosen_tcr
+        taux = self._get_acte_standard_cnam_rate(acte, rates[0], rates[1], rates[2])
+        return chosen_tcr * taux
+
     def _get_part_cnam_reelle(self):
         self.ensure_one()
         m_total = getattr(self, 'montant_total', 0.0)
@@ -188,71 +229,15 @@ class Facture(models.Model):
         if not p or not getattr(p, 'is_cnam', False) or self.scenario in (SCENARIO_SANS_COUVERTURE, SCENARIO_SANS_CNAM_ASSUR):
             return 0.0
 
-        part_cnam = 0.0
         consult = getattr(self, 'consultation_id', None)
         acte_ids = getattr(consult, 'acte_ids', None) if consult else None
         active_actes = acte_ids.filtered(lambda a: a.active) if hasattr(acte_ids, 'filtered') else (acte_ids or [])
         if active_actes:
             ir_config_param = self.env[CONFIG_PARAM_MODEL].sudo()
-            taux_default_consult = float(ir_config_param.get_param('cabinet.cnam_taux_consultation', '70.0')) / 100.0
-            taux_default_tech = 0.80  # 80% actes médico-chirurgicaux (Art. 21 Décret 2007-1367)
-            taux_default_rad_bio = 0.75  # 75% radiologie et biologie (Art. 21 Décret 2007-1367)
-
-            has_explicit_apci_acte = any(getattr(a, 'is_acte_apci', False) for a in active_actes)
-
-            for acte in active_actes:
-                # 1. Base TCR conventionnelle de l'acte (Art. 3 Décret 2007-1367)
-                tcr = getattr(acte, 'tarif_conventionnel', 0.0)
-                param = getattr(acte, 'parametrage_id', None)
-                param_tarif = getattr(param, 'tarif', 0.0) if param else 0.0
-                a_montant = getattr(acte, 'montant', 0.0) or 0.0
-                if tcr and isinstance(tcr, (int, float)) and tcr > 0.0:
-                    base_tcr = tcr
-                elif param_tarif and isinstance(param_tarif, (int, float)) and param_tarif > 0.0:
-                    base_tcr = param_tarif
-                else:
-                    base_tcr = a_montant if isinstance(a_montant, (int, float)) else 0.0
-
-                # 2. Accord préalable requis non accordé (Convention sectorielle art. 22)
-                if getattr(acte, 'necessite_accord_prealable', False) and getattr(acte, 'statut_accord_prealable', 'non_requis') in ('refuse', 'demande'):
-                    part_cnam += 0.0
-                    continue
-
-                # 3. Éligibilité APCI (100% de la base TCR - Art. 19 Décret 2007-1367)
-                is_eligible_apci = False
-                if getattr(p, 'is_apci', False):
-                    if getattr(acte, 'is_acte_apci', False):
-                        is_eligible_apci = True
-                    elif has_explicit_apci_acte:
-                        # Séance mixte : certains actes sont APCI, d'autres non (Scénario 10)
-                        is_eligible_apci = False
-                    elif getattr(consult, 'is_consultation_apci', False):
-                        is_eligible_apci = True
-                    elif 'non_apci' in (getattr(acte, 'description', '') or '').lower() or 'non_apci' in (getattr(consult, 'motif', '') or '').lower() or self.env.context.get('apci_non_liee'):
-                        is_eligible_apci = False
-                    else:
-                        # Rétrocompatibilité Scénarios 4 et 5 (acte unique non différencié sous patient APCI)
-                        is_eligible_apci = True
-
-                if is_eligible_apci:
-                    part_cnam += base_tcr * 1.0
-                    continue
-
-                # 4. Taux CNAM de droit commun selon le type d'acte et paramétrage
-                param = getattr(acte, 'parametrage_id', None)
-                taux_cnam = getattr(param, 'taux_cnam', None) if param else None
-                if param and taux_cnam is not None and taux_cnam is not False:
-                    taux = float(taux_cnam) / 100.0
-                else:
-                    type_a = getattr(acte, 'type_acte', 'consultation')
-                    if type_a in ('acte_technique', 'chirurgie', 'suture'):
-                        taux = taux_default_tech
-                    elif type_a in ('radiologie', 'biologie'):
-                        taux = taux_default_rad_bio
-                    else:
-                        taux = taux_default_consult
-
-                part_cnam += base_tcr * taux
+            taux_consult = float(ir_config_param.get_param('cabinet.cnam_taux_consultation', '70.0')) / 100.0
+            rates = (taux_consult, 0.80, 0.75)
+            has_explicit_apci = any(getattr(a, 'is_acte_apci', False) for a in active_actes)
+            part_cnam = sum(self._calculate_single_acte_cnam_part(a, p, consult, has_explicit_apci, rates) for a in active_actes)
         else:
             ir_config_param = self.env[CONFIG_PARAM_MODEL].sudo()
             taux_remb_pct = float(ir_config_param.get_param('cabinet.cnam_taux_remboursement', '70.0')) / 100.0
@@ -261,6 +246,7 @@ class Facture(models.Model):
             part_cnam = base_tcr * taux_remb_pct
 
         return round(part_cnam, 2)
+
 
     @api.depends(
         'montant_total', 'montant_conventionnel_total', 'depassement_total', 'scenario',
@@ -357,6 +343,19 @@ class Facture(models.Model):
                     rec.montant_paye_cabinet = round(total, 2)
                 rec.reste_a_charge_final = round(total - part_assur_sans_cnam, 2)
 
+    def _compute_scenario_display_parts(self, scenario, total, depassement, taux_assur, part_cnam_reelle, ticket_mod, couv_dep):
+        if scenario == SCENARIO_SANS_COUVERTURE:
+            return 0.0, 0.0
+        if scenario in (SCENARIO_APCI_TIERS_PAYANT, SCENARIO_APCI_REMBOURSEMENT, SCENARIO_CNAM_REMBOURSEMENT):
+            return part_cnam_reelle, 0.0
+        if scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR, SCENARIO_CNAM_REMB_ASSUR):
+            part_mutuelle_dep = (depassement * taux_assur) if couv_dep else 0.0
+            part_assurance = (ticket_mod * taux_assur) + part_mutuelle_dep if scenario != SCENARIO_CNAM_TIERS_PAYANT else 0.0
+            return part_cnam_reelle, part_assurance
+        if scenario == SCENARIO_SANS_CNAM_ASSUR:
+            return 0.0, total * taux_assur
+        return 0.0, 0.0
+
     @api.depends(
         'scenario', 'montant_total', 'montant_conventionnel_total', 'depassement_total',
         'montant_cnam_cabinet', 'montant_paye_cabinet', 'reste_a_charge_final',
@@ -376,47 +375,21 @@ class Facture(models.Model):
         for rec in self:
             m_total = getattr(rec, 'montant_total', 0.0)
             total = m_total if isinstance(m_total, (int, float)) else 0.0
-
             m_conv = getattr(rec, 'montant_conventionnel_total', None)
             tcr_total = m_conv if (isinstance(m_conv, (int, float)) and m_conv > 0) else total
-
             m_dep = getattr(rec, 'depassement_total', None)
             depassement = m_dep if isinstance(m_dep, (int, float)) else max(0.0, total - tcr_total)
-
             p = getattr(rec, 'patient_id', None)
             assur_taux = getattr(p, 'assurance_taux', 0.0) if p else 0.0
             taux_assur = (assur_taux if isinstance(assur_taux, (int, float)) else 0.0) / 100.0
-
             part_cnam_reelle = rec._get_part_cnam_reelle()
             if not isinstance(part_cnam_reelle, (int, float)):
                 part_cnam_reelle = 0.0
-
             ticket_mod = max(0.0, tcr_total - part_cnam_reelle)
-
-            part_cnam = 0.0
-            part_assurance = 0.0
-
-            if rec.scenario == SCENARIO_SANS_COUVERTURE:
-                part_cnam = 0.0
-                part_assurance = 0.0
-            elif rec.scenario in (SCENARIO_APCI_TIERS_PAYANT, SCENARIO_APCI_REMBOURSEMENT, SCENARIO_CNAM_REMBOURSEMENT):
-                part_cnam = part_cnam_reelle
-                part_assurance = 0.0
-            elif rec.scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR):
-                part_cnam = part_cnam_reelle
-                if rec.scenario == SCENARIO_CNAM_TP_ASSUR:
-                    couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False)
-                    part_mutuelle_dep = (depassement * taux_assur) if (couv_dep is True) else 0.0
-                    part_assurance = (ticket_mod * taux_assur) + part_mutuelle_dep
-            elif rec.scenario == SCENARIO_CNAM_REMB_ASSUR:
-                part_cnam = part_cnam_reelle
-                couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False)
-                part_mutuelle_dep = (depassement * taux_assur) if (couv_dep is True) else 0.0
-                part_assurance = (ticket_mod * taux_assur) + part_mutuelle_dep
-            elif rec.scenario == SCENARIO_SANS_CNAM_ASSUR:
-                part_cnam = 0.0
-                part_assurance = total * taux_assur
-
+            couv_dep = getattr(rec, 'couverture_depassement_mutuelle', False) is True
+            part_cnam, part_assurance = rec._compute_scenario_display_parts(
+                rec.scenario, total, depassement, taux_assur, part_cnam_reelle, ticket_mod, couv_dep
+            )
             rec.part_cnam_display = round(part_cnam, 2)
             rec.part_assurance_display = round(part_assurance, 2)
             rec.ticket_moderateur_total = round(ticket_mod, 2)
@@ -449,15 +422,18 @@ class Facture(models.Model):
                 raise ValidationError("Suppression interdite : La facture %s est rattachée au bordereau CNAM %s." % (rec.name or '', rec.bordereau_id.name or ''))
         return super(Facture, self).unlink()
 
+    def _check_locked_fields_on_write(self, vals):
+        if self.state != STATE_VALIDATED or self.env.context.get('bypass_facture_lock'):
+            return
+        locked_modified = set(vals.keys()) & self.LOCKED_FIELDS_VALIDATED
+        if locked_modified:
+            raise ValidationError("Modification interdite : La facture %s est validée. Les champs suivants sont verrouillés : %s." % (self.name or '', ', '.join(locked_modified)))
+        if self.bordereau_id and 'bordereau_id' in vals and vals['bordereau_id'] != self.bordereau_id.id and not self.env.su:
+            raise ValidationError("Modification interdite : La facture %s est déjà rattachée au bordereau %s." % (self.name or '', self.bordereau_id.name or ''))
+
     def write(self, vals):
         for rec in self:
-            if rec.state == STATE_VALIDATED and not self.env.context.get('bypass_facture_lock'):
-                locked_modified = set(vals.keys()) & self.LOCKED_FIELDS_VALIDATED
-                if locked_modified:
-                    raise ValidationError("Modification interdite : La facture %s est validée. Les champs suivants sont verrouillés : %s." % (rec.name or '', ', '.join(locked_modified)))
-                if rec.bordereau_id and 'bordereau_id' in vals and vals['bordereau_id'] != rec.bordereau_id.id and not self.env.su:
-                    raise ValidationError("Modification interdite : La facture %s est déjà rattachée au bordereau %s." % (rec.name or '', rec.bordereau_id.name or ''))
-
+            rec._check_locked_fields_on_write(vals)
         pre_vals = {getattr(rec, 'id'): rec.state for rec in self}
         res = super(Facture, self).write(vals)
         if 'state' in vals:
@@ -473,55 +449,54 @@ class Facture(models.Model):
                     )
         return res
 
+    def _validate_apci_rules(self, p, date_ref):
+        if not getattr(p, 'is_apci', False):
+            raise ValidationError(f"Validation impossible en APCI : Le patient {p.name} n'est pas enregistré comme bénéficiaire de l'APCI.")
+        if not getattr(p, 'numero_decision_apci', False):
+            raise ValidationError(f"Validation impossible : Le patient {p.name} n'a aucun numéro de décision APCI valide.")
+        date_fin_apci = getattr(p, 'date_fin_apci', False)
+        if isinstance(date_fin_apci, date) and isinstance(date_ref, date) and date_fin_apci < date_ref:
+            date_fin_str = date_fin_apci.strftime(DATE_FORMAT) if hasattr(date_fin_apci, 'strftime') else str(date_fin_apci)
+            raise ValidationError(f"Validation impossible en APCI : La prise en charge APCI de {p.name} est expirée depuis le {date_fin_str}.")
+
+    def _validate_accord_prealable_rules(self, active_actes):
+        for a in active_actes:
+            if getattr(a, 'necessite_accord_prealable', False):
+                statut_ap = getattr(a, 'statut_accord_prealable', 'non_requis')
+                num_ap = getattr(a, 'numero_accord_prealable', False)
+                if statut_ap != STATUT_ACCORDE and not num_ap:
+                    desc = getattr(a, 'description', '') or getattr(a, 'type_acte', 'Acte conventionné')
+                    raise ValidationError(f"Validation impossible en Tiers-payant : L'acte '{desc}' requiert un accord préalable obligatoire de la CNAM (statut actuel : '{statut_ap}'). Un accord préalable accordé est obligatoire pour la prise en charge en tiers-payant.")
+
+    def _validate_cnam_controls(self, p, date_ref, active_actes, has_apci_acte):
+        if not p:
+            raise ValidationError("Validation impossible : Aucun patient rattaché à la facture.")
+        if not getattr(p, 'is_cnam', False):
+            raise ValidationError("Validation impossible en Tiers-payant : Le patient n'est pas identifié comme assuré CNAM.")
+        validite_cnam = getattr(p, 'date_validite_cnam', False)
+        if isinstance(validite_cnam, date) and isinstance(date_ref, date) and validite_cnam < date_ref:
+            date_str = validite_cnam.strftime(DATE_FORMAT) if hasattr(validite_cnam, 'strftime') else str(validite_cnam)
+            ref_str = date_ref.strftime(DATE_FORMAT) if hasattr(date_ref, 'strftime') else str(date_ref)
+            raise ValidationError(f"Validation impossible en Tiers-payant : Les droits CNAM de l'assuré {p.name} sont expirés depuis le {date_str} (date de facturation : {ref_str}). Le tiers-payant ne peut pas être appliqué.")
+        if self.scenario == SCENARIO_APCI_TIERS_PAYANT or has_apci_acte:
+            self._validate_apci_rules(p, date_ref)
+        self._validate_accord_prealable_rules(active_actes)
+
     def action_valider(self):
         self.ensure_one()
         m_tot = getattr(self, 'montant_total', 0.0)
         if (m_tot if isinstance(m_tot, (int, float)) else 0.0) <= 0:
             raise ValidationError("Le montant total doit être supérieur à 0")
-
-        # Contrôles bloquants CNAM (Groupe 4)
         date_ref = getattr(self, 'date_facture', False) or fields.Date.context_today(self)
         p = getattr(self, 'patient_id', None)
-
         if self.scenario in (SCENARIO_CNAM_TIERS_PAYANT, SCENARIO_APCI_TIERS_PAYANT, SCENARIO_CNAM_TP_ASSUR):
-            if not p:
-                raise ValidationError("Validation impossible : Aucun patient rattaché à la facture.")
-            if not getattr(p, 'is_cnam', False):
-                raise ValidationError("Validation impossible en Tiers-payant : Le patient n'est pas identifié comme assuré CNAM.")
-
-            # 1. Vérification de la date d'expiration des droits CNAM
-            validite_cnam = getattr(p, 'date_validite_cnam', False)
-            if isinstance(validite_cnam, date) and isinstance(date_ref, date) and validite_cnam < date_ref:
-                date_str = validite_cnam.strftime(DATE_FORMAT) if hasattr(validite_cnam, 'strftime') else str(validite_cnam)
-                ref_str = date_ref.strftime(DATE_FORMAT) if hasattr(date_ref, 'strftime') else str(date_ref)
-                raise ValidationError(f"Validation impossible en Tiers-payant : Les droits CNAM de l'assuré {p.name} sont expirés depuis le {date_str} (date de facturation : {ref_str}). Le tiers-payant ne peut pas être appliqué.")
-
-            # 2. Vérification APCI : Décision et date de validité
             consult = getattr(self, 'consultation_id', None)
             acte_ids = getattr(consult, 'acte_ids', None) if consult else None
             active_actes = acte_ids.filtered(lambda a: a.active) if hasattr(acte_ids, 'filtered') else (acte_ids or [])
             has_apci_acte = any(getattr(a, 'is_acte_apci', False) for a in active_actes)
-
-            if self.scenario == SCENARIO_APCI_TIERS_PAYANT or has_apci_acte:
-                if not getattr(p, 'is_apci', False):
-                    raise ValidationError(f"Validation impossible en APCI : Le patient {p.name} n'est pas enregistré comme bénéficiaire de l'APCI.")
-                if not getattr(p, 'numero_decision_apci', False):
-                    raise ValidationError(f"Validation impossible : Le patient {p.name} n'a aucun numéro de décision APCI valide.")
-                date_fin_apci = getattr(p, 'date_fin_apci', False)
-                if isinstance(date_fin_apci, date) and isinstance(date_ref, date) and date_fin_apci < date_ref:
-                    date_fin_str = date_fin_apci.strftime(DATE_FORMAT) if hasattr(date_fin_apci, 'strftime') else str(date_fin_apci)
-                    raise ValidationError(f"Validation impossible en APCI : La prise en charge APCI de {p.name} est expirée depuis le {date_fin_str}.")
-
-            # 3. Contrôle Accord préalable obligatoire pour les actes conventionnés
-            for a in active_actes:
-                if getattr(a, 'necessite_accord_prealable', False):
-                    statut_ap = getattr(a, 'statut_accord_prealable', 'non_requis')
-                    num_ap = getattr(a, 'numero_accord_prealable', False)
-                    if statut_ap != STATUT_ACCORDE and not num_ap:
-                        desc = getattr(a, 'description', '') or getattr(a, 'type_acte', 'Acte conventionné')
-                        raise ValidationError(f"Validation impossible en Tiers-payant : L'acte '{desc}' requiert un accord préalable obligatoire de la CNAM (statut actuel : '{statut_ap}'). Un accord préalable accordé est obligatoire pour la prise en charge en tiers-payant.")
-
+            self._validate_cnam_controls(p, date_ref, active_actes, has_apci_acte)
         self.state = STATE_VALIDATED
+
 
     # --- IA n°3 : Assistant LLM pour la reformulation des alertes ---
     @api.model

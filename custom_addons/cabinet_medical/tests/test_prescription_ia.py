@@ -179,7 +179,7 @@ class TestPrescriptionIAModulaire(unittest.TestCase):
         medicaments = ["Amoxicilline"]
         allergies = "Amoxicilline"
         alertes_n1 = self.prescription._verifier_niveau_1(medicaments, allergies)
-        self.assertTrue(len(alertes_n1) > 0)
+        self.assertGreater(len(alertes_n1), 0)
         self.assertEqual(alertes_n1[0]['score'], 1.0)
         self.assertEqual(alertes_n1[0]['type'], 'exact')
 
@@ -188,7 +188,7 @@ class TestPrescriptionIAModulaire(unittest.TestCase):
         medicaments = ["Augmentin 1g"]
         allergies = "Pénicilline"
         alertes_n1 = self.prescription._verifier_niveau_1(medicaments, allergies)
-        self.assertTrue(len(alertes_n1) > 0)
+        self.assertGreater(len(alertes_n1), 0)
         self.assertEqual(alertes_n1[0]['score'], 1.0)
         self.assertEqual(alertes_n1[0]['type'], 'famille')
         self.assertEqual(alertes_n1[0]['famille'], 'penicilline')
@@ -198,7 +198,7 @@ class TestPrescriptionIAModulaire(unittest.TestCase):
         medicaments = ["Dolipranne"]  # Faute de frappe sur Doliprane
         allergies = "Doliprane"
         alertes_n1 = self.prescription._verifier_niveau_1(medicaments, allergies)
-        self.assertTrue(len(alertes_n1) > 0)
+        self.assertGreater(len(alertes_n1), 0)
         self.assertGreaterEqual(alertes_n1[0]['score'], 0.82)
         self.assertIn(alertes_n1[0]['type'], ['fuzzy', 'famille'])
 
@@ -207,7 +207,7 @@ class TestPrescriptionIAModulaire(unittest.TestCase):
         medicaments = ["Amoxcilline"]
         allergies = "allergique sur penecilline"
         alertes_n1 = self.prescription._verifier_niveau_1(medicaments, allergies)
-        self.assertTrue(len(alertes_n1) > 0)
+        self.assertGreater(len(alertes_n1), 0)
         self.assertGreaterEqual(alertes_n1[0]['score'], 0.82)
         self.assertEqual(alertes_n1[0]['famille'], 'penicilline')
 
@@ -216,8 +216,9 @@ class TestPrescriptionIAModulaire(unittest.TestCase):
         medicaments = ["Amoxil 500"]
         allergies = "Pénicilline"
         alertes_n1 = self.prescription._verifier_niveau_1(medicaments, allergies)
-        self.assertTrue(len(alertes_n1) > 0)
+        self.assertGreater(len(alertes_n1), 0)
         self.assertEqual(alertes_n1[0]['famille'], 'penicilline')
+
 
     def test_niveau_1_safe_aucun_danger(self):
         """Test Niveau 1 : Médicament sans rapport avec l'allergie."""
@@ -294,18 +295,19 @@ class TestPrescriptionIAModulaire(unittest.TestCase):
         medicaments = ["Amoxicilline 500mg"]
         allergies = "حساسية شديدة من البنسلين"
         alertes_n1 = self.prescription._verifier_niveau_1(medicaments, allergies)
-        self.assertTrue(len(alertes_n1) > 0)
+        self.assertGreater(len(alertes_n1), 0)
         self.assertEqual(alertes_n1[0]['famille'], 'penicilline')
 
     def test_famille_aspirine_et_ibuprofene(self):
         """Test Niveau 1 : Détection Aspirine (Aspegic) et AINS (Advil)."""
         alertes_asp = self.prescription._verifier_niveau_1(["Aspegic 1000"], "Allergie grave à l'aspirine")
-        self.assertTrue(len(alertes_asp) > 0)
+        self.assertGreater(len(alertes_asp), 0)
         self.assertEqual(alertes_asp[0]['famille'], 'aspirine')
 
         alertes_adv = self.prescription._verifier_niveau_1(["Advil 400"], "Allergie aux anti-inflammatoires ibuprofene")
-        self.assertTrue(len(alertes_adv) > 0)
+        self.assertGreater(len(alertes_adv), 0)
         self.assertEqual(alertes_adv[0]['famille'], 'ibuprofene')
+
 
     def test_fusion_alerte_niveau1_seul(self):
         """Test Fusion : Alerte présente au Niveau 1 seulement."""
@@ -1173,7 +1175,7 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
 
     def test_constantes_interactions_et_classes(self):
         """Vérifie que INTERACTIONS_MEDICAMENTEUSES et CLASSES_PHARMACOLOGIQUES contiennent les classes majeures requises."""
-        self.assertTrue(len(INTERACTIONS_MEDICAMENTEUSES) >= 6)
+        self.assertGreaterEqual(len(INTERACTIONS_MEDICAMENTEUSES), 6)
         
         # Vérification des classes essentielles
         self.assertIn("iec", CLASSES_PHARMACOLOGIQUES)
@@ -1200,9 +1202,9 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Spironolactone 50mg", "Ramipril 5mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         alerte_majeure = [a for a in alertes if a['type'] == 'interaction' and a['gravite'] == 'majeure']
-        self.assertTrue(len(alerte_majeure) > 0, "L'interaction majeure IEC + Diurétique épargneur doit être détectée")
+        self.assertGreater(len(alerte_majeure), 0, "L'interaction majeure IEC + Diurétique épargneur doit être détectée")
         self.assertIn("hyperkaliémie", alerte_majeure[0]['raison'].lower())
         self.assertEqual(alerte_majeure[0]['contexte'], "Même ordonnance")
 
@@ -1212,9 +1214,9 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Triatec 5mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments, patient=patient)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         alerte_inter = [a for a in alertes if a['type'] == 'interaction']
-        self.assertTrue(len(alerte_inter) > 0)
+        self.assertGreater(len(alerte_inter), 0)
         self.assertEqual(alerte_inter[0]['gravite'], 'majeure')
         self.assertIn("Aldactone", alerte_inter[0]['medicament_b'])
 
@@ -1223,7 +1225,7 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Zeclar 500mg", "Tahor 20mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         alerte = alertes[0]
         self.assertEqual(alerte['type'], 'interaction')
         self.assertEqual(alerte['gravite'], 'majeure')
@@ -1235,7 +1237,7 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Bi-Profenid 150mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments, patient=patient)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         alerte = alertes[0]
         self.assertEqual(alerte['gravite'], 'majeure')
         self.assertIn("hémorragique", alerte['raison'].lower())
@@ -1246,9 +1248,9 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Ibuprofène 400mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments, patient=patient)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         alerte_mod = [a for a in alertes if a['type'] == 'interaction' and a['gravite'] == 'moderee']
-        self.assertTrue(len(alerte_mod) > 0)
+        self.assertGreater(len(alerte_mod), 0)
         self.assertIn("saignement", alerte_mod[0]['raison'].lower())
 
     def test_interaction_moderee_quinolone_corticoide(self):
@@ -1256,7 +1258,7 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Ciflox 500mg", "Solupred 20mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         alerte = alertes[0]
         self.assertEqual(alerte['gravite'], 'moderee')
         self.assertIn("tendinopathie", alerte['raison'].lower())
@@ -1310,16 +1312,16 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         patient = MagicMock(traitements_chroniques=False, consultation_ids=[consult])
 
         alertes = self.prescription._verifier_interactions_medicamenteuses(["Bi-Profenid 150mg"], patient=patient, reference_date=ref_date)
-        self.assertTrue(len(alertes) > 0, "L'interaction doit être détectée car le traitement est toujours en cours")
+        self.assertGreater(len(alertes), 0, "L'interaction doit être détectée car le traitement est toujours en cours")
 
     def test_doublon_therapeutique_intra_ordonnance_distinct_interaction(self):
         """5. Doublon thérapeutique : 2 médicaments de la même famille (Ramipril + Périndopril) -> alerte Type B distincte."""
         medicaments = ["Ramipril 5mg", "Périndopril 10mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         doublons = [a for a in alertes if a['type'] == 'doublon']
-        self.assertTrue(len(doublons) > 0, "Un doublon thérapeutique doit être détecté")
+        self.assertGreater(len(doublons), 0, "Un doublon thérapeutique doit être détecté")
         self.assertEqual(doublons[0]['type_label'], "Doublon Thérapeutique")
         self.assertIn("Doublon thérapeutique", doublons[0]['titre'])
         self.assertIn("surdosage", doublons[0]['raison'].lower())
@@ -1330,9 +1332,9 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
         medicaments = ["Ibuprofène 400mg"]
         alertes = self.prescription._verifier_interactions_medicamenteuses(medicaments, patient=patient)
         
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         doublons = [a for a in alertes if a['type'] == 'doublon']
-        self.assertTrue(len(doublons) > 0)
+        self.assertGreater(len(doublons), 0)
         self.assertIn("redondant", doublons[0]['raison'].lower())
 
     def test_deux_medicaments_sans_aucun_lien_safe_sans_fausse_alerte(self):
@@ -1351,8 +1353,9 @@ class TestInteractionsMedicamenteusesEtDoublons(unittest.TestCase):
 
         # Test de détection d'interaction avec le traitement extrait
         alertes = self.prescription._verifier_interactions_medicamenteuses(["Aldactone 25mg"], patient=patient)
-        self.assertTrue(len(alertes) > 0)
+        self.assertGreater(len(alertes), 0)
         self.assertEqual(alertes[0]['gravite'], 'majeure')
+
 
 
 
@@ -1487,17 +1490,16 @@ class TestSecurityAccessRules(unittest.TestCase):
 
     def test_secretaire_ne_peut_pas_modifier_diagnostic_medical(self):
         """2. Secret médical : Les champs médicaux (diagnostic, notes) ne sont pas modifiables par la secrétaire."""
-        is_secretaire = True
-        is_medecin = False
-
-        # Vérification des droits selon ir.model.access.csv
-        perm_create_consultation = is_medecin  # 1 pour médecin, 0 pour secrétaire
+        user_groups = {'cabinet_medical.group_secretaire'}
+        perm_create_consultation = 'cabinet_medical.group_medecin' in user_groups
         self.assertFalse(perm_create_consultation, "La secrétaire ne peut pas créer ni altérer une consultation clinique")
 
     def test_patient_portail_interdiction_ecriture_dossier(self):
         """3. Intégrité des données : Le patient sur le portail ne peut modifier ses antécédents médicaux."""
-        perm_write_medical = False
+        user_groups = {'base.group_portal'}
+        perm_write_medical = 'cabinet_medical.group_medecin' in user_groups
         self.assertFalse(perm_write_medical, "Le patient ne peut pas modifier ses antécédents ou ses prescriptions")
+
 
 
 # -------------------------------------------------------------------------
