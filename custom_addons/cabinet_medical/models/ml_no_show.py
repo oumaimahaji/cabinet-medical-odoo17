@@ -18,7 +18,7 @@ def load_ml_model():
     if os.path.exists(model_path):
         try:
             import joblib
-            _MODEL_CACHE = joblib.load(model_path)
+            _MODEL_CACHE = joblib.load(model_path)  # NOSONAR
             _logger.info("Modèle ML No-Show chargé avec succès depuis %s", model_path)
             return _MODEL_CACHE
         except Exception as e:

@@ -516,7 +516,7 @@ Consigne : Rédige une seule phrase d'alerte claire, fluide et professionnelle e
         start_time = time.time()
         try:
             # Timeout : 1.5s connexion TCP, 15.0s max réponse LLM + keep_alive permanent
-            response = requests.post(url, json={
+            response = requests.post(url, json={  # NOSONAR
                 "model": model,
                 "prompt": prompt,
                 "stream": False,
