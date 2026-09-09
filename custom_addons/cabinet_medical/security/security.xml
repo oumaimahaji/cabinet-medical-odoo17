@@ -23,14 +23,14 @@
         <field name="implied_ids" eval="[(4, ref('base.group_user')), (4, ref('base.group_partner_manager')), (4, ref('base.group_allow_export'))]"/>
     </record>
 
-    <!-- Règle de sécurité : La Secrétaire ne peut consulter que les consultations terminées ('done') -->
+    <!-- Règle de sécurité : La Secrétaire ne peut consulter/modifier que les consultations terminées ('done') -->
     <record id="rule_cabinet_consultation_secretaire" model="ir.rule">
         <field name="name">Consultations Secrétaire: Terminées uniquement</field>
         <field name="model_id" ref="model_cabinet_consultation"/>
         <field name="domain_force">[('state', '=', 'done')]</field>
         <field name="groups" eval="[(4, ref('group_secretaire'))]"/>
         <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
+        <field name="perm_write" eval="True"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
