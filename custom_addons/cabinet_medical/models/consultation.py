@@ -44,8 +44,8 @@ class Consultation(models.Model):
         readonly=True
     )
 
-    # US16 - Prescription/Ordonnance
-    prescription_ids = fields.One2many('cabinet.prescription', 'consultation_id', string='Prescriptions')
+    # US16 - Ordonnances
+    prescription_ids = fields.One2many('cabinet.prescription', 'consultation_id', string='Ordonnances')
     facture_ids = fields.One2many(FACTURE_MODEL, 'consultation_id', string='Factures')
     
     # État de la consultation
@@ -73,6 +73,7 @@ class Consultation(models.Model):
         string='Facture générée',
         compute='_compute_has_facture',
         store=True,
+        compute_sudo=True,
     )
 
 
