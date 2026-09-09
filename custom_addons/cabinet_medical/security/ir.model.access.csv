@@ -1,7 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_cabinet_patient_secretaire,cabinet.patient.secretaire,model_cabinet_patient,cabinet_medical.group_secretaire,1,1,1,0
 access_cabinet_patient_medecin,cabinet.patient.medecin,model_cabinet_patient,cabinet_medical.group_medecin,1,0,0,0
-access_cabinet_consultation_secretaire,cabinet.consultation.secretaire,model_cabinet_consultation,cabinet_medical.group_secretaire,1,0,0,0
+access_cabinet_consultation_secretaire,cabinet.consultation.secretaire,model_cabinet_consultation,cabinet_medical.group_secretaire,1,1,0,0
 access_cabinet_consultation_medecin,cabinet.consultation.medecin,model_cabinet_consultation,cabinet_medical.group_medecin,1,1,1,0
 access_cabinet_rendezvous_secretaire,cabinet.rendezvous.secretaire,model_cabinet_rendezvous,cabinet_medical.group_secretaire,1,1,1,0
 access_cabinet_rendezvous_medecin,cabinet.rendezvous.medecin,model_cabinet_rendezvous,cabinet_medical.group_medecin,1,1,1,0
