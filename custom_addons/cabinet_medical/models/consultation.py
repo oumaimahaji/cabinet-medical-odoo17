@@ -267,3 +267,8 @@ class Consultation(models.Model):
             return self.patient_id.action_ia_conseil_apci()
         return False
 
+    def action_archiver_consultation(self):
+        """Permet au médecin ou à la secrétaire d'archiver la consultation"""
+        for rec in self:
+            rec.active = False
+

@@ -29,3 +29,11 @@ class Assurance(models.Model):
             name = f"{record.name} ({record.taux}%)" if record.taux else record.name
             result.append((record.id, name))  # type: ignore
         return result
+
+    def action_archiver(self):
+        for rec in self:
+            rec.active = False
+
+    def action_activer(self):
+        for rec in self:
+            rec.active = True

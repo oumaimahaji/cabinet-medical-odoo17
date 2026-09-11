@@ -68,7 +68,7 @@
     </record>
 
     <record id="action_wizard_import_patients" model="ir.actions.act_window">
-        <field name="name">Import patients Excel</field>
+        <field name="name">Importer des patients (Excel / CSV)</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">cabinet.wizard.import.patients</field>
         <field name="view_mode">form</field>

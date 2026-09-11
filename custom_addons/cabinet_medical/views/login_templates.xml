@@ -39,7 +39,7 @@
                     <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
                         <i class="fa fa-envelope" style="color: #1a3a6e !important; opacity: 0.8; font-size: 0.9rem;"></i>
                     </span>
-                    <input type="text" placeholder="Ex: secretaire@cabinet.com" name="login" t-att-value="login" id="login" t-attf-class="form-control border-start-0 #{'form-control-sm' if form_small else ''}" required="required" autocomplete="username" autofocus="autofocus" autocapitalize="off" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px;"/>
+                    <input type="text" name="login" t-att-value="login" id="login" t-attf-class="form-control border-start-0 #{'form-control-sm' if form_small else ''}" required="required" autocomplete="username" autofocus="autofocus" autocapitalize="off" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px;"/>
                 </div>
             </div>
         </xpath>
@@ -67,12 +67,20 @@
             <attribute name="style">display: none !important;</attribute>
         </xpath>
 
+        <!-- Personnaliser le bouton de connexion -->
+        <xpath expr="//button[@type='submit']" position="replace">
+            <button type="submit" class="btn btn-primary btn-block" style="background-color: #1a3a6e !important; border-color: #1a3a6e !important; color: white !important; width: 100%; border-radius: 8px !important; font-weight: 600; padding: 10px; margin-top: 15px;">Se connecter</button>
+        </xpath>
+
         <!-- Supprimer le lien d'inscription (Créer un compte) et centrer le lien "Mot de passe oublié" -->
         <xpath expr="//div[hasclass('justify-content-between')]/a[1]" position="attributes">
             <attribute name="style">display: none !important;</attribute>
         </xpath>
         <xpath expr="//div[hasclass('justify-content-between')]" position="attributes">
-            <attribute name="class">text-center mt-2 d-block small</attribute>
+            <attribute name="class">text-center mt-3 d-block small</attribute>
+        </xpath>
+        <xpath expr="//a[@t-if='reset_password_enabled']" position="replace">
+            <a t-if="reset_password_enabled" t-attf-href="/web/reset_password?{{ keep_query() }}" style="color: #1a3a6e; font-size: 0.85rem; font-weight: 500; text-decoration: none;">Réinitialiser le mot de passe</a>
         </xpath>
 
         <!-- Insertion du script JavaScript de toggle password et d'animations subtiles -->
@@ -131,7 +139,7 @@
                     <span class="input-group-text bg-light border-end-0 text-muted" style="border-color: #dee2e6; padding: 0.375rem 0.65rem;">
                         <i class="fa fa-user" style="color: #1a3a6e !important; opacity: 0.5; font-size: 0.9rem;"></i>
                     </span>
-                    <input type="text" name="name" t-att-value="name" id="name" class="form-control border-start-0 bg-light" placeholder="e.g. John Doe" required="required" t-att-readonly="'readonly' if only_passwords else None" t-att-autofocus="'autofocus' if login and not only_passwords else None" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px; color: #6c757d;"/>
+                    <input type="text" name="name" t-att-value="name" id="name" class="form-control border-start-0 bg-light" placeholder="Ex : Mohamed Ben Salem" required="required" t-att-readonly="'readonly' if only_passwords else None" t-att-autofocus="'autofocus' if login and not only_passwords else None" style="border-color: #dee2e6; height: 36px; font-size: 0.85rem; border-top-right-radius: 8px; border-bottom-right-radius: 8px; color: #6c757d;"/>
                 </div>
             </div>
         </xpath>

@@ -47,8 +47,7 @@
                             <field name="active" widget="boolean_toggle"/>
                         </group>
                         <group string="Tarification Conventionnelle CNAM">
-                            <field name="tarif" widget="monetary" options="{'currency_field': 'currency_id'}"
-                                   string="Tarif conventionné (DT)"/>
+                            <field name="tarif" string="Tarif conventionné (DT)"/>
                             <field name="taux_cnam" readonly="1" string="Taux CNAM (%)"/>
                             <field name="tarif_cnam" readonly="1" string="Part CNAM (DT)"
                                    decoration-success="tarif_cnam &gt; 0"/>

@@ -6,13 +6,14 @@
         <field name="name">cabinet.assurance.list</field>
         <field name="model">cabinet.assurance</field>
         <field name="arch" type="xml">
-            <tree class="o_assurance_tree" export_xlsx="1">
+            <tree string="Assurances Privées" class="o_assurance_tree" export_xlsx="1">
                 <field name="name" string="🛡️ Nom de l'assurance"/>
                 <field name="taux" column_invisible="True"/>
                 <field name="taux_affichage" string="📈 Taux" widget="badge"
                        decoration-success="taux &gt;= 80"
                        decoration-info="taux &lt; 80 and taux &gt;= 50"
                        decoration-warning="taux &lt; 50"/>
+                <field name="tiers_payant_direct" string="Tiers-payant direct" widget="boolean_toggle" optional="show"/>
                 <field name="active" string="🟢 Active" widget="boolean_toggle"/>
             </tree>
         </field>
@@ -23,9 +24,15 @@
         <field name="name">cabinet.assurance.form</field>
         <field name="model">cabinet.assurance</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Assurance Privée">
+                <header>
+                    <button name="action_archiver" string="Désactiver" type="object" class="btn-outline-danger" invisible="not active" icon="fa-archive" confirm="Êtes-vous sûr de vouloir désactiver cette assurance ?"/>
+                    <button name="action_activer" string="Activer" type="object" class="btn-outline-success" invisible="active" icon="fa-check"/>
+                </header>
                 <sheet>
+                    <widget name="web_ribbon" title="Désactivée" bg_color="text-bg-danger" invisible="active"/>
                     <div class="oe_title">
+                        <label for="name" string="Nom de l'assurance"/>
                         <h1>
                             <i class="fa fa-shield text-primary mr-3" style="color: #007bff; margin-right: 15px;" title="Assurance"/>
                             <field name="name" placeholder="Nom de l'assurance..."/>
@@ -35,13 +42,18 @@
                     <group>
                         <group string="Informations générales">
                             <field name="taux" string="📈 Taux de couverture (%)"/>
-                            <field name="active" string="🟢 Active"/>
+                            <field name="tiers_payant_direct" widget="boolean_toggle" string="Tiers-payant direct"/>
+                            <field name="active" string="🟢 Active" widget="boolean_toggle"/>
                         </group>
                         <group string="Description">
                             <field name="description" nolabel="1" placeholder="Description détaillée de l'assurance..."/>
                         </group>
                     </group>
                 </sheet>
+                <footer>
+                    <button name="write" string="Enregistrer" type="object" class="btn-primary" data-hotkey="s" special="save"/>
+                    <button string="Ignorer" class="btn-secondary" special="cancel"/>
+                </footer>
             </form>
         </field>
     </record>
@@ -51,14 +63,18 @@
         <field name="name">cabinet.assurance.search</field>
         <field name="model">cabinet.assurance</field>
         <field name="arch" type="xml">
-            <search>
+            <search string="Rechercher une assurance">
                 <field name="name" string="Nom"/>
                 <field name="taux" string="Taux"/>
                 <separator/>
                 <filter string="Actives" name="filter_active" domain="[('active', '=', True)]"/>
                 <filter string="Inactives" name="filter_inactive" domain="[('active', '=', False)]"/>
                 <separator/>
-    
+                <filter string="Tiers-payant direct" name="filter_tp_direct" domain="[('tiers_payant_direct', '=', True)]"/>
+                <separator/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Statut" name="group_active" context="{'group_by': 'active'}"/>
+                </group>
             </search>
         </field>
     </record>
@@ -85,5 +101,3 @@
     </record>
 
 </odoo>
-
-

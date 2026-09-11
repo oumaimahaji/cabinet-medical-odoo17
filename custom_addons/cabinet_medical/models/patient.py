@@ -20,16 +20,9 @@ class Patient(models.Model):
 
     _sql_constraints = [
         ('cin_unique', 'UNIQUE(cin)', 'Erreur : Ce numéro de CIN est déjà utilisé par un autre patient !'),
-        ('email_unique', 'UNIQUE(email)', 'Erreur : Cette adresse email est déjà utilisée par un autre patient !')
     ]
 
-    @api.constrains('email')
-    def _check_email_unique(self):
-        for rec in self:
-            if rec.email and rec.email.strip():
-                domain = [('email', '=', rec.email.strip().lower()), ('id', '!=', rec.id)] # type: ignore
-                if self.search_count(domain) > 0:
-                    raise ValidationError("Erreur : L'adresse email '%s' est déjà associée à un autre dossier patient !" % rec.email.strip())
+
 
     @api.constrains('cin')
     def _check_cin_unique(self):

@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <tree limit="10" create="0" export_xlsx="1">
                 <field name="state" column_invisible="True"/>
+                <field name="active" column_invisible="True"/>
                 <field name="has_facture" column_invisible="True"/>
                 <field name="date_consultation"/>
                 <field name="patient_id" decoration-bf="1"/>
@@ -46,9 +47,11 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
                 </header>
                 <sheet>
+                    <field name="active" invisible="1"/>
                     <field name="patient_id" invisible="1"/>
                     <field name="has_facture" invisible="1"/>
-                    <widget name="web_ribbon" title="Terminée" bg_color="text-bg-success" invisible="state != 'done'"/>
+                    <widget name="web_ribbon" title="Terminée" bg_color="text-bg-success" invisible="state != 'done' or not active"/>
+                    <widget name="web_ribbon" title="Archivée" bg_color="text-bg-secondary" invisible="active"/>
                     <div class="consultation-card">
                         <div class="oe_title">
                             <h1>
@@ -126,7 +129,7 @@
 
                     <notebook>
                         <!-- US13 - Motif de consultation -->
-                        <page string=" Motif de consultation" name="motif">
+                        <page string="Motif de consultation" name="motif">
                             <div class="consultation-card">
                                 <h4><i class="fa fa-clipboard mr-2" title="Motif"/>Motif de la consultation</h4>
                                 <field name="motif" nolabel="1" placeholder="Décrivez le motif de la consultation..." readonly="state == 'done'"/>
@@ -191,8 +194,8 @@
                             </div>
                         </page>
 
-                        <!-- US16 - Prescriptions/Ordonnances -->
-                        <page string="💊 Prescriptions/Ordonnances" name="prescriptions">
+                        <!-- US16 - Ordonnances -->
+                        <page string="💊 Ordonnances" name="prescriptions">
                             <div class="consultation-card">
                                 <h4><i class="fa fa-prescription-bottle mr-2" title="Ordonnances"/>Ordonnances et prescriptions</h4>
                                 <field name="prescription_ids" context="{'default_consultation_id': id, 'default_patient_id': patient_id}">
@@ -322,6 +325,7 @@
                 <filter string="Aujourd'hui" name="aujourd_hui" domain="[('date_consultation','&gt;=', context_today()), ('date_consultation','&lt;=', context_today())]"/>
                 <filter string="En cours" name="en_cours" domain="[('state','=','draft')]"/>
                 <filter string="Terminées" name="terminees" domain="[('state','=','done')]"/>
+                <filter string="Archivées" name="filter_archived" domain="[('active', '=', False)]"/>
                 <separator/>
                 <group expand="0" string="Regrouper par">
                     <filter string="Patient" name="group_patient" context="{'group_by':'patient_id'}"/>
@@ -363,6 +367,19 @@
             <p class="o_view_nocontent_smiling_face">
                 Aucune consultation pour le moment.
             </p>
+        </field>
+    </record>
+
+    <!-- Action dans le menu Actions : Archiver pour Médecin et Secrétaire -->
+    <record id="action_server_archiver_consultation" model="ir.actions.server">
+        <field name="name">Archiver</field>
+        <field name="model_id" ref="model_cabinet_consultation"/>
+        <field name="binding_model_id" ref="model_cabinet_consultation"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="groups_id" eval="[(4, ref('group_medecin')), (4, ref('group_secretaire'))]"/>
+        <field name="state">code</field>
+        <field name="code">
+records.action_archiver_consultation()
         </field>
     </record>
 

@@ -27,7 +27,7 @@
                 <button class="btn btn-primary o_form_button_save" t-on-click="saveButtonClicked" data-hotkey="c">✅ Enregistrer le RDV</button>
             </t>
             <t t-else="">
-                <button class="btn btn-primary o_form_button_save" t-on-click="saveButtonClicked" data-hotkey="c">Save &amp; Close</button>
+                <button class="btn btn-primary o_form_button_save" t-on-click="saveButtonClicked" data-hotkey="c">Enregistrer et fermer</button>
             </t>
         </xpath>
         <xpath expr="//button[contains(@class, 'o_form_button_cancel')]" position="replace">
@@ -35,7 +35,7 @@
                 <button class="btn btn-secondary o_form_button_cancel" t-on-click.stop="discard" data-hotkey="j">✖ Annuler</button>
             </t>
             <t t-else="">
-                <button type="button" class="btn btn-secondary o_form_button_cancel" data-hotkey="j" t-on-click.stop="discard">Discard</button>
+                <button type="button" class="btn btn-secondary o_form_button_cancel" data-hotkey="j" t-on-click.stop="discard">Annuler</button>
             </t>
         </xpath>
     </t>

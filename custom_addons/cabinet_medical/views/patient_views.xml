@@ -266,7 +266,12 @@
                     </notebook>
 
                 </sheet>
+                <footer>
+                    <button name="write" string="Enregistrer" type="object" class="btn-primary" data-hotkey="s" special="save"/>
+                    <button string="Ignorer" class="btn-secondary" special="cancel"/>
+                </footer>
             </form>
+
         </field>
     </record>
 
@@ -376,7 +381,7 @@
                                         </tree>
                                     </field>
                                 </page>
-                                <page string="Prescriptions">
+                                <page string="Ordonnances">
                                     <field name="prescription_ids" readonly="1">
                                         <tree limit="10">
                                             <field name="date_prescription"/>
@@ -443,7 +448,7 @@
 
     <!-- Action Patients pour Secrétaire -->
     <record id="action_patient_secretaire" model="ir.actions.act_window">
-        <field name="name">👥 Liste des Patients</field>
+        <field name="name">👥 Patients (Secrétaire)</field>
         <field name="res_model">cabinet.patient</field>
         <field name="limit">10</field>
         <field name="view_mode">tree,form</field>
@@ -460,7 +465,7 @@
 
     <!-- Action Patients pour Médecin -->
     <record id="action_patient_medecin" model="ir.actions.act_window">
-        <field name="name">👥 Liste des Patients</field>
+        <field name="name">👥 Patients (Médecin)</field>
         <field name="res_model">cabinet.patient</field>
         <field name="limit">10</field>
         <field name="view_mode">tree,form</field>
