@@ -136,15 +136,15 @@
 
     <!-- Action pour Médecin -->
     <record id="action_appointment_medecin" model="ir.actions.act_window">
-        <field name="name">📅 Liste des Rendez-vous</field>
+        <field name="name">📅 Rendez-vous</field>
         <field name="res_model">cabinet.rendezvous</field>
         <field name="limit">10</field>
-        <field name="view_mode">tree,calendar,form</field>
+        <field name="view_mode">calendar,tree,form</field>
         <field name="domain">[('state', 'in', ['en_attente', 'present', 'en_consultation', 'termine'])]</field>
         <field name="search_view_id" ref="view_appointment_search_medecin"/>
         <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_appointment_list_medecin')}),
             (0, 0, {'view_mode': 'calendar', 'view_id': ref('cabinet_medical.view_appointment_calendar')}),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_appointment_list_medecin')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_appointment_form_medecin')})]"/>
         <field name="context">{'create': False, 'search_default_today': 1}</field>
     </record>
