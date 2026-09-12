@@ -34,10 +34,15 @@ export class CabinetNotificationSystray extends Component {
 
         onMounted(() => {
             window.addEventListener("click", this.onWindowClick);
+            // Vérification automatique en arrière-plan toutes les 2 minutes
+            this.intervalId = setInterval(() => this.loadAlerts(), 120000);
         });
 
         onWillUnmount(() => {
             window.removeEventListener("click", this.onWindowClick);
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+            }
         });
     }
 
@@ -58,6 +63,9 @@ export class CabinetNotificationSystray extends Component {
             ev.stopPropagation();
         }
         this.state.isOpen = !this.state.isOpen;
+        if (this.state.isOpen) {
+            this.loadAlerts();
+        }
     }
 
     async refreshAlerts(ev) {
