@@ -132,6 +132,17 @@ class Patient(models.Model):
         compute='_compute_cnam_statut_display',
         store=False
     )
+    cnam_statut_level = fields.Selection(
+        [
+            ('danger', 'Expiré'),
+            ('warning', 'Expire bientôt'),
+            ('success', 'Valide'),
+            ('muted', 'Non affilié'),
+        ],
+        string='Niveau Statut CNAM',
+        compute='_compute_cnam_statut_display',
+        store=False
+    )
 
     @api.depends('is_cnam', 'is_apci')
     def _compute_profil_couverture(self):
@@ -223,16 +234,21 @@ class Patient(models.Model):
         for rec in self:
             if not rec.is_cnam:
                 rec.cnam_statut_display = "Non affilié"
+                rec.cnam_statut_level = "muted"
             elif rec.date_validite_cnam and rec.date_validite_cnam < today:
                 retard = (today - rec.date_validite_cnam).days
                 rec.cnam_statut_display = f"Expiré ({retard}j)"
+                rec.cnam_statut_level = "danger"
             elif rec.date_validite_cnam and (rec.date_validite_cnam - today).days <= 7:
                 jours_restants = (rec.date_validite_cnam - today).days
                 rec.cnam_statut_display = f"Expire dans {jours_restants}j"
+                rec.cnam_statut_level = "warning"
             elif rec.is_apci and rec.date_fin_apci and rec.date_fin_apci < today:
                 rec.cnam_statut_display = "APCI expirée"
+                rec.cnam_statut_level = "danger"
             else:
                 rec.cnam_statut_display = "Valide"
+                rec.cnam_statut_level = "success"
 
     # --- Assistant IA : Conseils d'expiration On-Demand ---
     def action_ia_conseil_global(self):

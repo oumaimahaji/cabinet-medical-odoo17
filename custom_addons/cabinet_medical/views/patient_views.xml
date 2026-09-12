@@ -20,12 +20,13 @@
                        decoration-info="genre == 'femme'"
                        decoration-primary="genre == 'homme'"/>
                 <field name="is_cnam" string="CNAM" widget="boolean_toggle" readonly="1"/>
+                <field name="cnam_statut_level" column_invisible="True"/>
                 <field name="cnam_statut_display" string="Validité CNAM"
                        widget="badge"
-                       decoration-danger="cnam_statut_display and cnam_statut_display.startswith('Expiré')"
-                       decoration-warning="cnam_statut_display and cnam_statut_display.startswith('Expire dans')"
-                       decoration-success="cnam_statut_display == 'Valide'"
-                       decoration-muted="cnam_statut_display == 'Non affilié'"/>
+                       decoration-danger="cnam_statut_level == 'danger'"
+                       decoration-warning="cnam_statut_level == 'warning'"
+                       decoration-success="cnam_statut_level == 'success'"
+                       decoration-muted="cnam_statut_level == 'muted'"/>
                 <field name="has_assurance" string="Assurance" widget="boolean_toggle" readonly="1"/>
                 <field name="dossier_status" string="Statut dossier"
                        widget="badge"
