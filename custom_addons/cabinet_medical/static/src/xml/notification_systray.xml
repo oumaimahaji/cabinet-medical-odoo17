@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="cabinet_medical.NotificationSystray" owl="1">
+        <div class="o_cabinet_notification_systray dropdown d-flex align-items-center position-relative me-2" t-if="isSecretaire">
+            <!-- Bouton Cloche Systray -->
+            <a href="javascript:void(0)" 
+               role="button" 
+               class="btn btn-link text-white position-relative p-2 text-decoration-none o_cabinet_bell_btn" 
+               t-on-click="toggleDropdown" 
+               title="Veille Proactive CNAM (IA)">
+                <i class="fa fa-bell" style="font-size: 16px; color: #ffffff;"/>
+                <span t-if="state.unreadCount > 0" 
+                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm o_cabinet_bell_badge">
+                    <t t-esc="state.unreadCount"/>
+                </span>
+            </a>
+
+            <!-- Menu Déroulant (Dropdown) -->
+            <div t-if="state.isOpen" 
+                 class="dropdown-menu dropdown-menu-end show shadow-lg border-0 p-0 mt-2 o_cabinet_notif_dropdown" 
+                 style="width: 380px; border-radius: 12px; z-index: 1060; right: 0; position: absolute; top: 100%; overflow: hidden; background: #ffffff;">
+                
+                <!-- En-tête -->
+                <div class="p-3 text-white d-flex justify-content-between align-items-center" 
+                     style="background: linear-gradient(135deg, #1A365D 0%, #2B6CB0 100%);">
+                    <div>
+                        <h6 class="fw-bold mb-0" style="font-size: 0.95rem; letter-spacing: 0.3px;">
+                            <i class="fa fa-bell me-2" style="color: #ffd166;"/>Veille Proactive CNAM
+                        </h6>
+                        <small style="font-size: 0.75rem; opacity: 0.9;">Assistant d'Aide à la Décision (IA)</small>
+                    </div>
+                    <span t-if="state.unreadCount > 0" class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                        <t t-esc="state.unreadCount"/> alerte(s)
+                    </span>
+                    <span t-else="" class="badge bg-success rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                        À jour
+                    </span>
+                </div>
+
+                <!-- Liste des Alertes -->
+                <div class="list-group list-group-flush overflow-auto o_cabinet_notif_list" style="max-height: 360px;">
+                    <t t-if="state.alerts and state.alerts.length > 0">
+                        <t t-foreach="state.alerts" t-as="alert" t-key="alert.id">
+                            <div class="list-group-item list-group-item-action p-3 border-bottom d-flex align-items-start gap-3 o_notif_item"
+                                 t-on-click="() => this.openPatient(alert.id)"
+                                 style="cursor: pointer; transition: background 0.15s ease;">
+                                <!-- Cercle Icône -->
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     t-attf-style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.1); color: {{ alert.icon_color }};">
+                                    <i t-attf-class="fa {{ alert.icon }}" style="font-size: 16px;"/>
+                                </div>
+                                <!-- Contenu -->
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                        <span class="fw-bold text-dark text-truncate" style="font-size: 0.88rem;">
+                                            <t t-esc="alert.name"/>
+                                        </span>
+                                        <span t-attf-class="badge rounded-pill {{ alert.badge_class }} ms-2" style="font-size: 0.7rem;">
+                                            <t t-esc="alert.badge_label"/>
+                                        </span>
+                                    </div>
+                                    <div class="text-muted mb-1" style="font-size: 0.76rem;">
+                                        <i class="fa fa-calendar-times-o me-1 text-danger"/> <t t-esc="alert.days_text"/> 
+                                        <span t-if="alert.date_validite" class="ms-1">· Échéance : <t t-esc="alert.date_validite"/></span>
+                                    </div>
+                                    <!-- Conseil IA -->
+                                    <div class="p-2 rounded bg-light border-start border-3 border-primary mt-1" style="font-size: 0.76rem; color: #2d3748; line-height: 1.3;">
+                                        <strong class="text-primary"><i class="fa fa-lightbulb-o me-1"/>Conseil IA :</strong> 
+                                        <t t-esc="alert.conseil_ia"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                    <t t-else="">
+                        <div class="p-4 text-center text-muted">
+                            <i class="fa fa-check-circle-o text-success d-block mb-2" style="font-size: 2rem;"/>
+                            <div class="fw-bold">Aucune anomalie détectée</div>
+                            <small>Toutes les cartes CNAM sont à jour.</small>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Pied de page -->
+                <div class="p-2 bg-light border-top d-flex justify-content-between align-items-center">
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-primary fw-semibold" 
+                            t-on-click="refreshAlerts" 
+                            style="font-size: 0.78rem;">
+                        <i class="fa fa-refresh me-1"/> Actualiser l'analyse IA
+                    </button>
+                    <button type="button" 
+                            class="btn btn-sm btn-link text-muted text-decoration-none" 
+                            t-on-click="openAllPatients" 
+                            style="font-size: 0.78rem;">
+                        Voir tous les patients <i class="fa fa-angle-right ms-1"/>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </t>
+
+</templates>

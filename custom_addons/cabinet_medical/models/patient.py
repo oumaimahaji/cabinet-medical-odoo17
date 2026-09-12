@@ -745,6 +745,98 @@ class Patient(models.Model):
                 res_url='/my/couverture'
             )
 
+    @api.model
+    def get_secretary_cnam_alerts(self):
+        """Retourne la liste des alertes proactives CNAM/APCI avec analyse IA pour le Systray de la secrétaire."""
+        today = date.today()
+        seven_days_later = today + relativedelta(days=7)
+
+        alerts = []
+
+        # 1. Cartes CNAM expirées
+        expired_patients = self.search([
+            ('is_cnam', '=', True),
+            ('date_validite_cnam', '<', today)
+        ], order='date_validite_cnam asc', limit=15)
+
+        for p in expired_patients:
+            retard = (today - p.date_validite_cnam).days if p.date_validite_cnam else 0
+            filiere = p.filiere_cnam or "Non spécifiée"
+            conseil_ia = (
+                f"Filière {filiere}. Carte échue depuis {retard} jours. "
+                "Exiger l'attestation de renouvellement avant facturation tiers-payant."
+            )
+            alerts.append({
+                'id': p.id,
+                'name': p.name,
+                'type': 'expired',
+                'badge_label': 'Expiré',
+                'badge_class': 'bg-danger',
+                'icon': 'fa-exclamation-triangle',
+                'icon_color': '#dc3545',
+                'days_text': f"Expiré ({retard}j)",
+                'date_validite': p.date_validite_cnam.strftime(DATE_FORMAT) if p.date_validite_cnam else '',
+                'conseil_ia': conseil_ia,
+            })
+
+        # 2. Cartes CNAM expirant bientôt (sous 7 jours)
+        soon_patients = self.search([
+            ('is_cnam', '=', True),
+            ('date_validite_cnam', '>=', today),
+            ('date_validite_cnam', '<=', seven_days_later)
+        ], order='date_validite_cnam asc', limit=10)
+
+        for p in soon_patients:
+            jours_restants = (p.date_validite_cnam - today).days if p.date_validite_cnam else 0
+            conseil_ia = (
+                f"Échéance dans {jours_restants} jour(s). "
+                "Informer le patient pour entamer le renouvellement auprès du centre CNAM."
+            )
+            alerts.append({
+                'id': p.id,
+                'name': p.name,
+                'type': 'soon',
+                'badge_label': f"Dans {jours_restants}j",
+                'badge_class': 'bg-warning text-dark',
+                'icon': 'fa-clock-o',
+                'icon_color': '#fd7e14',
+                'days_text': f"Expire dans {jours_restants}j",
+                'date_validite': p.date_validite_cnam.strftime(DATE_FORMAT) if p.date_validite_cnam else '',
+                'conseil_ia': conseil_ia,
+            })
+
+        # 3. Prises en charge APCI expirées
+        apci_patients = self.search([
+            ('is_cnam', '=', True),
+            ('is_apci', '=', True),
+            ('date_fin_apci', '<', today)
+        ], order='date_fin_apci asc', limit=10)
+
+        for p in apci_patients:
+            retard_apci = (today - p.date_fin_apci).days if p.date_fin_apci else 0
+            patho = p.apci_pathologie or "Non spécifiée"
+            conseil_ia = (
+                f"Accord APCI ({patho}) expiré depuis {retard_apci}j. "
+                "La prise en charge à 100% est suspendue jusqu'à réception de la nouvelle décision."
+            )
+            alerts.append({
+                'id': p.id,
+                'name': p.name,
+                'type': 'apci',
+                'badge_label': 'APCI Expirée',
+                'badge_class': 'bg-danger',
+                'icon': 'fa-heartbeat',
+                'icon_color': '#d63384',
+                'days_text': f"APCI ({retard_apci}j)",
+                'date_validite': p.date_fin_apci.strftime(DATE_FORMAT) if p.date_fin_apci else '',
+                'conseil_ia': conseil_ia,
+            })
+
+        return {
+            'count': len(alerts),
+            'alerts': alerts
+        }
+
 
 
 class PortalWizardUser(models.TransientModel):

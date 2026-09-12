@@ -1,6 +1,6 @@
 {
     'name': 'Cabinet Médical',
-    'version': '17.0.1.0.16',
+    'version': '17.0.1.0.17',
     'summary': 'Gestion d un cabinet médical',
     'author': 'Ton Nom',
     'category': 'Healthcare',
@@ -70,9 +70,11 @@
             'cabinet_medical/static/src/js/hide_app_switcher.js',
             'cabinet_medical/static/src/js/live_search.js',
             'cabinet_medical/static/src/js/user_menu_cleanup.js',
+            'cabinet_medical/static/src/js/notification_systray.js',
             'cabinet_medical/static/src/xml/rdv_filter_buttons.xml',
             'cabinet_medical/static/src/xml/ai_dashboard.xml',
             'cabinet_medical/static/src/xml/cnam_dashboard.xml',
+            'cabinet_medical/static/src/xml/notification_systray.xml',
         ],
         'web.assets_frontend': [
             'cabinet_medical/static/src/css/medical_styles.css',

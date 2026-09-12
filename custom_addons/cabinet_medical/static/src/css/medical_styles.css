@@ -1564,6 +1564,47 @@ div[name="actes"] .o_list_table td.o_list_button,
     padding: 6px 8px !important;
 }
 
+/* ===== SYSTRAY NOTIFICATION CLOCHE SECRÉTAIRE ===== */
+.o_cabinet_notification_systray .o_cabinet_bell_btn {
+    border-radius: 6px;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.o_cabinet_notification_systray .o_cabinet_bell_btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: scale(1.05);
+}
+
+.o_cabinet_bell_badge {
+    animation: pulseBadge 2s infinite ease-in-out;
+    font-weight: bold;
+}
+
+@keyframes pulseBadge {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.o_cabinet_notif_dropdown {
+    animation: fadeInSlideDown 0.2s ease-out;
+}
+
+@keyframes fadeInSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.o_notif_item:hover {
+    background-color: #f1f5f9 !important;
+}
+
 
 
 
