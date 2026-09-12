@@ -26,7 +26,7 @@
 
     <!-- Assurances pour Secrétaire (dans Configuration) -->
     <menuitem id="menu_assurances_secretaire"
-              name="Assurances"
+              name="🛡️ Assurances"
               parent="menu_cabinet_configuration"
               action="action_assurance_secretaire"
               groups="cabinet_medical.group_secretaire"
@@ -100,14 +100,14 @@
               sequence="5"/>
 
     <menuitem id="menu_cabinet_settings"
-              name="Paramètres du cabinet"
+              name="⚙️ Paramètres du cabinet"
               parent="menu_cabinet_configuration"
               action="action_cabinet_medical_configuration"
               groups="cabinet_medical.group_medecin"
               sequence="10"/>
 
     <menuitem id="menu_cabinet_tarifs_cnam"
-              name="Tarifs CNAM"
+              name="💳 Tarifs CNAM"
               parent="menu_cabinet_configuration"
               action="action_acte_parametrage"
               groups="cabinet_medical.group_medecin"
