@@ -14,15 +14,30 @@ const removeUnarchiveDomElements = () => {
     document.querySelectorAll('.dropdown-item, .o_menu_item, span, a, button').forEach((el) => {
         const text = (el.innerText || el.textContent || '').trim().toLowerCase();
         if (text === 'désarchiver' || text === 'unarchive' || text.startsWith('désarchiver') || text.startsWith('unarchive')) {
-            // Si c'est un item de menu ou un bouton d'action
             const container = el.closest('.dropdown-item, .o_menu_item, li') || el;
             container.style.setProperty('display', 'none', 'important');
         }
     });
+
+    // Traduction automatique des boutons en français : New -> Nouveau, Save -> Enregistrer, Discard -> Ignorer
+    document.querySelectorAll('.o_list_button_add, .o_form_button_create, .o_control_panel_main_buttons button, button').forEach((btn) => {
+        btn.childNodes.forEach((node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const txt = node.textContent.trim();
+                if (txt === 'New' || txt === 'new') {
+                    node.textContent = ' Nouveau';
+                } else if (txt === 'Save' || txt === 'save') {
+                    node.textContent = ' Enregistrer';
+                } else if (txt === 'Discard' || txt === 'discard') {
+                    node.textContent = ' Ignorer';
+                }
+            }
+        });
+    });
 };
 
 document.addEventListener('DOMContentLoaded', removeUnarchiveDomElements);
-setInterval(removeUnarchiveDomElements, 200);
+setInterval(removeUnarchiveDomElements, 150);
 document.addEventListener('click', () => {
     setTimeout(removeUnarchiveDomElements, 10);
     setTimeout(removeUnarchiveDomElements, 50);
