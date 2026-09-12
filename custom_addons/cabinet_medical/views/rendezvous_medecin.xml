@@ -123,7 +123,7 @@
                 <field name="date" string="Date"/>
                 <separator/>
                 <filter string="Aujourd'hui" name="today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
-                <filter string="À venir" name="upcoming" domain="[('date', '&gt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="À venir" name="upcoming" domain="[('date', '&gt;', context_today().strftime('%Y-%m-%d')), ('state', 'not in', ('termine', 'annule'))]"/>
                 <filter string="À traiter" name="to_treat" domain="[('state', 'in', ['en_attente', 'present', 'en_consultation'])]"/>
                 <filter string="Présent" name="filter_present" domain="[('state', '=', 'present')]"/>
                 <filter string="En attente" name="filter_en_attente" domain="[('state', '=', 'en_attente')]"/>
