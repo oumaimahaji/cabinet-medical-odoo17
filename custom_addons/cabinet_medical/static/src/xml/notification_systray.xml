@@ -83,18 +83,18 @@
                 </div>
 
                 <!-- Pied de page -->
-                <div class="p-2 bg-light border-top d-flex justify-content-between align-items-center">
+                <div class="p-2 border-top d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
                     <button type="button" 
-                            class="btn btn-sm btn-outline-primary fw-semibold" 
+                            class="btn btn-sm fw-semibold" 
                             t-on-click="refreshAlerts" 
-                            style="font-size: 0.78rem;">
-                        <i class="fa fa-refresh me-1"/> Actualiser l'analyse IA
+                            style="font-size: 0.78rem; background-color: #1A365D !important; color: #ffffff !important; border: 1px solid #1A365D !important; border-radius: 6px; padding: 5px 12px; display: inline-flex; align-items: center;">
+                        <i class="fa fa-refresh me-1" style="color: #ffffff !important;"/> Actualiser l'analyse IA
                     </button>
                     <button type="button" 
-                            class="btn btn-sm btn-link text-muted text-decoration-none" 
+                            class="btn btn-sm fw-bold text-decoration-none" 
                             t-on-click="openAllPatients" 
-                            style="font-size: 0.78rem;">
-                        Voir tous les patients <i class="fa fa-angle-right ms-1"/>
+                            style="font-size: 0.78rem; background: transparent !important; color: #1A365D !important; border: none !important; padding: 5px 10px;">
+                        Voir tous les patients <i class="fa fa-angle-right ms-1" style="color: #1A365D !important;"/>
                     </button>
                 </div>
 
