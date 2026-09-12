@@ -8,6 +8,7 @@ import { X2ManyFieldDialog } from "@web/views/fields/relational_utils";
 
 import { ListController } from "@web/views/list/list_controller";
 import { FormController } from "@web/views/form/form_controller";
+import { FormViewDialog } from "@web/views/view_dialogs/form_view_dialog";
 
 // Supprimer dynamiquement tout élément "Désarchiver" / "Unarchive" qui apparaîtrait dans le DOM
 const removeUnarchiveDomElements = () => {
@@ -63,6 +64,35 @@ patch(FormController.prototype, {
             delete menuItems.unarchive;
         }
         return menuItems;
+    },
+    async onRecordSaved(record, changes) {
+        await super.onRecordSaved(...arguments);
+        if (this.props.resModel === 'cabinet.patient') {
+            if (this.env.services && this.env.services.action) {
+                setTimeout(() => {
+                    this.env.services.action.doAction({ type: 'ir.actions.client', tag: 'reload' });
+                }, 250);
+            }
+        }
+    },
+});
+
+patch(FormViewDialog.prototype, {
+    setup() {
+        super.setup();
+        const origOnRecordSaved = this.props.onRecordSaved;
+        this.props.onRecordSaved = async (record) => {
+            if (origOnRecordSaved) {
+                await origOnRecordSaved(record);
+            }
+            if (this.props.resModel === 'cabinet.patient') {
+                if (this.env.services && this.env.services.action) {
+                    setTimeout(() => {
+                        this.env.services.action.doAction({ type: 'ir.actions.client', tag: 'reload' });
+                    }, 250);
+                }
+            }
+        };
     },
 });
 
