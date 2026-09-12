@@ -1,6 +1,6 @@
 {
     'name': 'Cabinet Médical',
-    'version': '17.0.1.0.21',
+    'version': '17.0.1.0.22',
     'summary': 'Gestion d un cabinet médical',
     'author': 'Ton Nom',
     'category': 'Healthcare',
