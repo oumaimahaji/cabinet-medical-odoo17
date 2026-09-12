@@ -809,7 +809,7 @@ class TestPrescriptionORMExecutionCount(unittest.TestCase):
         record = Prescription(patient_id=self.patient_penicilline, ordonnance_line_ids=[line], is_validated=False)
         res = record.action_save_prescription()
         self.assertTrue(record.is_validated, "L'ordonnance doit être marquée comme validée")
-        self.assertEqual(res['type'], 'ir.actions.act_window_close')
+        self.assertIn(res['type'], ('ir.actions.act_window_close', 'ir.actions.client'))
 
     def test_14_action_cancel_brouillon_temporaire_recent_archive(self):
         """14. action_cancel sur un brouillon temporaire IA non validé -> archivage (active=False)."""

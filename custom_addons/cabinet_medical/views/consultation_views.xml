@@ -205,7 +205,7 @@
                                         </control>
                                         <field name="active" column_invisible="True"/>
                                         <field name="date_prescription" widget="date"/>
-                                        <field name="ordonnance_line_ids" widget="many2many_tags"/>
+                                        <field name="medicaments_resume" string="Médicaments prescrits"/>
                                         <field name="state" widget="badge" decoration-success="state == 'signed'" decoration-muted="state == 'draft'" string="Statut"/>
                                         <field name="instructions" placeholder="Instructions générales..." optional="hide"/>
                                         <button name="action_open_sign_wizard" string="✍️ Signer" type="object" icon="fa-pencil" class="btn-success btn-sm" invisible="state == 'signed'" groups="cabinet_medical.group_medecin"/>

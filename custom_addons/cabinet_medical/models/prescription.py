@@ -913,11 +913,19 @@ class Prescription(models.Model):
             if rec.is_validated and not active_lines:
                 raise ValidationError("Une ordonnance doit contenir au moins un médicament")
 
-    @api.depends('ordonnance_line_ids.medicament')
+    @api.depends('ordonnance_line_ids.medicament', 'ordonnance_line_ids.dosage', 'ordonnance_line_ids.active')
     def _compute_medicaments_resume(self):
         for rec in self:
-            noms = rec.ordonnance_line_ids.mapped('medicament')
-            rec.medicaments_resume = ', '.join(filter(None, noms)) or '—'
+            lines = rec.ordonnance_line_ids.filtered(lambda l: getattr(l, 'active', True)) if hasattr(rec.ordonnance_line_ids, 'filtered') else rec.ordonnance_line_ids
+            items = []
+            for line in lines:
+                med = (getattr(line, 'medicament', '') or '').strip()
+                dos = (getattr(line, 'dosage', '') or '').strip()
+                if med and dos:
+                    items.append(f"{med} ({dos})")
+                elif med:
+                    items.append(med)
+            rec.medicaments_resume = ', '.join(items) if items else '—'
 
     @api.depends('instructions')
     def _compute_instructions_summary(self):
@@ -1954,7 +1962,10 @@ class Prescription(models.Model):
             FIELD_IS_VALIDATED: True,
             FIELD_IS_IA_TEMPORARY_DRAFT: False
         })
-        return {KEY_TYPE: ACTION_WINDOW_CLOSE}
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
 
     def action_cancel_prescription(self):
         """
@@ -1981,7 +1992,10 @@ class Prescription(models.Model):
     def action_archive_prescription(self):
         self.ensure_one()
         self.write({FIELD_ACTIVE: False})
-        return {KEY_TYPE: ACTION_WINDOW_CLOSE}
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
 
     def action_unarchive(self):
         """Interdire le désarchivage via le menu Actions."""
