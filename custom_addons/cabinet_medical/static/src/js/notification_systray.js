@@ -29,10 +29,7 @@ export class CabinetNotificationSystray extends Component {
         };
 
         onWillStart(async () => {
-            this.isSecretaire = await this.user.hasGroup("cabinet_medical.group_secretaire");
-            if (this.isSecretaire) {
-                await this.loadAlerts();
-            }
+            await this.loadAlerts();
         });
 
         onMounted(() => {
@@ -104,4 +101,4 @@ export const systrayItem = {
     Component: CabinetNotificationSystray,
 };
 
-registry.category("systray").add("cabinet_medical.notification_systray", systrayItem, { sequence: 25 });
+registry.category("systray").add("cabinet_medical.notification_systray", systrayItem, { sequence: 1 });

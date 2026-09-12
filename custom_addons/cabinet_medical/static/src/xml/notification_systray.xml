@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
     <t t-name="cabinet_medical.NotificationSystray" owl="1">
-        <div class="o_cabinet_notification_systray dropdown d-flex align-items-center position-relative me-2" t-if="isSecretaire">
+        <div class="o_cabinet_notification_systray dropdown d-flex align-items-center position-relative me-2">
             <!-- Bouton Cloche Systray -->
             <a href="javascript:void(0)" 
                role="button" 

@@ -244,13 +244,17 @@ header.o_navbar .nav-item.active > .nav-link {
 }
 
 /* ===== MASQUER LES ICÔNES MESSAGERIE ET ACTIVITÉS (Odoo par défaut) ===== */
-.o_menu_systray > div:has(.fa-comments),
-.o_menu_systray > div:has(.fa-clock-o),
-.o_menu_systray > div:has(.fa-bell),
-.o_menu_systray > li:has(.fa-comments),
-.o_menu_systray > li:has(.fa-clock-o),
-.o_menu_systray > li:has(.fa-bell) {
+.o_menu_systray > div:not(.o_cabinet_notification_systray):has(.fa-comments),
+.o_menu_systray > div:not(.o_cabinet_notification_systray):has(.fa-clock-o),
+.o_menu_systray > div:not(.o_cabinet_notification_systray):has(.fa-bell),
+.o_menu_systray > li:not(.o_cabinet_notification_systray):has(.fa-comments),
+.o_menu_systray > li:not(.o_cabinet_notification_systray):has(.fa-clock-o),
+.o_menu_systray > li:not(.o_cabinet_notification_systray):has(.fa-bell) {
     display: none !important;
+}
+
+.o_menu_systray .o_cabinet_notification_systray {
+    display: flex !important;
 }
 
 /* ===== RESTAURATION DU SÉLECTEUR D'APPLICATIONS (Menu Gaufrier) ===== */
