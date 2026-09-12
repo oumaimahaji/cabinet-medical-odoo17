@@ -11,10 +11,15 @@ th[data-name="telephone"] span::before {
     font-family: FontAwesome; content: "\f095"; margin-right: 6px; color: #2c5aa0;
 }
 th[data-name="date"] span::before,
-th[data-name="heure"] span::before,
 th[data-name="date_consultation"] span::before,
 th[data-name="date_naissance"] span::before {
     font-family: FontAwesome; content: "\f073"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="heure"] span::before {
+    font-family: FontAwesome; content: "\f017"; margin-right: 6px; color: #2c5aa0;
+}
+th[data-name="no_show_risk_badge"] span::before {
+    font-family: FontAwesome; content: "\f201"; margin-right: 6px; color: #2c5aa0;
 }
 th[data-name="state"] span::before,
 th[data-name="dossier_status"] span::before {
