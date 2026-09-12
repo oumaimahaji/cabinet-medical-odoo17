@@ -966,6 +966,15 @@ class Appointment(models.Model):
     def _onchange_patient_id(self):
         if self.patient_id:
             self.patient_name = False
+            if self.patient_id.is_cnam and self.patient_id.is_cnam_expired:
+                jours = (fields.Date.today() - self.patient_id.date_validite_cnam).days if self.patient_id.date_validite_cnam else 0
+                return {
+                    'warning': {
+                        'title': "⚠️ Alerte CNAM (Patient Expiré)",
+                        'message': f"Attention : La carte CNAM de {self.patient_id.name} est expirée depuis {jours} jours ({self.patient_id.date_validite_cnam}).\n\nVeuillez informer le patient au téléphone d'apporter son attestation de renouvellement lors de son rendez-vous.",
+                        'type': 'notification'
+                    }
+                }
 
     @api.onchange('patient_name')
     def _onchange_patient_name(self):
@@ -1125,7 +1134,12 @@ class Appointment(models.Model):
             }
         }
 
-    # Actions pour les boutons
+    def action_ia_conseil_rdv(self):
+        """Déclencher l'analyse IA de la situation CNAM du patient directement depuis le rendez-vous."""
+        self.ensure_one()
+        if not self.patient_id:
+            return False
+        return self.patient_id.action_ia_conseil_global()
     def action_patient_arrive(self):
         """Marquer le patient comme arrivé (présent) et rafraîchir la vue.
         Retourne une action client qui déclenche le rechargement du formulaire.
