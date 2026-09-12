@@ -267,7 +267,7 @@
 
                 </sheet>
                 <footer>
-                    <button name="write" string="Enregistrer" type="object" class="btn-primary" data-hotkey="s" special="save"/>
+                    <button name="action_save_and_close" string="Enregistrer et fermer" type="object" class="btn-primary" data-hotkey="s"/>
                     <button string="Ignorer" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>

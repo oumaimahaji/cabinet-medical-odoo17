@@ -610,6 +610,21 @@ class Patient(models.Model):
         """Bloquer la suppression physique des patients (Règle éthique et légale)"""
         raise ValidationError("Les dossiers patients ne peuvent pas être supprimés physiquement pour des raisons médico-légales. Si ce dossier est un doublon ou n'est plus actif, veuillez utiliser la fonction d'archivage (bouton Actif/Inactif).")
 
+    def action_save_and_close(self):
+        """Action déclenchée par le bouton Enregistrer de la modale pour fermer la modale et recharger la vue sous-jacente proprement."""
+        self.ensure_one()
+        return {
+            'type': ACTION_CLIENT,
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Dossier enregistré',
+                'message': f'Le dossier de {self.name} a été mis à jour avec succès.',
+                'type': NOTIF_TYPE_SUCCESS,
+                'sticky': False,
+                'next': {'type': ACTION_CLIENT, 'tag': 'reload'},
+            }
+        }
+
     def _compute_unread_notification_count(self):
         for rec in self:
             rec.unread_notification_count = self.env[NOTIFICATION_MODEL].search_count([

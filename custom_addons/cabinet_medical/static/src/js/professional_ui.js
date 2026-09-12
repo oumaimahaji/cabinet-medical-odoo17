@@ -65,35 +65,6 @@ patch(FormController.prototype, {
         }
         return menuItems;
     },
-    async onRecordSaved(record, changes) {
-        await super.onRecordSaved(...arguments);
-        if (this.props.resModel === 'cabinet.patient') {
-            if (this.env.services && this.env.services.action) {
-                setTimeout(() => {
-                    this.env.services.action.doAction({ type: 'ir.actions.client', tag: 'reload' });
-                }, 250);
-            }
-        }
-    },
-});
-
-patch(FormViewDialog.prototype, {
-    setup() {
-        super.setup();
-        const origOnRecordSaved = this.props.onRecordSaved;
-        this.props.onRecordSaved = async (record) => {
-            if (origOnRecordSaved) {
-                await origOnRecordSaved(record);
-            }
-            if (this.props.resModel === 'cabinet.patient') {
-                if (this.env.services && this.env.services.action) {
-                    setTimeout(() => {
-                        this.env.services.action.doAction({ type: 'ir.actions.client', tag: 'reload' });
-                    }, 250);
-                }
-            }
-        };
-    },
 });
 
 patch(ActionMenus.prototype, {
