@@ -26,16 +26,16 @@ function setupRdvFilter(component) {
         };
 
         const stylesActive = {
-            "today": "background: #0284c7; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;",
-            "upcoming": "background: #8e44ad; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;",
-            "present": "background: #27ae60; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;",
-            "en_attente": "background: #e67e22; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;",
-            "en_consultation": "background: #2980b9; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;",
-            "termine": "background: #7f8c8d; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;"
+            "today": "background: #0284c7; color: white; font-weight: 700; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;",
+            "upcoming": "background: #8e44ad; color: white; font-weight: 700; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;",
+            "present": "background: #27ae60; color: white; font-weight: 700; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;",
+            "en_attente": "background: #e67e22; color: white; font-weight: 700; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;",
+            "en_consultation": "background: #2980b9; color: white; font-weight: 700; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;",
+            "termine": "background: #7f8c8d; color: white; font-weight: 700; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;"
         };
 
         const styleInactive =
-            "background: transparent; color: white; font-weight: 600; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s;";
+            "background: transparent; color: white; font-weight: 600; border-radius: 6px; padding: 7px 16px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s;";
 
         Object.entries(buttons).forEach(([key, btn]) => {
             if (btn) {
@@ -226,9 +226,9 @@ function setupConsultationFilter(component) {
         const btnEnCours = document.getElementById("consult-btn-en_cours");
         const btnTerminees = document.getElementById("consult-btn-terminees");
 
-        const styleEnCoursActive = "background: #e67e22; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;";
-        const styleTermineesActive = "background: #27ae60; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;";
-        const styleInactive = "background: transparent; color: white; font-weight: 600; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s;";
+        const styleEnCoursActive = "background: #e67e22; color: white; font-weight: 700; border-radius: 6px; padding: 7px 18px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;";
+        const styleTermineesActive = "background: #27ae60; color: white; font-weight: 700; border-radius: 6px; padding: 7px 18px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;";
+        const styleInactive = "background: transparent; color: white; font-weight: 600; border-radius: 6px; padding: 7px 18px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s;";
 
         if (btnEnCours) {
             btnEnCours.style.cssText = activeKey === 'en_cours' ? styleEnCoursActive : styleInactive;
