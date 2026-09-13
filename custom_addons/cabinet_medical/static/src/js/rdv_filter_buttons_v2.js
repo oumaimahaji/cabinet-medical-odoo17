@@ -277,7 +277,7 @@ function setupConsultationFilter(component) {
 }
 
 // 1. Patch de la Vue Liste
-patch(ListController.prototype, "cabinet_medical.ListControllerPatch", {
+patch(ListController.prototype, {
     setup() {
         super.setup();
         if (this.props.resModel === 'cabinet.rendezvous') {
@@ -291,7 +291,7 @@ patch(ListController.prototype, "cabinet_medical.ListControllerPatch", {
 });
 
 // 2. Patch de la Vue Calendrier
-patch(CalendarController.prototype, "cabinet_medical.CalendarControllerPatch", {
+patch(CalendarController.prototype, {
     setup() {
         super.setup();
         setupRdvFilter(this);
@@ -301,7 +301,7 @@ patch(CalendarController.prototype, "cabinet_medical.CalendarControllerPatch", {
 });
 
 // 3. Patch du FormController (uniquement pour cabinet.suivi.wizard)
-patch(FormController.prototype, "cabinet_medical.FormControllerPatch1", {
+patch(FormController.prototype, {
     setup() {
         super.setup();
         if (this.props.resModel === 'cabinet.suivi.wizard') {
@@ -562,7 +562,7 @@ window.renderDay = function (dayData, dateStr) {
 };
 
 // 4. Patch de FormController pour gérer le bouton Annuler (suppression/unlink) et la sauvegarde
-patch(FormController.prototype, "cabinet_medical.FormControllerPatch2", {
+patch(FormController.prototype, {
     async saveButtonClicked(params) {
         const result = await super.saveButtonClicked(...arguments);
         if (this.props.resModel === 'cabinet.rendezvous' && window._rdvRefreshBanner) {
