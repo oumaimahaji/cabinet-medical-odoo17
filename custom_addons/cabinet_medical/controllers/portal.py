@@ -17,7 +17,7 @@ class PatientPortal(CustomerPortal):
         """Valeurs spécifiques et complètes chargées UNIQUEMENT sur l'accueil du portail (/my)."""
         values = super()._prepare_home_portal_values(counters)
         
-        patient = request.env['cabinet.patient'].search([('user_id', '=', request.env.user.id)], limit=1)
+        patient = request.env['cabinet.patient'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)
         values['patient'] = patient
         
         if patient:
@@ -144,7 +144,7 @@ class PatientPortal(CustomerPortal):
     @http.route(['/my/rendezvous', '/my/rendezvous/page/<int:page>'], type='http', auth="user", website=True)
     def portal_my_rendezvous(self, page=1, sortby=None, **kw):
         values = self._prepare_portal_layout_values()
-        patient = request.env['cabinet.patient'].search([('user_id', '=', request.env.user.id)], limit=1)
+        patient = request.env['cabinet.patient'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)
         
         if not patient:
             return request.redirect('/my')
@@ -200,7 +200,7 @@ class PatientPortal(CustomerPortal):
         Aucun champ IA (ia_statut, ia_fingerprint, alertes détectées) n'est transmis.
         """
         values = self._prepare_portal_layout_values()
-        patient = request.env['cabinet.patient'].search(
+        patient = request.env['cabinet.patient'].sudo().search(
             [('user_id', '=', request.env.user.id)], limit=1
         )
         if not patient:
@@ -220,7 +220,7 @@ class PatientPortal(CustomerPortal):
     @http.route(['/my/ordonnances', '/my/ordonnances/page/<int:page>'], type='http', auth="user", website=True)
     def portal_my_ordonnances(self, page=1, sortby=None, **kw):
         values = self._prepare_portal_layout_values()
-        patient = request.env['cabinet.patient'].search([('user_id', '=', request.env.user.id)], limit=1)
+        patient = request.env['cabinet.patient'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)
         
         if not patient:
             return request.redirect('/my')
