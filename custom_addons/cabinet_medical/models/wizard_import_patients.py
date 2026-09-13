@@ -340,7 +340,5 @@ class WizardImportPatientsSuccess(models.TransientModel):
     message = fields.Text(string='Message', readonly=True)
 
     def action_ok(self):
-        """Ferme la boîte de dialogue et recharge la vue liste des patients"""
-        action = self.env[ACTION_WINDOW]._for_xml_id('cabinet_medical.action_patient_secretaire') if self.env.ref('cabinet_medical.action_patient_secretaire', raise_if_not_found=False) else self.env[ACTION_WINDOW]._for_xml_id('cabinet_medical.action_patient')
-        action['target'] = 'main'
-        return action
+        """Ferme la boîte de dialogue et recharge la vue courante"""
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
