@@ -17,12 +17,12 @@ class PatientPortal(CustomerPortal):
         """Valeurs spécifiques et complètes chargées UNIQUEMENT sur l'accueil du portail (/my)."""
         values = super()._prepare_home_portal_values(counters)
         
-        patient = request.env['cabinet.patient'].search([('user_id', '=', request.env.user.id)], limit=1)
+        patient = request.env['cabinet.patient'].with_user(1).search([('user_id', '=', request.env.user.id)], limit=1)  
         values['patient'] = patient
         
         if patient:
             today = fields.Date.today()
-            next_rdv = request.env['cabinet.rendezvous'].search([
+            next_rdv = request.env['cabinet.rendezvous'].with_user(1).search([
                 ('patient_id', '=', patient.id), 
                 ('date', '>=', today), 
                 ('state', '=', 'en_attente')
@@ -34,14 +34,14 @@ class PatientPortal(CustomerPortal):
                     cnam_expiring_soon = True
             
             values['next_rdv'] = next_rdv
-            values['consultation_count'] = request.env['cabinet.consultation'].search_count([('patient_id', '=', patient.id)])
+            values['consultation_count'] = request.env['cabinet.consultation'].with_user(1).search_count([('patient_id', '=', patient.id)])
             values['cnam_expiring_soon'] = cnam_expiring_soon
             
             # Prénom du patient
             values['patient_firstname'] = patient.name.split()[0] if patient.name else ''
             
             # Montant total dû (somme des factures en état brouillon/non payées)
-            factures = request.env['cabinet.facture'].search([('patient_id', '=', patient.id), ('state', '=', 'draft')])
+            factures = request.env['cabinet.facture'].with_user(1).search([('patient_id', '=', patient.id), ('state', '=', 'draft')])
             values['facture_total_du'] = sum(factures.mapped('montant_paye_cabinet'))
             
             # Statut CNAM
@@ -51,12 +51,12 @@ class PatientPortal(CustomerPortal):
                 values['cnam_status'] = 'Inactif'
             
             # Compteurs réels pour le rendu QWeb direct (uniquement RDV terminés, en attente et absent)
-            values['rendezvous_count'] = request.env['cabinet.rendezvous'].search_count([
+            values['rendezvous_count'] = request.env['cabinet.rendezvous'].with_user(1).search_count([
                 ('patient_id', '=', patient.id),
                 ('state', 'in', ['termine', 'en_attente', 'absent'])
             ])
-            values['ordonnance_count'] = request.env['cabinet.prescription'].search_count([('patient_id', '=', patient.id)])
-            values['facture_count'] = request.env['cabinet.facture'].search_count([('patient_id', '=', patient.id)])
+            values['ordonnance_count'] = request.env['cabinet.prescription'].with_user(1).search_count([('patient_id', '=', patient.id)])
+            values['facture_count'] = request.env['cabinet.facture'].with_user(1).search_count([('patient_id', '=', patient.id)])
             
             # Activités récentes combinées
             activities = []
@@ -66,7 +66,7 @@ class PatientPortal(CustomerPortal):
                     return ""
                 return d.strftime('%d/%m/%Y')
 
-            consultations = request.env['cabinet.consultation'].search([('patient_id', '=', patient.id)], order='date_consultation desc, id desc', limit=3)
+            consultations = request.env['cabinet.consultation'].with_user(1).search([('patient_id', '=', patient.id)], order='date_consultation desc, id desc', limit=3)
             for c in consultations:
                 activities.append({
                     'type': 'consultation',
@@ -78,7 +78,7 @@ class PatientPortal(CustomerPortal):
                     'text_color': '#06b6d4'
                 })
                 
-            prescriptions = request.env['cabinet.prescription'].search([('patient_id', '=', patient.id)], order='date_prescription desc, id desc', limit=3)
+            prescriptions = request.env['cabinet.prescription'].with_user(1).search([('patient_id', '=', patient.id)], order='date_prescription desc, id desc', limit=3)
             for p in prescriptions:
                 med_str = f" : {p.medicaments_resume}" if p.medicaments_resume and p.medicaments_resume != '—' else ""
                 activities.append({
@@ -91,8 +91,8 @@ class PatientPortal(CustomerPortal):
                     'text_color': '#10b981'
                 })
                 
-            factures = request.env['cabinet.facture'].search([('patient_id', '=', patient.id)], order='date_facture desc, id desc', limit=3)
-            for f in factures:
+            factures_recents = request.env['cabinet.facture'].with_user(1).search([('patient_id', '=', patient.id)], order='date_facture desc, id desc', limit=3)
+            for f in factures_recents:
                 fac_name_str = f" {f.name}" if f.name and f.name != 'Nouveau' else ""
                 activities.append({
                     'type': 'facture',
@@ -104,7 +104,7 @@ class PatientPortal(CustomerPortal):
                     'text_color': '#f59e0b'
                 })
                 
-            rendezvous = request.env['cabinet.rendezvous'].search([
+            rendezvous = request.env['cabinet.rendezvous'].with_user(1).search([
                 ('patient_id', '=', patient.id),
                 ('state', 'in', ['termine', 'en_attente', 'absent'])
             ], order='date desc, id desc', limit=3)
@@ -144,7 +144,7 @@ class PatientPortal(CustomerPortal):
     @http.route(['/my/rendezvous', '/my/rendezvous/page/<int:page>'], type='http', auth="user", website=True)
     def portal_my_rendezvous(self, page=1, sortby=None, **kw):
         values = self._prepare_portal_layout_values()
-        patient = request.env['cabinet.patient'].search([('user_id', '=', request.env.user.id)], limit=1)
+        patient = request.env['cabinet.patient'].with_user(1).search([('user_id', '=', request.env.user.id)], limit=1)  
         
         if not patient:
             return request.redirect('/my')
@@ -168,7 +168,7 @@ class PatientPortal(CustomerPortal):
             sortby = 'date'
         order = searchbar_sortings[sortby]['order']
 
-        rdv_count = Rendezvous.search_count(domain)
+        rdv_count = Rendezvous.with_user(1).search_count(domain)
         pager = portal_pager(
             url="/my/rendezvous",
             url_args={'sortby': sortby},
@@ -176,7 +176,7 @@ class PatientPortal(CustomerPortal):
             page=page,
             step=self._items_per_page
         )
-        rendezvous = Rendezvous.search(domain, order=order, limit=self._items_per_page, offset=pager['offset'])
+        rendezvous = Rendezvous.with_user(1).search(domain, order=order, limit=self._items_per_page, offset=pager['offset'])
 
         values.update({
             'rendezvous': rendezvous,
@@ -200,7 +200,7 @@ class PatientPortal(CustomerPortal):
         Aucun champ IA (ia_statut, ia_fingerprint, alertes détectées) n'est transmis.
         """
         values = self._prepare_portal_layout_values()
-        patient = request.env['cabinet.patient'].search(
+        patient = request.env['cabinet.patient'].with_user(1).search(
             [('user_id', '=', request.env.user.id)], limit=1
         )
         if not patient:
@@ -220,7 +220,7 @@ class PatientPortal(CustomerPortal):
     @http.route(['/my/ordonnances', '/my/ordonnances/page/<int:page>'], type='http', auth="user", website=True)
     def portal_my_ordonnances(self, page=1, sortby=None, **kw):
         values = self._prepare_portal_layout_values()
-        patient = request.env['cabinet.patient'].search([('user_id', '=', request.env.user.id)], limit=1)
+        patient = request.env['cabinet.patient'].with_user(1).search([('user_id', '=', request.env.user.id)], limit=1)  
         
         if not patient:
             return request.redirect('/my')
@@ -235,7 +235,7 @@ class PatientPortal(CustomerPortal):
             sortby = 'date'
         order = searchbar_sortings[sortby]['order']
 
-        count = Prescription.search_count(domain)
+        count = Prescription.with_user(1).search_count(domain)
         pager = portal_pager(
             url="/my/ordonnances",
             url_args={'sortby': sortby},
@@ -243,7 +243,7 @@ class PatientPortal(CustomerPortal):
             page=page,
             step=self._items_per_page
         )
-        ordonnances = Prescription.search(domain, order=order, limit=self._items_per_page, offset=pager['offset'])
+        ordonnances = Prescription.with_user(1).search(domain, order=order, limit=self._items_per_page, offset=pager['offset'])
 
         values.update({
             'ordonnances': ordonnances,
@@ -507,7 +507,7 @@ class PatientPortal(CustomerPortal):
             values.update(post)
 
         # Liste des assurances disponibles pour le select
-        assurances = request.env['cabinet.assurance'].sudo().search([])
+        assurances = request.env['cabinet.assurance'].with_user(1).search([])
 
         values.update({
             'partner': partner,
