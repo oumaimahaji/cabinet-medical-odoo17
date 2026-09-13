@@ -35,7 +35,7 @@ function setupRdvFilter(component) {
         };
 
         const styleInactive =
-            "background: transparent; color: #495057; font-weight: 600; border-radius: 6px; padding: 5px 12px; border: 1px solid #ced4da; cursor: pointer; font-size: 13px; transition: all 0.2s;";
+            "background: transparent; color: white; font-weight: 600; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s;";
 
         Object.entries(buttons).forEach(([key, btn]) => {
             if (btn) {
@@ -228,7 +228,7 @@ function setupConsultationFilter(component) {
 
         const styleEnCoursActive = "background: #e67e22; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;";
         const styleTermineesActive = "background: #27ae60; color: white; font-weight: 700; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;";
-        const styleInactive = "background: transparent; color: #495057; font-weight: 600; border-radius: 6px; padding: 5px 12px; border: 1px solid #ced4da; cursor: pointer; font-size: 13px; transition: all 0.2s;";
+        const styleInactive = "background: transparent; color: white; font-weight: 600; border-radius: 6px; padding: 5px 12px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s;";
 
         if (btnEnCours) {
             btnEnCours.style.cssText = activeKey === 'en_cours' ? styleEnCoursActive : styleInactive;
