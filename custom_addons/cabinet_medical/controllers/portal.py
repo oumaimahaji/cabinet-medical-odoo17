@@ -13,9 +13,10 @@ class PatientPortal(CustomerPortal):
         values['patient'] = patient
         return values
 
-    def _prepare_home_portal_values(self, counters):
+    @http.route(['/my', '/my/home'], type='http', auth="user", website=True)
+    def home(self, **kw):
         """Valeurs spécifiques et complètes chargées UNIQUEMENT sur l'accueil du portail (/my)."""
-        values = super()._prepare_home_portal_values(counters)
+        values = self._prepare_portal_layout_values()
         
         patient = request.env['cabinet.patient'].with_user(1).search([('user_id', '=', request.env.user.id)], limit=1)  
         values['patient'] = patient
@@ -60,8 +61,8 @@ class PatientPortal(CustomerPortal):
             
             # Activités récentes combinées
             activities = []
-
-            def format_dt(d):
+            
+            def format_date(d):
                 if not d:
                     return ""
                 return d.strftime('%d/%m/%Y')
@@ -70,11 +71,11 @@ class PatientPortal(CustomerPortal):
             for c in consultations:
                 activities.append({
                     'type': 'consultation',
-                    'title': "Consultation médicale effectuée",
-                    'date': c.date_consultation,
-                    'date_formatted': format_dt(c.date_consultation),
+                    'date': format_date(c.date_consultation),
+                    'title': 'Consultation',
+                    'desc': f"Motif : {c.motif or 'Non spécifié'}",
                     'icon': 'fa-stethoscope',
-                    'color': 'rgba(6, 182, 212, 0.08)',
+                    'bg_color': 'bg-info',
                     'text_color': '#06b6d4'
                 })
                 
@@ -82,12 +83,12 @@ class PatientPortal(CustomerPortal):
             for p in prescriptions:
                 med_str = f" : {p.medicaments_resume}" if p.medicaments_resume and p.medicaments_resume != '—' else ""
                 activities.append({
-                    'type': 'prescription',
-                    'title': f"Nouvelle ordonnance disponible{med_str}",
-                    'date': p.date_prescription,
-                    'date_formatted': format_dt(p.date_prescription),
-                    'icon': 'fa-file-text-o',
-                    'color': 'rgba(16, 185, 129, 0.08)',
+                    'type': 'ordonnance',
+                    'date': format_date(p.date_prescription),
+                    'title': 'Ordonnance',
+                    'desc': f"Prescription de médicaments{med_str}",
+                    'icon': 'fa-medkit',
+                    'bg_color': 'bg-success',
                     'text_color': '#10b981'
                 })
                 
@@ -96,11 +97,11 @@ class PatientPortal(CustomerPortal):
                 fac_name_str = f" {f.name}" if f.name and f.name != 'Nouveau' else ""
                 activities.append({
                     'type': 'facture',
-                    'title': f"Facture de soins{fac_name_str} ({f.montant_total} DT)",
-                    'date': f.date_facture,
-                    'date_formatted': format_dt(f.date_facture),
-                    'icon': 'fa-credit-card',
-                    'color': 'rgba(245, 158, 11, 0.08)',
+                    'date': format_date(f.date_facture),
+                    'title': f'Facture{fac_name_str}',
+                    'desc': f"Montant : {f.montant_total_cabinet} DT",
+                    'icon': 'fa-file-invoice-dollar',
+                    'bg_color': 'bg-warning',
                     'text_color': '#f59e0b'
                 })
                 
@@ -109,27 +110,29 @@ class PatientPortal(CustomerPortal):
                 ('state', 'in', ['termine', 'en_attente', 'absent'])
             ], order='date desc, id desc', limit=3)
             for r in rendezvous:
-                if r.state == 'termine':
-                    status_label = "terminé"
-                elif r.state == 'en_attente':
-                    status_label = "planifié" if r.date and r.date >= today else "passé"
-                elif r.state == 'absent':
-                    status_label = "non honoré"
-                else:
-                    status_label = "planifié"
                 activities.append({
                     'type': 'rendezvous',
-                    'title': f"Rendez-vous {status_label}",
-                    'date': r.date,
-                    'date_formatted': format_dt(r.date),
-                    'icon': 'fa-calendar-check-o',
-                    'color': 'rgba(79, 70, 229, 0.08)',
-                    'text_color': '#4f46e5'
+                    'date': format_date(r.date),
+                    'title': 'Rendez-vous',
+                    'desc': f"Statut : {dict(r._fields['state'].selection).get(r.state, r.state)}",
+                    'icon': 'fa-calendar-check',
+                    'bg_color': 'bg-primary',
+                    'text_color': '#3b82f6'
                 })
-                
-            # Trier par date décroissante
-            activities = sorted(activities, key=lambda x: str(x['date']) if x['date'] else '', reverse=True)[:5]
-            values['recent_activities'] = activities
+            
+            # Trier par date (plus récent en premier)
+            # Puisque date est une string '%d/%m/%Y', on doit convertir pour trier correctement
+            from datetime import datetime
+            
+            def sort_key(x):
+                try:
+                    return datetime.strptime(x['date'], '%d/%m/%Y')
+                except:
+                    return datetime.min
+                    
+            activities.sort(key=sort_key, reverse=True)
+            values['recent_activities'] = activities[:5]  # Garder les 5 plus récents
+            
         else:
             values['next_rdv'] = False
             values['consultation_count'] = 0
@@ -139,6 +142,7 @@ class PatientPortal(CustomerPortal):
             values['facture_count'] = 0
             values['recent_activities'] = []
             
+        return request.render("portal.portal_my_home", values)   
         return values
 
     @http.route(['/my/rendezvous', '/my/rendezvous/page/<int:page>'], type='http', auth="user", website=True)
