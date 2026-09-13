@@ -42,7 +42,7 @@
 
 
     <t t-inherit="web.ControlPanel" t-inherit-mode="extension">
-        <xpath expr="//div[contains(@class, 'o_control_panel')]" position="before">
+        <xpath expr="//div[contains(@class, 'o_control_panel_main')]" position="before">
             <t t-if="env.searchModel &amp;&amp; env.searchModel.resModel === 'cabinet.rendezvous' &amp;&amp; !env.inDialog &amp;&amp; env.config.viewType === 'list'">
                 <div class="rdv-banner-quick-filters d-flex align-items-center justify-content-center gap-2 py-2" 
                      style="background: #1a3a6e; border-radius: 8px 8px 0 0; margin: 16px 16px 0 16px; padding: 8px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
