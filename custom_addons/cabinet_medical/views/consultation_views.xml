@@ -7,7 +7,7 @@
         <field name="model">cabinet.consultation</field>
         <field name="arch" type="xml">
             <tree limit="10" create="0" export_xlsx="1">
-                <field name="state" column_invisible="True"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'done'"/>
                 <field name="active" column_invisible="True"/>
                 <field name="has_facture" column_invisible="True"/>
                 <field name="date_consultation"/>
@@ -24,6 +24,7 @@
         <field name="model">cabinet.consultation</field>
         <field name="arch" type="xml">
             <tree limit="10" create="0" export_xlsx="1">
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'done'"/>
                 <field name="date_consultation"/>
                 <field name="patient_id" decoration-bf="1"/>
                 <field name="motif"/>
@@ -370,19 +371,5 @@
         </field>
     </record>
 
-    <!-- Action dans le menu Actions : Archiver pour Médecin et Secrétaire -->
-    <record id="action_server_archiver_consultation" model="ir.actions.server">
-        <field name="name">Archiver</field>
-        <field name="model_id" ref="model_cabinet_consultation"/>
-        <field name="binding_model_id" ref="model_cabinet_consultation"/>
-        <field name="binding_view_types">list,form</field>
-        <field name="groups_id" eval="[(4, ref('group_medecin')), (4, ref('group_secretaire'))]"/>
-        <field name="state">code</field>
-        <field name="code">
-records.action_archiver_consultation()
-        </field>
-    </record>
-
 </odoo>
-
 
