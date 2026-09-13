@@ -29,13 +29,18 @@ export class CabinetNotificationSystray extends Component {
         };
 
         onWillStart(async () => {
-            await this.loadAlerts();
+            this.isSecretaire = await this.user.hasGroup("cabinet_medical.group_secretaire");
+            if (this.isSecretaire) {
+                await this.loadAlerts();
+            }
         });
 
         onMounted(() => {
             window.addEventListener("click", this.onWindowClick);
-            // Vérification automatique en arrière-plan toutes les 2 minutes
-            this.intervalId = setInterval(() => this.loadAlerts(), 120000);
+            // Vérification automatique en arrière-plan toutes les 2 minutes (uniquement pour secrétaire)
+            if (this.isSecretaire) {
+                this.intervalId = setInterval(() => this.loadAlerts(), 120000);
+            }
         });
 
         onWillUnmount(() => {
