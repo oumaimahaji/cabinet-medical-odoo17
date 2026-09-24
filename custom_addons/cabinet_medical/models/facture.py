@@ -506,7 +506,10 @@ class Facture(models.Model):
         import time
         ir_config_param = self.env[CONFIG_PARAM_MODEL].sudo()
         url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
-        model = ir_config_param.get_param('cabinet_medical.ollama_model', 'tinyllama')
+        model = ir_config_param.get_param('cabinet_medical.ollama_model')
+        if not model:
+            _logger.error("Modèle Ollama non configuré dans 'cabinet_medical.ollama_model'")
+            return default_message
         prompt = f"""Tu es l'assistant médical intelligent d'un cabinet médical Odoo.
 Alerte : {anomaly_type}
 Contexte technique : {context_data}
@@ -534,9 +537,11 @@ Consigne : Rédige une seule phrase d'alerte claire, fluide et professionnelle e
                     return f"✨ [IA Assistant] : {cleaned_resp}"
         except Exception as e:
             elapsed = time.time() - start_time
+            duration = elapsed
             _logger.warning(
-                "Ollama/Phi3 _get_llm_alert failed after %.2fs (%s: %s). Fallback to default message.",
-                elapsed, type(e).__name__, e
+                "Ollama _get_llm_alert failed after %.2fs (%s: %s). Fallback to default message.",
+                duration,
+                type(e).__name__, e
             )
             
         return default_message

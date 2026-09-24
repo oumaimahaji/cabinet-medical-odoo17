@@ -44,11 +44,6 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='cabinet_medical.taux_assurance',
         default=80.0
     )
-    claude_api_key = fields.Char(
-        string='Clé API Claude (Anthropic)',
-        config_parameter='cabinet_medical.claude_api_key',
-        help='Clé API pour générer les insights intelligents du tableau de bord.'
-    )
     ollama_url = fields.Char(
         string='URL Service Ollama',
         config_parameter='cabinet_medical.ollama_url',
@@ -58,8 +53,8 @@ class ResConfigSettings(models.TransientModel):
     ollama_model = fields.Char(
         string='Modèle Ollama',
         config_parameter='cabinet_medical.ollama_model',
-        default='tinyllama',
-        help='Nom du modèle Ollama (ex: tinyllama, phi3)'
+        default='qwen2.5:3b-instruct',
+        help='Nom du modèle Ollama (ex: qwen2.5:3b-instruct)'
     )
     cnam_taux_dentaire = fields.Float(
         string='Taux actes dentaires (%)',

@@ -52,9 +52,6 @@
                             <setting id="cnam_actif_setting" string="Gestion CNAM" help="Activer ou désactiver la facturation CNAM pour le cabinet">
                                 <field name="cnam_actif"/>
                             </setting>
-                            <setting id="claude_api_key_setting" string="IA : Clé API Anthropic (Claude)" help="Clé API pour générer les insights intelligents du tableau de bord.">
-                                <field name="claude_api_key" password="True"/>
-                            </setting>
                             <setting id="ollama_settings" string="IA Locale : Ollama" help="Configuration du serveur Ollama local pour les reformulations et le secours IA.">
                                 <div class="content-group">
                                     <div class="row mt16">

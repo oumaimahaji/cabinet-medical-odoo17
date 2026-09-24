@@ -20,8 +20,9 @@ class DashboardAI(models.AbstractModel):
         """
         Méthode principale d'orchestration de l'Assistant IA.
         Appelle les méthodes modulaires pour collecter les données,
-        calcule les scores et anomalies, et sollicite l'IA Claude.
+        calcule les scores et anomalies, et sollicite l'IA.
         """
+        _logger.info("\n\n\n[!!!] GET_AI_INSIGHTS HAS BEEN CALLED BY THE BROWSER! [!!!]\n\n\n")
         is_medecin = self.env.user.has_group('cabinet_medical.group_medecin')
         
         today = fields.Date.context_today(self)
@@ -40,11 +41,11 @@ class DashboardAI(models.AbstractModel):
             self._compute_forecasts(metrics)
             self._generate_recommendations(metrics)
             
-            return self._call_claude_api(metrics, is_medecin)
+            return self._call_ia_api(metrics, is_medecin)
         else:
             # Sécrétaire
             metrics = self._collect_secretaire_metrics(today, first_day_month, first_day_last_month, last_day_last_month)
-            return self._call_claude_api(metrics, False)
+            return self._call_ia_api(metrics, False)
 
     # ---------------------------------------------------------
     # 1. COLLECTE DE DONNÉES (MODULARISÉE POUR LA SOUTENANCE)
@@ -394,100 +395,46 @@ class DashboardAI(models.AbstractModel):
             
         metrics['ai_recommendations'] = " ".join(recos)
 
-    # ---------------------------------------------------------
-    # 3. INTÉGRATION API CLAUDE
+    # 3. INTÉGRATION IA LOCAL
     # ---------------------------------------------------------
 
-    def _call_claude_api(self, metrics, is_medecin):
-        """Prépare le prompt, appelle Claude et gère le fallback si l'API est indisponible."""
+    def _call_ia_api(self, metrics, is_medecin):
+        """Redirige vers l'IA locale (Ollama)."""
         if not is_medecin:
             # BUG FIX #1 (insights secrétaire) : on retourne le HTML pré-généré
             # par _collect_secretaire_metrics() au lieu du message "en maintenance".
             html = metrics.pop('_insights_html', "<p class='text-muted'>Aucune donnée disponible.</p>")
             return {'html': html, 'stats': metrics}
             
-        prompt = f"""En tant qu'Assistant IA Clinique, analyse les données du cabinet médical. Toutes tes analyses doivent être justifiées par ces chiffres.
-        
-Données Médicales et IA :
-- Alertes Allergies IA détectées ce mois : {metrics.get('nb_alertes_allergies', 0)} (dont {metrics.get('nb_alertes_critiques', 0)} critiques)
-- Patients avec allergies dans la base : {metrics.get('patients_allergiques', 0)}
-- Top Médicaments prescrits : {metrics.get('top_medicaments', 'N/A')}
-- Ratio de consultations avec/sans ordonnance : {metrics.get('consults_avec_ordo', 0)} / {metrics.get('consults_sans_ordo', 0)}
-
-Données d'Activité :
-- Consultations ce mois : {metrics['consults_ce_mois']} (vs {metrics['consults_mois_dernier']} mois dernier)
-- Historique 6 mois consultations : {metrics.get('us35_data')}
-- Score de Santé (pré-calculé) : {metrics['health_score']}/100
-
-Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TEXTE) :
-{{
-    "top_insights_html": "HTML <ul><li> (sans classes spécifiques, mets en valeur l'IA médicale et justifie tout avec les données fournies).",
-    "global_health_score": un entier de 0 à 100 reflétant la santé du cabinet,
-    "detected_anomalies": "Phrase listant les anomalies justifiées (ex: Baisse de X consultations).",
-    "recommendations": "Actions cliniques ou de gestion priorisées.",
-    "forecasts": "Estimation argumentée des consultations M+1 avec mention de la Confiance (Faible/Moyen/Élevé).",
-    "us35_comment": "Analyse de la courbe des consultations (Max 1 ligne).",
-    "us36_comment": "Analyse de la répartition du CA (Max 1 ligne).",
-    "us37_comment": "Analyse des créances CNAM (Max 1 ligne).",
-    "us39_comment": "Analyse de la répartition patients (Max 1 ligne)."
-}}
-"""
-        import os
-        api_key = self.env['ir.config_parameter'].sudo().get_param('cabinet_medical.claude_api_key') or os.environ.get('CLAUDE_API_KEY')
-        
-        # Si pas de clé Claude configurée -> bascule vers Ollama local
-        if not api_key:
-            return self._call_ollama_fallback(metrics, prompt, is_medecin)
-
-        try:
-            import requests
-            headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
-            payload = {"model": "claude-haiku-4-5-20251001", "max_tokens": 1500, "messages": [{"role": "user", "content": prompt}]}
-            
-            response = requests.post("https://api.anthropic.com/v1/messages", json=payload, headers=headers, timeout=12)
-            if response.status_code == 200:
-                result = response.json()
-                json_str = result.get('content', [{}])[0].get('text', '')
-                if JSON_BLOCK_DELIMITER in json_str: json_str = json_str.split(JSON_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
-                elif CODE_BLOCK_DELIMITER in json_str: json_str = json_str.split(CODE_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
-                
-                ai_data = json.loads(json_str.strip())
-                metrics['health_score'] = ai_data.get('global_health_score', metrics['health_score'])
-                metrics['ai_anomalies'] = ai_data.get('detected_anomalies', metrics['ai_anomalies'])
-                metrics['ai_recommendations'] = ai_data.get('recommendations', metrics['ai_recommendations'])
-                metrics['ai_forecasts'] = ai_data.get('forecasts', metrics['ai_forecasts'])
-                metrics['ai_us35'] = ai_data.get('us35_comment', '')
-                metrics['ai_us36'] = ai_data.get('us36_comment', '')
-                metrics['ai_us37'] = ai_data.get('us37_comment', '')
-                metrics['ai_us39'] = ai_data.get('us39_comment', '')
-                return {'html': ai_data.get('top_insights_html', ''), 'stats': metrics}
-            else:
-                _logger.warning(f"Claude API Error (status {response.status_code}): {response.text}. Bascule sur Ollama local.")
-                return self._call_ollama_fallback(metrics, prompt, is_medecin)
-                
-        except Exception as e:
-            _logger.warning(f"Claude API Exception: {e}. Bascule sur Ollama local.")
-            return self._call_ollama_fallback(metrics, prompt, is_medecin)
+        _logger.info("IA : Appel direct sur Ollama local.")
+        return self._call_ollama_fallback(metrics, "Prompt ignoré", is_medecin)
 
     def _call_ollama_fallback(self, metrics, prompt, is_medecin):
-        """Secours Ollama local : appelle le LLM local (phi3 ou tinyllama) si Claude n'est pas disponible."""
+        """Appelle le LLM local Ollama."""
         import requests
         ir_config_param = self.env['ir.config_parameter'].sudo()
         url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
-        model = ir_config_param.get_param('cabinet_medical.ollama_model', 'tinyllama')
+        model = ir_config_param.get_param('cabinet_medical.ollama_model')
+        if not model:
+            _logger.error("Modèle Ollama non configuré dans 'cabinet_medical.ollama_model'. Passage au moteur local.")
+            return self._generate_local_fallback(metrics, is_medecin)
+
+        ollama_prompt = f"""Tu es une IA d'analyse médicale. Retourne UNIQUEMENT un objet JSON strictement formaté contenant exactement ces deux clés : "top_insights_html" (du texte HTML) et "recommendations" (du texte court). Ne retourne rien d'autre. Stats: {metrics.get('consults_ce_mois', 0)} RDV, {metrics.get('nb_alertes_allergies', 0)} alerte"""
 
         try:
             payload = {
                 "model": model,
-                "prompt": prompt,
+                "prompt": ollama_prompt,
                 "stream": False,
+                "format": "json",
                 "options": {
-                    "temperature": 0.2,
-                    "num_predict": 800
+                    "temperature": 0.1,
+                    "num_predict": 150
                 }
             }
-            response = requests.post(url, json=payload, timeout=(2.0, 30.0))
+            response = requests.post(url, json=payload, timeout=(2.0, 150.0))
             if response.status_code == 200:
+                _logger.info("Ollama local → réponse reçue")
                 result = response.json()
                 raw_text = result.get('response', '').strip()
                 json_str = raw_text
@@ -497,6 +444,15 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
                     json_str = json_str.split(CODE_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
                 try:
                     ai_data = json.loads(json_str.strip())
+                    if not isinstance(ai_data, dict):
+                        raise ValueError("Le JSON généré n'est pas un objet (dict).")
+                    
+                    if "top_insights_html" not in ai_data or "recommendations" not in ai_data:
+                        raise ValueError("Les clés 'top_insights_html' et 'recommendations' sont manquantes.")
+                        
+                    if not isinstance(ai_data["top_insights_html"], str) or not isinstance(ai_data["recommendations"], str):
+                        raise ValueError("Les types des valeurs du JSON sont invalides (attendu: string).")
+
                     metrics['health_score'] = ai_data.get('global_health_score', metrics['health_score'])
                     metrics['ai_anomalies'] = ai_data.get('detected_anomalies', metrics['ai_anomalies'])
                     metrics['ai_recommendations'] = ai_data.get('recommendations', metrics['ai_recommendations'])
@@ -505,12 +461,15 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
                     metrics['ai_us36'] = ai_data.get('us36_comment', '')
                     metrics['ai_us37'] = ai_data.get('us37_comment', '')
                     metrics['ai_us39'] = ai_data.get('us39_comment', '')
-                    html = ai_data.get('top_insights_html', f"<p>🤖 <em>[Secours LLM {model}]</em> {raw_text[:250]}</p>")
+                    insights_html = ai_data.get('top_insights_html', '')
+                    _logger.info(f"Ollama local (modèle {model}) a généré les insights avec succès.")
+                    html = insights_html if insights_html else f"<p>{raw_text[:250]}</p>"
                     return {'html': html, 'stats': metrics}
-                except Exception:
+                except Exception as e:
+                    _logger.warning(f"Échec du parsing JSON depuis Ollama local (modèle {model}): {e}")
                     html = f"""
                     <ul class='list-unstyled mb-0'>
-                        <li class='mb-2'><strong>🤖 Assistant LLM Local ({model}) :</strong> {raw_text[:300]}</li>
+                        <li class='mb-2'><strong>Erreur :</strong> Le format de la réponse IA était invalide.</li>
                         <li class='mb-2'><strong>🩺 Statut Médical :</strong> Données analysées localement en mode sécurisé.</li>
                     </ul>
                     """
@@ -523,7 +482,7 @@ Tu DOIS retourner un objet JSON strict avec EXACTEMENT ces clés (AUCUN AUTRE TE
             return self._generate_local_fallback(metrics, is_medecin)
 
     def _generate_local_fallback(self, metrics, is_medecin):
-        """Moteur local générant des analyses basiques justifiées en cas d'absence de Claude."""
+        """Moteur local générant des analyses basiques justifiées en cas d'absence d'IA."""
         metrics['ai_us35'] = f"Consultations {'en hausse' if metrics['tendance_consults']>0 else 'en baisse'} ({metrics['tendance_consults']} RDV)."
         metrics['ai_us36'] = "Répartition stable."
         metrics['ai_us37'] = "Créances en attente à suivre."
