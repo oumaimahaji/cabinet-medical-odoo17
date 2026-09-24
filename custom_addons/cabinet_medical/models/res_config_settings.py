@@ -53,8 +53,8 @@ class ResConfigSettings(models.TransientModel):
     ollama_model = fields.Char(
         string='Modèle Ollama',
         config_parameter='cabinet_medical.ollama_model',
-        default='qwen2.5:3b-instruct',
-        help='Nom du modèle Ollama (ex: qwen2.5:3b-instruct)'
+        default='qwen2.5:1.5b',
+        help='Nom du modèle Ollama (ex: qwen2.5:1.5b)'
     )
     cnam_taux_dentaire = fields.Float(
         string='Taux actes dentaires (%)',

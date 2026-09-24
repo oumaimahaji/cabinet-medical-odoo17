@@ -8,9 +8,9 @@ services:
     image: postgres:15
     container_name: cabinet_db
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=odoo
-      - POSTGRES_PASSWORD=odoo_secret_pwd
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - odoo-db-data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -24,10 +24,10 @@ services:
     depends_on:
       - db
     environment:
-      - HOST=db
-      - USER=odoo
-      - PASSWORD=odoo_secret_pwd
-      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - HOST=${HOST}
+      - USER=${POSTGRES_USER}
+      - PASSWORD=${POSTGRES_PASSWORD}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
     ports:
       - "8069:8069"
     volumes:
@@ -37,27 +37,16 @@ services:
     restart: unless-stopped
 
   # =========================================================================
-  # 3. SERVEUR DE TEST SMTP & INTERFACE WEB : MAILPIT
-  # =========================================================================
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: cabinet_mailpit
-    ports:
-      - "8025:8025"
-      - "1025:1025"
-    restart: unless-stopped
-
-  # =========================================================================
   # 4. ASSISTANT IA LOCAL : OLLAMA (LLM MÉDICAL PHI-3 / TINYLLAMA)
   # =========================================================================
   ollama:
     image: ollama/ollama:latest
     container_name: cabinet_ollama
-    ports:
-      - "11434:11434"
+    # Port 11434 strictement interne au réseau bridge Docker (sécurité : non publié sur l'hôte)
+    # Accessible uniquement par Odoo via la résolution DNS interne : http://ollama:11434
     volumes:
       - /vagrant/docker-deploy/ollama_data:/root/.ollama
-    mem_limit: 2.5g
+    mem_limit: 4.5g
     restart: unless-stopped
 
 volumes:

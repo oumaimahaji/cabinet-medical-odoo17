@@ -9,6 +9,10 @@ RUN pip3 install --no-cache-dir \
     scikit-learn \
     joblib \
     pandas \
-    numpy
+    numpy \
+    torch \
+    sentence-transformers \
+    pillow \
+    --extra-index-url https://download.pytorch.org/whl/cpu
 
 USER odoo

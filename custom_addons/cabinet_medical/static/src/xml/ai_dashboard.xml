@@ -22,7 +22,7 @@
                                         <span class="fs-5 fw-bold text-dark">Synthèse décisionnelle IA en cours de génération...</span>
                                     </div>
                                     <div class="text-muted small text-center">
-                                        <i class="fa fa-shield text-success me-1"/> Inférence souveraine locale <strong>Qwen2.5:0.5b</strong> (Ollama sur CPU) &amp;bull; Confidentialité 100% garantie
+                                        <i class="fa fa-shield text-success me-1"/> Inférence souveraine locale <strong>Qwen2.5:1.5b</strong> (Ollama sur CPU) &amp;bull; Confidentialité 100% garantie
                                     </div>
                                 </div>
                             </div>
