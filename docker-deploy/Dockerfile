@@ -12,7 +12,7 @@ RUN pip3 install --no-cache-dir \
     numpy \
     torch \
     sentence-transformers \
-    pillow \
+    "pillow==10.4.0" \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 USER odoo

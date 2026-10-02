@@ -5,12 +5,19 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.coverage
+coverage.xml
 
 # IDE & Logs
 .vscode/
 *.log
 inspection_output.txt
 rapports_generes/
+
+# Dumps and Large Binary Data
+*.dump
+docker-deploy/ollama_data/
+
 # Private Soutenance Guides
 SOUTENANCE_DEVOPS.html
 GUIDE_DEVOPS_SOUTENANCE.md

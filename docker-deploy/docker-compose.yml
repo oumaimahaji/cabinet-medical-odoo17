@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
 
   # =========================================================================
-  # 4. ASSISTANT IA LOCAL : OLLAMA (LLM MÉDICAL PHI-3 / TINYLLAMA)
+  # 3. ASSISTANT IA LOCAL : OLLAMA (LLM SOUVERAIN QWEN2.5:1.5B)
   # =========================================================================
   ollama:
     image: ollama/ollama:latest
