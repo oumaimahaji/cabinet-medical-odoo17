@@ -27,7 +27,6 @@ services:
       - HOST=${HOST}
       - USER=${POSTGRES_USER}
       - PASSWORD=${POSTGRES_PASSWORD}
-      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
     ports:
       - "8069:8069"
     volumes:

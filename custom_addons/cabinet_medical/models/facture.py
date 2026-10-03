@@ -518,23 +518,28 @@ Consigne : Rédige une seule phrase d'alerte claire, fluide et professionnelle e
 
         start_time = time.time()
         try:
-            # Timeout : 1.5s connexion TCP, 15.0s max réponse LLM + keep_alive permanent
+            # Timeout : 2.0s connexion TCP, 30.0s max réponse LLM + keep_alive permanent
             response = requests.post(url, json={  # NOSONAR
                 "model": model,
                 "prompt": prompt,
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": 95,
+                    "num_predict": 45,
                     "temperature": 0.1,
                 }
-            }, timeout=(1.5, 15.0))
+            }, timeout=(2.0, 30.0))
             
             if response.status_code == 200:
                 result = response.json()
                 if 'response' in result and result['response']:
                     cleaned_resp = result['response'].strip().strip('"').strip("'")
                     return f"✨ [IA Assistant] : {cleaned_resp}"
+            else:
+                _logger.warning(
+                    "Ollama _get_llm_alert returned HTTP %s (%s). Fallback to default message.",
+                    response.status_code, response.text[:200]
+                )
         except Exception as e:
             elapsed = time.time() - start_time
             duration = elapsed

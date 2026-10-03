@@ -72,12 +72,15 @@ def generate_synthetic_dataset(n_samples=1500, random_state=42):
     
     return df
 
-def train_and_evaluate_model(output_dir="custom_addons/cabinet_medical/data"):
+def train_and_evaluate_model(output_dir=None):
     """
     Entraîne le RandomForestClassifier (distribution de probabilité naturelle sans distortion artificielle),
     évalue les métriques officielles avec le seuil décisionnel clinique à 30% (orienté rappel),
     et sérialise le modèle dans no_show_model.joblib.
     """
+    if output_dir is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(os.path.dirname(script_dir), "data")
     os.makedirs(output_dir, exist_ok=True)
     df = generate_synthetic_dataset(n_samples=1500, random_state=42)
     

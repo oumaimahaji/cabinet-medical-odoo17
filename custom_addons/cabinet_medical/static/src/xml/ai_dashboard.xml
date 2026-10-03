@@ -42,7 +42,12 @@
                                                 <div class="display-3 fw-bold" t-attf-style="color: {{ state.aiStats.health_score >= 80 ? '#28a745' : (state.aiStats.health_score >= 50 ? '#ffc107' : '#dc3545') }};">
                                                     <t t-esc="state.aiStats.health_score"/>/100
                                                 </div>
-                                                <p class="text-muted mt-2 small"><i class="fa fa-magic text-warning me-1"/> Calculé par l'IA</p>
+                                                <t t-if="!state.aiStats.is_fallback">
+                                                    <p class="text-muted mt-2 small"><i class="fa fa-magic text-warning me-1"/> Calculé par l'IA (Qwen2.5:1.5b)</p>
+                                                </t>
+                                                <t t-else="">
+                                                    <p class="text-muted mt-2 small"><i class="fa fa-calculator text-secondary me-1"/> Calculé par les algorithmes locaux</p>
+                                                </t>
                                             </div>
                                         </div>
                                     </div>
@@ -73,7 +78,12 @@
                                                 
                                                 <hr class="my-3"/>
                                                 
-                                                <h6 class="text-secondary fw-bold"><i class="fa fa-commenting-o me-2"/>Analyse IA Globale (Justifiée par les données)</h6>
+                                                <t t-if="!state.aiStats.is_fallback">
+                                                    <h6 class="text-secondary fw-bold"><i class="fa fa-commenting-o me-2"/>Analyse générée par Ollama — qwen2.5:1.5b</h6>
+                                                </t>
+                                                <t t-else="">
+                                                    <h6 class="text-secondary fw-bold"><i class="fa fa-info-circle text-warning me-2"/>Mode de secours heuristique — Ollama indisponible</h6>
+                                                </t>
                                                 <div class="small ai-insights-content text-muted mb-0">
                                                     <t t-out="state.aiHtml"/>
                                                 </div>
@@ -87,8 +97,8 @@
                                 <div class="card shadow-sm border-0 rounded-3">
                                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
                                         <h4 class="card-title text-secondary mb-0">
-                                            <i class="fa fa-magic text-warning me-2" style="font-size: 1.2em;"/> 
-                                            Insights Financiers de l'Assistant IA
+                                            <i class="fa fa-line-chart text-primary me-2" style="font-size: 1.2em;"/> 
+                                            Synthèse Financière &amp; Activité
                                         </h4>
                                     </div>
                                     <div class="card-body">
@@ -260,7 +270,12 @@
                                         </div>
                                         <t t-if="state.aiStats.ai_us35">
                                             <div class="alert alert-light border mt-3 mb-0 p-2 small text-muted">
-                                                <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us35"/>
+                                                <t t-if="!state.aiStats.is_fallback">
+                                                    <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us35"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <i class="fa fa-info-circle text-secondary me-2"/><strong>Analyse :</strong> <t t-esc="state.aiStats.ai_us35"/>
+                                                </t>
                                             </div>
                                         </t>
                                     </div>
@@ -276,7 +291,12 @@
                                         </div>
                                         <t t-if="state.aiStats.ai_us36">
                                             <div class="alert alert-light border mt-3 mb-0 p-2 small text-muted">
-                                                <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us36"/>
+                                                <t t-if="!state.aiStats.is_fallback">
+                                                    <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us36"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <i class="fa fa-info-circle text-secondary me-2"/><strong>Analyse :</strong> <t t-esc="state.aiStats.ai_us36"/>
+                                                </t>
                                             </div>
                                         </t>
                                     </div>
@@ -292,7 +312,12 @@
                                         </div>
                                         <t t-if="state.aiStats.ai_us37">
                                             <div class="alert alert-light border mt-3 mb-0 p-2 small text-muted">
-                                                <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us37"/>
+                                                <t t-if="!state.aiStats.is_fallback">
+                                                    <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us37"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <i class="fa fa-info-circle text-secondary me-2"/><strong>Analyse :</strong> <t t-esc="state.aiStats.ai_us37"/>
+                                                </t>
                                             </div>
                                         </t>
                                     </div>
@@ -308,7 +333,12 @@
                                         </div>
                                         <t t-if="state.aiStats.ai_us39">
                                             <div class="alert alert-light border mt-3 mb-0 p-2 small text-muted">
-                                                <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us39"/>
+                                                <t t-if="!state.aiStats.is_fallback">
+                                                    <i class="fa fa-magic text-warning me-2"/><strong>Analyse IA :</strong> <t t-esc="state.aiStats.ai_us39"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <i class="fa fa-info-circle text-secondary me-2"/><strong>Analyse :</strong> <t t-esc="state.aiStats.ai_us39"/>
+                                                </t>
                                             </div>
                                         </t>
                                     </div>

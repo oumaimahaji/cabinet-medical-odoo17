@@ -403,6 +403,7 @@ class DashboardAI(models.AbstractModel):
         if not is_medecin:
             # BUG FIX #1 (insights secrétaire) : on retourne le HTML pré-généré
             # par _collect_secretaire_metrics() au lieu du message "en maintenance".
+            metrics['is_fallback'] = False
             html = metrics.pop('_insights_html', "<p class='text-muted'>Aucune donnée disponible.</p>")
             return {'html': html, 'stats': metrics}
             
@@ -416,7 +417,7 @@ class DashboardAI(models.AbstractModel):
         url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
         model = ir_config_param.get_param('cabinet_medical.ollama_model')
         if not model:
-            _logger.error("Modèle Ollama non configuré dans 'cabinet_medical.ollama_model'. Passage au moteur local.")
+            _logger.warning("Modèle Ollama non configuré dans 'cabinet_medical.ollama_model'. Passage au moteur local.")
             return self._generate_local_fallback(metrics, is_medecin)
 
         ollama_prompt = f"""Tu es une IA d'analyse médicale. Retourne UNIQUEMENT un objet JSON strictement formaté contenant exactement ces deux clés : "top_insights_html" (du texte HTML) et "recommendations" (du texte court). Ne retourne rien d'autre. Stats: {metrics.get('consults_ce_mois', 0)} RDV, {metrics.get('nb_alertes_allergies', 0)} alerte"""
@@ -453,36 +454,33 @@ class DashboardAI(models.AbstractModel):
                     if not isinstance(ai_data["top_insights_html"], str) or not isinstance(ai_data["recommendations"], str):
                         raise ValueError("Les types des valeurs du JSON sont invalides (attendu: string).")
 
-                    metrics['health_score'] = ai_data.get('global_health_score', metrics['health_score'])
-                    metrics['ai_anomalies'] = ai_data.get('detected_anomalies', metrics['ai_anomalies'])
-                    metrics['ai_recommendations'] = ai_data.get('recommendations', metrics['ai_recommendations'])
-                    metrics['ai_forecasts'] = ai_data.get('forecasts', metrics['ai_forecasts'])
+                    metrics['health_score'] = ai_data.get('global_health_score', metrics.get('health_score', 100))
+                    metrics['ai_anomalies'] = ai_data.get('detected_anomalies', metrics.get('ai_anomalies', ''))
+                    metrics['ai_recommendations'] = ai_data.get('recommendations', metrics.get('ai_recommendations', ''))
+                    metrics['ai_forecasts'] = ai_data.get('forecasts', metrics.get('ai_forecasts', ''))
                     metrics['ai_us35'] = ai_data.get('us35_comment', '')
                     metrics['ai_us36'] = ai_data.get('us36_comment', '')
                     metrics['ai_us37'] = ai_data.get('us37_comment', '')
                     metrics['ai_us39'] = ai_data.get('us39_comment', '')
+                    metrics['is_fallback'] = False
                     insights_html = ai_data.get('top_insights_html', '')
                     _logger.info(f"Ollama local (modèle {model}) a généré les insights avec succès.")
                     html = insights_html if insights_html else f"<p>{raw_text[:250]}</p>"
                     return {'html': html, 'stats': metrics}
                 except Exception as e:
-                    _logger.warning(f"Échec du parsing JSON depuis Ollama local (modèle {model}): {e}")
-                    html = f"""
-                    <ul class='list-unstyled mb-0'>
-                        <li class='mb-2'><strong>Erreur :</strong> Le format de la réponse IA était invalide.</li>
-                        <li class='mb-2'><strong>🩺 Statut Médical :</strong> Données analysées localement en mode sécurisé.</li>
-                    </ul>
-                    """
-                    return {'html': html, 'stats': metrics}
+                    _logger.warning(f"Échec du parsing JSON depuis Ollama local (modèle {model}): {e}. Passage au moteur local heuristique.")
+                    return self._generate_local_fallback(metrics, is_medecin)
             else:
-                _logger.warning(f"Ollama API Error status {response.status_code}: {response.text}")
+                _logger.warning(f"Ollama API Error status {response.status_code}: {response.text[:200]}. Passage au moteur local heuristique.")
                 return self._generate_local_fallback(metrics, is_medecin)
         except Exception as e:
-            _logger.info(f"Ollama local non joignable ({e}), passage au moteur local heuristique.")
+            _logger.warning(f"Ollama local non joignable ou timeout ({type(e).__name__}: {e}), passage au moteur local heuristique.")
             return self._generate_local_fallback(metrics, is_medecin)
 
     def _generate_local_fallback(self, metrics, is_medecin):
         """Moteur local générant des analyses basiques justifiées en cas d'absence d'IA."""
+        _logger.warning("Passage au mode de secours heuristique local pour le tableau de bord.")
+        metrics['is_fallback'] = True
         metrics['ai_us35'] = f"Consultations {'en hausse' if metrics['tendance_consults']>0 else 'en baisse'} ({metrics['tendance_consults']} RDV)."
         metrics['ai_us36'] = "Répartition stable."
         metrics['ai_us37'] = "Créances en attente à suivre."
