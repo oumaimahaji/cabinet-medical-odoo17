@@ -48,9 +48,9 @@ class WizardCreerPatient(models.TransientModel):
     is_cnam = fields.Boolean(string='Assuré CNAM')
     numero_cnam = fields.Char(string='Numéro CNAM')
     regime_cnam = fields.Selection([
-        ('salarie', 'Salarié'),
-        ('retraite', 'Retraité'),
-    ], string='Régime CNAM')
+        ('cnss_salarie', 'CNSS — Salarié secteur privé'),
+        ('retraite_cnss', 'Retraité CNSS'),
+    ], string='Régime / organisme d’affiliation sociale')
     filiere_cnam = fields.Selection([
         ('privee', 'Tiers-payant (Filière Privée)'),
         ('remboursement', 'Remboursement des Frais')

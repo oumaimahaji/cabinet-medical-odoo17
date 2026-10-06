@@ -259,9 +259,9 @@ class WizardImportPatients(models.TransientModel):
                         'regime_cnam': self._clean_regime_cnam(row[COL['regime_cnam']].value) if is_cnam else None,
                         'filiere_cnam': self._clean_filiere_cnam(row[COL['filiere_cnam']].value) if is_cnam else None,
                         'date_validite_cnam': self._to_date(row[COL['date_validite_cnam']].value),
-                        'is_apci': self._to_bool(row[COL['is_apci']].value),
-                        'numero_decision_apci': self._safe_str(row[COL['numero_decision_apci']].value) or None,
-                        'date_fin_apci': self._to_date(row[COL['date_fin_apci']].value),
+                        'is_apci': self._to_bool(row[COL['is_apci']].value) if is_cnam else False,
+                        'numero_decision_apci': (self._safe_str(row[COL['numero_decision_apci']].value) or None) if is_cnam else None,
+                        'date_fin_apci': self._to_date(row[COL['date_fin_apci']].value) if is_cnam else None,
                         'has_assurance': self._to_bool(row[COL['has_assurance']].value),
                     }
 
