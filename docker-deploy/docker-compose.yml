@@ -27,8 +27,8 @@ services:
       - HOST=${HOST}
       - USER=${POSTGRES_USER}
       - PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "8069:8069"
+    expose:
+      - "8069"
     volumes:
       - odoo-web-data:/var/lib/odoo
       - /vagrant/custom_addons:/mnt/extra-addons
@@ -48,6 +48,58 @@ services:
     mem_limit: 4.5g
     restart: unless-stopped
 
+  # =========================================================================
+  # 4. SUPERVISION : PROMETHEUS (COLLECTE DES MÉTRIQUES)
+  # =========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - /vagrant/docker-deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--storage.tsdb.retention.time=15d"
+    restart: unless-stopped
+
+  # =========================================================================
+  # 5. SUPERVISION : GRAFANA (VISUALISATION DES MÉTRIQUES)
+  # =========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - /vagrant/docker-deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: cabinet_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - odoo
+    restart: unless-stopped
+
 volumes:
   odoo-db-data:
   odoo-web-data:
+  prometheus-data:
+  grafana-data:

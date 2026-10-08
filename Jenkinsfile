@@ -165,9 +165,9 @@ pipeline {
                     docker rm cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
                     cd /vagrant/docker-deploy
                     if docker compose version >/dev/null 2>&1; then
-                        docker compose -p cabinet-deploy up -d --force-recreate odoo
+                        docker compose -p cabinet-deploy up -d --force-recreate odoo nginx
                     else
-                        docker-compose -p cabinet-deploy up -d --force-recreate odoo
+                        docker-compose -p cabinet-deploy up -d --force-recreate odoo nginx
                     fi
                 '''
             }
@@ -178,18 +178,18 @@ pipeline {
         // =================================================================
         stage('Health Check') {
             steps {
-                echo '🏥 Vérification de la disponibilité du serveur Odoo sur le port 8069...'
+                echo '🏥 Vérification de la disponibilité du serveur Odoo via HTTPS...'
                 sh '''
                     MAX_RETRIES=15
                     DELAY=4
-                    URL_EXTERNAL="http://192.168.33.10:8069"
-                    URL_LOCAL="http://localhost:8069"
+                    URL_EXTERNAL="https://192.168.33.10"
+                    URL_LOCAL="https://localhost"
                     SUCCESS=0
 
                     echo "Attente de la disponibilité d'Odoo 17..."
                     for i in $(seq 1 $MAX_RETRIES); do
                         echo "Tentative $i/$MAX_RETRIES..."
-                        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL_EXTERNAL" || curl -s -o /dev/null -w "%{http_code}" "$URL_LOCAL" || echo "000")
+                        HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" "$URL_EXTERNAL" || curl -k -s -o /dev/null -w "%{http_code}" "$URL_LOCAL" || echo "000")
                         echo "Code HTTP reçu: $HTTP_CODE"
 
                         if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "303" ] || [ "$HTTP_CODE" = "302" ]; then
@@ -201,7 +201,7 @@ pipeline {
                     done
 
                     if [ $SUCCESS -ne 1 ]; then
-                        echo "❌ Échec du Health Check : Le serveur Odoo 17 n'a pas répondu à temps sur le port 8069."
+                        echo "❌ Échec du Health Check : Le serveur Odoo 17 n'a pas répondu à temps en HTTPS."
                         exit 0
                     fi
                 '''

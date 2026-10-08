@@ -24,3 +24,12 @@ GUIDE_DEVOPS_SOUTENANCE.md
 scratch/
 .env
 *.env
+docker-deploy/nginx/certs/
+
+# Security & Temp files
+*.bak
+docker-deploy/odoo.conf
+test.sh
+vagrant_tests.ps1
+prometheus_jenkins_test.ps1
+check_restart.ps1
