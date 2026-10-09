@@ -27,9 +27,10 @@ scratch/
 docker-deploy/nginx/certs/
 
 # Security & Temp files
-*.bak
+*.bak*
 docker-deploy/odoo.conf
 test.sh
 vagrant_tests.ps1
 prometheus_jenkins_test.ps1
 check_restart.ps1
+*.ps1

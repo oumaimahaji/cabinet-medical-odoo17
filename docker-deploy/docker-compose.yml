@@ -41,6 +41,8 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: cabinet_ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
     # Port 11434 strictement interne au réseau bridge Docker (sécurité : non publié sur l'hôte)
     # Accessible uniquement par Odoo via la résolution DNS interne : http://ollama:11434
     volumes:
@@ -76,7 +78,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana-data:/var/lib/grafana
