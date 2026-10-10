@@ -44,10 +44,14 @@ class Facture(models.Model):
     _description = 'Facture Médicale'
     _order = 'date_facture desc'
 
+    _sql_constraints = [
+        ('consultation_id_unique', 'UNIQUE(consultation_id)', "Une consultation ne peut être rattachée qu'à une seule facture !"),
+    ]
+
     name = fields.Char(string='Numéro facture', readonly=True, default=DEFAULT_SEQUENCE_NAME)
     active = fields.Boolean(string="Actif", default=True)
     patient_id = fields.Many2one('cabinet.patient', string='Patient', required=True)
-    consultation_id = fields.Many2one('cabinet.consultation', string='Consultation', required=True)
+    consultation_id = fields.Many2one('cabinet.consultation', string='Consultation', required=False)
     date_facture = fields.Date(string='Date', required=True, default=fields.Date.today)
     
     company_id = fields.Many2one(
@@ -560,3 +564,18 @@ Consigne : Rédige une seule phrase d'alerte claire, fluide et professionnelle e
                 context = f"Patient: {rec.patient_id.name}, APCI activé, Décision non fournie"
                 alert = self._get_llm_alert("Patient APCI sans décision formelle", context, default_msg)
                 raise ValidationError(alert)
+
+    @api.constrains('consultation_id')
+    def _check_unique_consultation_facture(self):
+        """Garantit l'unicité de la facture par consultation (Cardinalité 0..1)."""
+        for rec in self:
+            if rec.consultation_id:
+                domain = [('consultation_id', '=', rec.consultation_id.id)]
+                if getattr(rec, '_origin', False) and rec._origin.id:  # type: ignore
+                    domain.append(('id', '!=', rec._origin.id))  # type: ignore
+                elif isinstance(rec.id, int):  # type: ignore
+                    domain.append(('id', '!=', rec.id))  # type: ignore
+
+                if self.search_count(domain) > 0:
+                    raise ValidationError(f"Une consultation (ID {rec.consultation_id.id}) ne peut être rattachée qu'à une seule facture.")
+

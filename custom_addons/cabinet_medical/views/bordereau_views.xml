@@ -61,7 +61,7 @@
                             <field name="date_fin" readonly="state != 'draft'"/>
                             <field name="date_creation" readonly="1"/>
                             <field name="code_motif_rejet" invisible="state != 'rejected'" required="state == 'rejected'" readonly="state == 'paid'"/>
-                            <field name="motif_rejet" invisible="state != 'rejected'" readonly="state == 'paid'"/>
+                            <field name="motif_rejet" invisible="not motif_rejet and state != 'rejected'" readonly="state == 'paid'"/>
                         </group>
                         <group string="Résumé">
                             <field name="nb_factures" readonly="1"/>
