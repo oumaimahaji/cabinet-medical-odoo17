@@ -163,6 +163,9 @@ pipeline {
                 sh '''
                     docker stop cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
                     docker rm cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
+                    mkdir -p /vagrant/custom_addons
+                    rm -rf /vagrant/custom_addons/cabinet_medical
+                    cp -r custom_addons/cabinet_medical /vagrant/custom_addons/
                     cd /vagrant/docker-deploy
                     if docker compose version >/dev/null 2>&1; then
                         docker compose -p cabinet-deploy up -d --force-recreate odoo nginx
