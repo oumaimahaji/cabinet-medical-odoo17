@@ -1,0 +1,79 @@
+{
+    "dataset": {
+        "name": "Medical Appointment No Shows",
+        "source_file": "KaggleV2-May-2016.csv",
+        "author": "Joni Hoppen (Aquarela Analytics)",
+        "license": "CC BY-NC-SA 4.0",
+        "license_source": "Kaggle Dataset (Medical Appointment No Shows - Joni Hoppen / Aquarela Advanced Analytics)",
+        "publication_year": 2016,
+        "training_date": "2026-10-11",
+        "total_rows_raw": 110527,
+        "total_rows_cleaned": 110521,
+        "cleaned_rows_dropped": 6,
+        "unique_patients": 62298,
+        "natural_noshow_rate_percent": 20.19
+    },
+    "model": {
+        "model_name": "RandomForestClassifier",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "max_depth": 6,
+            "min_samples_split": 5,
+            "min_samples_leaf": 3,
+            "random_state": 42
+        },
+        "features": [
+            "lead_days",
+            "day_of_week",
+            "is_nouveau_patient",
+            "patient_previous_rdv_count",
+            "patient_historical_noshow_rate"
+        ],
+        "features_count": 5,
+        "train_size": 88416,
+        "test_size": 22105,
+        "decision_threshold": 0.3,
+        "risk_thresholds": {
+            "faible": "< 25%",
+            "moyen": "25% - 45%",
+            "eleve": "> 45%"
+        }
+    },
+    "test_metrics": {
+        "accuracy": 0.7595,
+        "precision": 0.3748,
+        "recall": 0.2864,
+        "f1_score": 0.3247,
+        "roc_auc": 0.7214,
+        "cv_roc_auc_5fold_mean": 0.708,
+        "cv_roc_auc_5fold_std": 0.0126
+    },
+    "confusion_matrix": {
+        "true_negatives_venu_predit_venu": 15510,
+        "false_positives_venu_predit_absent": 2132,
+        "false_negatives_absent_predit_venu": 3185,
+        "true_positives_absent_predit_absent": 1278
+    },
+    "feature_importances": [
+        {
+            "feature": "lead_days",
+            "importance_percent": 83.18
+        },
+        {
+            "feature": "patient_historical_noshow_rate",
+            "importance_percent": 12.29
+        },
+        {
+            "feature": "patient_previous_rdv_count",
+            "importance_percent": 3.1
+        },
+        {
+            "feature": "day_of_week",
+            "importance_percent": 1.01
+        },
+        {
+            "feature": "is_nouveau_patient",
+            "importance_percent": 0.42
+        }
+    ]
+}

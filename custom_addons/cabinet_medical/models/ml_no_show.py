@@ -7,23 +7,47 @@ _MODEL_CACHE = None
 
 def get_model_path():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, "data", "no_show_model.joblib")
+    # Priorité 1 : Modèle public entraîné sur données réelles Kaggle (5 variables)
+    public_path = os.path.join(base_dir, "data", "no_show_model_public.joblib")
+    if os.path.exists(public_path):
+        return public_path
+    # Priorité 2 : Ancien modèle synthétique PoC (7 variables)
+    fallback_path = os.path.join(base_dir, "data", "no_show_model.joblib")
+    if os.path.exists(fallback_path):
+        return fallback_path
+    return public_path
 
 def load_ml_model():
     global _MODEL_CACHE
     if _MODEL_CACHE is not None:
         return _MODEL_CACHE
     
-    model_path = get_model_path()
-    if os.path.exists(model_path):
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    public_path = os.path.join(base_dir, "data", "no_show_model_public.joblib")
+    fallback_path = os.path.join(base_dir, "data", "no_show_model.joblib")
+
+    # 1. Tentative chargement modèle public (5 variables)
+    if os.path.exists(public_path):
         try:
             import joblib
-            _MODEL_CACHE = joblib.load(model_path)  # NOSONAR
-            _logger.info("Modèle ML No-Show chargé avec succès depuis %s", model_path)
+            _MODEL_CACHE = joblib.load(public_path)  # NOSONAR
+            _logger.info("Modèle ML No-Show actif : Modèle Public (5 variables) chargé depuis %s", public_path)
             return _MODEL_CACHE
         except Exception as e:
-            _logger.warning("Impossible de charger le modèle ML No-Show (%s), passage au fallback heuristique.", e)
-            return None
+            _logger.warning("Échec du chargement du modèle public (%s). Déclenchement du repli.", e)
+
+    # 2. Repli vers l'ancien modèle synthétique PoC (7 variables)
+    if os.path.exists(fallback_path):
+        try:
+            import joblib
+            _MODEL_CACHE = joblib.load(fallback_path)  # NOSONAR
+            _logger.warning("REPLI ML NO-SHOW : Modèle synthétique PoC (7 variables) chargé depuis %s", fallback_path)
+            return _MODEL_CACHE
+        except Exception as e:
+            _logger.warning("Échec du chargement de l'ancien modèle synthétique (%s). Déclenchement du repli heuristique.", e)
+
+    # 3. Repli vers l'heuristique métier
+    _logger.warning("REPLI HEURISTIQUE : Aucun modèle joblib disponible. Passage sur la règle métier _heuristic_risk.")
     return None
 
 def predict_no_show_risk(lead_days=0, day_of_week=0, is_afternoon=0, is_urgence=0,
@@ -36,7 +60,7 @@ def predict_no_show_risk(lead_days=0, day_of_week=0, is_afternoon=0, is_urgence=
       - risk_level : str ('faible', 'moyen', 'eleve')
       - top_factors : list of str
     """
-    # 1. Cas d'urgence médicale : risque minimal garanti (< 3%)
+    # 1. Règle métier absolue d'urgence médicale : risque minimal garanti (< 3%) hors modèle
     if is_urgence:
         return 2.5, 'faible', ["Consultation d'urgence (présence quasi certaine)"]
     
@@ -48,30 +72,48 @@ def predict_no_show_risk(lead_days=0, day_of_week=0, is_afternoon=0, is_urgence=
             import numpy as np
             import pandas as pd
             
-            features = [
-                'lead_days',
-                'day_of_week',
-                'is_afternoon',
-                'is_urgence',
-                'is_nouveau_patient',
-                'patient_previous_rdv_count',
-                'patient_historical_noshow_rate'
-            ]
-            
-            features_df = pd.DataFrame([{
-                'lead_days': max(0, int(lead_days)),
-                'day_of_week': int(day_of_week),
-                'is_afternoon': int(bool(is_afternoon)),
-                'is_urgence': int(bool(is_urgence)),
-                'is_nouveau_patient': int(bool(is_nouveau_patient)),
-                'patient_previous_rdv_count': max(0, int(patient_previous_rdv_count)),
-                'patient_historical_noshow_rate': float(np.clip(patient_historical_noshow_rate, 0.0, 1.0))
-            }])[features]
+            n_features = getattr(model, "n_features_in_", 5)
+            if n_features == 5:
+                # Modèle public Kaggle (5 variables)
+                features = [
+                    'lead_days',
+                    'day_of_week',
+                    'is_nouveau_patient',
+                    'patient_previous_rdv_count',
+                    'patient_historical_noshow_rate'
+                ]
+                features_df = pd.DataFrame([{
+                    'lead_days': max(0, int(lead_days)),
+                    'day_of_week': int(day_of_week),
+                    'is_nouveau_patient': int(bool(is_nouveau_patient)),
+                    'patient_previous_rdv_count': max(0, int(patient_previous_rdv_count)),
+                    'patient_historical_noshow_rate': float(np.clip(patient_historical_noshow_rate, 0.0, 1.0))
+                }])[features]
+            else:
+                # Ancien modèle PoC (7 variables)
+                features = [
+                    'lead_days',
+                    'day_of_week',
+                    'is_afternoon',
+                    'is_urgence',
+                    'is_nouveau_patient',
+                    'patient_previous_rdv_count',
+                    'patient_historical_noshow_rate'
+                ]
+                features_df = pd.DataFrame([{
+                    'lead_days': max(0, int(lead_days)),
+                    'day_of_week': int(day_of_week),
+                    'is_afternoon': int(bool(is_afternoon)),
+                    'is_urgence': int(bool(is_urgence)),
+                    'is_nouveau_patient': int(bool(is_nouveau_patient)),
+                    'patient_previous_rdv_count': max(0, int(patient_previous_rdv_count)),
+                    'patient_historical_noshow_rate': float(np.clip(patient_historical_noshow_rate, 0.0, 1.0))
+                }])[features]
             
             proba = model.predict_proba(features_df)[0][1]
             risk_score = round(float(proba * 100.0), 1)
         except Exception as e:
-            _logger.warning("Erreur inférence ML No-Show: %s. Utilisation de la formule heuristique.", e)
+            _logger.warning("Erreur lors de l'inférence ML No-Show: %s. Repli sur la règle heuristique métier.", e)
             risk_score = _heuristic_risk(
                 lead_days, day_of_week, is_afternoon, is_urgence,
                 is_nouveau_patient, patient_previous_rdv_count, patient_historical_noshow_rate

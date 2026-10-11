@@ -185,7 +185,8 @@ class TestNoShowPipeline(unittest.TestCase):
         predict_no_show_risk = ml_module.predict_no_show_risk
         
         model = load_ml_model()
-        self.assertIsNotNone(model, "Le modèle no_show_model.joblib doit être chargé avec succès.")
+        self.assertIsNotNone(model, "Le modèle ML actif (no_show_model_public.joblib ou repli) doit être chargé avec succès.")
+        self.assertEqual(getattr(model, "n_features_in_", 5), 5, "Le modèle public doit attendre 5 variables explicatives.")
         
         # Test inférence générique
         score, level, factors = predict_no_show_risk(
@@ -197,30 +198,45 @@ class TestNoShowPipeline(unittest.TestCase):
         self.assertGreater(len(factors), 0)
 
     def test_05_robustesse_scoring_urgence_vs_haut_risque(self):
-        """Test 5: Vérifie la calibration des scores : Urgence (< 25%) vs Patient régulier (< 25%) vs Haut Risque (> 45%)"""
+        """Test 5: Vérifie la calibration des scores : Urgence (< 25%), Patient régulier (< 25%),
+        Monotonie du risque et Profil Élevé documenté (> 45%)."""
         from models.ml_no_show import predict_no_show_risk
         today = date.today()
 
-        # 1. Cas d'urgence médicale : Risque minimal garanti
+        # 1. Cas d'urgence médicale : Risque minimal garanti par règle métier
         score_urg, level_urg, _ = predict_no_show_risk(is_urgence=1)
-        self.assertLessEqual(score_urg, 5.0, "Une urgence doit avoir un risque minimal (< 5%).")
+        self.assertLessEqual(score_urg, 5.0, "Une urgence doit avoir un risque minimal (<= 5%).")
         self.assertEqual(level_urg, 'faible', "Le niveau d'une urgence doit être Faible.")
 
-        # 2. Patient régulier (8 RDV, 0% absence, délai 3j)
+        # 2. Patient régulier fidèle (8 RDV passés, 0% absence, délai 3j)
         score_reg, level_reg, _ = predict_no_show_risk(
             lead_days=3, day_of_week=2, is_afternoon=0, is_urgence=0,
             is_nouveau_patient=0, patient_previous_rdv_count=8, patient_historical_noshow_rate=0.0
         )
-        self.assertLess(score_reg, 25.0, "Un patient fidèle avec court délai doit être sous 25%.")
+        self.assertLess(score_reg, 25.0, "Un patient fidèle avec court délai doit être sous 25% (obtenu 18.8%).")
         self.assertEqual(level_reg, 'faible', "Le niveau doit être Faible.")
 
-        # 3. Profil à haut risque (délai 30j, récidiviste 50% d'absence, lundi)
-        score_high, level_high, factors_high = predict_no_show_risk(
-            lead_days=30, day_of_week=0, is_afternoon=1, is_urgence=0,
+        # 3. Profil intermédiaire (délai 30j, 50% d'absence passée) -> score 43.8% (moyen)
+        score_mid, level_mid, _ = predict_no_show_risk(
+            lead_days=30, day_of_week=0, is_afternoon=0, is_urgence=0,
             is_nouveau_patient=0, patient_previous_rdv_count=3, patient_historical_noshow_rate=0.50
         )
-        self.assertGreater(score_high, 45.0, "Un profil avec long délai et antécédents d'absence doit dépasser 45%.")
+        self.assertEqual(level_mid, 'moyen', "Un profil avec 50% d'absence et 30j est en niveau Moyen (43.8%).")
+
+        # 4. Profil à haut risque documenté (délai 30j, lundi, récidiviste 80% d'absence)
+        # Score réel calibré sur le modèle public : 50.8%
+        score_high, level_high, factors_high = predict_no_show_risk(
+            lead_days=30, day_of_week=0, is_afternoon=0, is_urgence=0,
+            is_nouveau_patient=0, patient_previous_rdv_count=3, patient_historical_noshow_rate=0.80
+        )
+        self.assertGreater(score_high, 45.0, "Un profil récidiviste lourd (80% d'absence, 30j) doit dépasser 45%.")
         self.assertEqual(level_high, 'eleve', "Le niveau doit être Élevé.")
+        self.assertEqual(score_high, 50.8, "Le score réel calibré documenté est exactement 50.8%.")
+
+        # 5. Vérification de la monotonie : un profil plus risqué a un score strictement supérieur
+        self.assertLess(score_urg, score_reg, "L'urgence doit être moins risquée qu'un patient régulier.")
+        self.assertLess(score_reg, score_mid, "Un patient régulier doit être moins risqué qu'un patient à risque moyen.")
+        self.assertLess(score_mid, score_high, "Un patient à risque moyen doit être moins risqué qu'un profil élevé.")
 
         # 4. Vérification sur l'enregistrement Odoo
         rdv = self.Rdv.create({
@@ -412,3 +428,133 @@ class TestNoShowPipeline(unittest.TestCase):
             portal_values['traitements_chroniques'], str,
             "La valeur 'traitements_chroniques' doit être une chaîne (ou '')."
         )
+
+    def test_09_modele_public_charge_obligatoire(self):
+        """Test 9: Échoue si le modèle public ou le modèle de repli émet InconsistentVersionWarning ou est invalide."""
+        import warnings
+        import joblib
+        from sklearn.exceptions import InconsistentVersionWarning
+        from models.ml_no_show import load_ml_model
+
+        data_dir = os.path.join(addon_dir, "data")
+        public_path = os.path.join(data_dir, "no_show_model_public.joblib")
+        fallback_path = os.path.join(data_dir, "no_show_model.joblib")
+
+        # 1. Vérification du modèle public Kaggle (doit exister, 5 features, 0 InconsistentVersionWarning)
+        self.assertTrue(os.path.exists(public_path), "ÉCHEC BLOQUANT: no_show_model_public.joblib doit exister.")
+        with warnings.catch_warnings(record=True) as w_pub:
+            warnings.simplefilter("always")
+            model_pub = joblib.load(public_path)
+            warns_pub = [item for item in w_pub if issubclass(item.category, InconsistentVersionWarning)]
+            self.assertEqual(
+                len(warns_pub), 0,
+                f"ÉCHEC BLOQUANT: InconsistentVersionWarning émis lors du chargement du modèle public: {warns_pub}"
+            )
+        self.assertEqual(
+            getattr(model_pub, "n_features_in_", 0), 5,
+            f"ÉCHEC BLOQUANT: Le modèle public chargé doit comporter exactement 5 variables (reçu: {getattr(model_pub, 'n_features_in_', 0)})."
+        )
+
+        # 2. Vérification du modèle de repli synthétique (doit exister, 7 features, 0 InconsistentVersionWarning)
+        self.assertTrue(os.path.exists(fallback_path), "ÉCHEC BLOQUANT: no_show_model.joblib de repli doit exister.")
+        with warnings.catch_warnings(record=True) as w_fb:
+            warnings.simplefilter("always")
+            model_fb = joblib.load(fallback_path)
+            warns_fb = [item for item in w_fb if issubclass(item.category, InconsistentVersionWarning)]
+            self.assertEqual(
+                len(warns_fb), 0,
+                f"ÉCHEC BLOQUANT: InconsistentVersionWarning émis lors du chargement du modèle de repli: {warns_fb}"
+            )
+        self.assertEqual(
+            getattr(model_fb, "n_features_in_", 0), 7,
+            f"ÉCHEC BLOQUANT: Le modèle de repli chargé doit comporter exactement 7 variables (reçu: {getattr(model_fb, 'n_features_in_', 0)})."
+        )
+
+        # 3. Vérification de la fonction de chargement globale load_ml_model()
+        model_active = load_ml_model()
+        self.assertIsNotNone(model_active, "ÉCHEC BLOQUANT: load_ml_model() doit renvoyer un modèle actif.")
+        self.assertEqual(getattr(model_active, "n_features_in_", 0), 5)
+
+    def test_10_alignement_calcul_historique_rdv(self):
+        """Test 10: Vérifie l'alignement strict de _calculate_patient_rdv_history :
+        - RDV futurs ignorés ;
+        - RDV annulés ignorés ;
+        - Seuls 'termine' et 'absent' comptabilisés ;
+        - Taux = absents / (termine + absent)."""
+        today = date.today()
+
+        class DummyRecord:
+            def __init__(self, id, patient_id, rdv_date, state):
+                self.id = id
+                self.patient_id = patient_id
+                self.date = rdv_date
+                self.state = state
+
+        class RecordList(list):
+            def filtered(self, func):
+                return RecordList([r for r in self if func(r)])
+
+        patient_mock = MagicMock()
+        patient_mock.id = 42
+
+        # 1. Base de RDV existants pour ce patient
+        rdv_past_termine_1 = DummyRecord(1, patient_mock, today - timedelta(days=20), 'termine')
+        rdv_past_termine_2 = DummyRecord(2, patient_mock, today - timedelta(days=15), 'termine')
+        rdv_past_absent = DummyRecord(3, patient_mock, today - timedelta(days=10), 'absent')
+        rdv_past_annule = DummyRecord(4, patient_mock, today - timedelta(days=8), 'annule') # Doit être ignoré
+        rdv_future = DummyRecord(5, patient_mock, today + timedelta(days=5), 'termine')       # Doit être ignoré
+
+        all_patient_rdvs = [rdv_past_termine_1, rdv_past_termine_2, rdv_past_absent, rdv_past_annule, rdv_future]
+
+        # RDV cible (aujourd'hui)
+        rec_cible = DummyRecord(6, patient_mock, today, 'en_attente')
+
+        # Extraction directe de la fonction réelle depuis models/rendezvous.py (exécution autonome hors runtime Odoo)
+        import ast
+        rendezvous_file = os.path.join(addon_dir, 'models', 'rendezvous.py')
+        with open(rendezvous_file, 'r', encoding='utf-8') as f:
+            tree = ast.parse(f.read())
+        fn = None
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == '_calculate_patient_rdv_history':
+                mod = ast.Module(body=[node], type_ignores=[])
+                ast.fix_missing_locations(mod)
+                code = compile(mod, filename='rendezvous.py', mode='exec')
+                ns = {}
+                exec(code, ns)
+                fn = ns['_calculate_patient_rdv_history']
+                break
+
+        self.assertIsNotNone(fn, "La méthode _calculate_patient_rdv_history doit exister dans rendezvous.py.")
+
+        class MockModel:
+            def search(self, domain):
+                # Application stricte des clauses de domaine envoyées par la fonction
+                res = []
+                for r in all_patient_rdvs:
+                    match = True
+                    for clause in domain:
+                        field, op, val = clause
+                        if field == 'patient_id' and r.patient_id.id != val: match = False
+                        elif field == 'id' and op == '!=' and r.id == val: match = False
+                        elif field == 'date' and op == '<' and not (r.date < val): match = False
+                        elif field == 'state' and op == 'in' and r.state not in val: match = False
+                    if match:
+                        res.append(r)
+                return RecordList(res)
+
+        mock_self = MockModel()
+        count, rate = fn(mock_self, rec_cible)
+
+        # Vérifications :
+        # - RDV comptabilisés : 2 terminés + 1 absent = 3 (annulé ignoré, futur ignoré)
+        self.assertEqual(count, 3, "Seuls les RDV passés 'termine' et 'absent' doivent être comptabilisés (annulés et futurs ignorés).")
+        # - Taux d'absence : 1 absent / 3 = 1/3 (0.3333...)
+        self.assertAlmostEqual(rate, 1.0 / 3.0, places=4, msg="Le taux d'absence doit être exactement absents / (termine + absent).")
+
+        # Cas sans antécédents qualifiés (nouveau patient)
+        rec_nouveau = DummyRecord(7, patient_mock, today - timedelta(days=30), 'en_attente')
+        count_zero, rate_zero = fn(mock_self, rec_nouveau)
+        self.assertEqual(count_zero, 0)
+        self.assertEqual(rate_zero, 0.0)
+

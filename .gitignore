@@ -34,3 +34,6 @@ vagrant_tests.ps1
 prometheus_jenkins_test.ps1
 check_restart.ps1
 *.ps1
+custom_addons/cabinet_medical/scripts/KaggleV2-May-2016.csv
+resultat*.txt
+noms_tests_noshow.txt

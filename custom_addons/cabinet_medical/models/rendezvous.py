@@ -359,14 +359,19 @@ class Appointment(models.Model):
     )
 
     def _calculate_patient_rdv_history(self, rec):
-        """Helper pour calculer l'historique d'absentéisme du patient."""
-        if not rec.patient_id:
+        """Helper pour calculer l'historique d'absentéisme du patient aligné sur le modèle public :
+        - RDV strictement antérieurs à rec.date ;
+        - Ne compte que les états qualifiés 'termine' et 'absent' ;
+        - Taux = absents / (termine + absent), 0.0 si aucun.
+        """
+        if not rec.patient_id or not rec.date:
             return 0, 0.0
         rec_id = getattr(getattr(rec, '_origin', False), 'id', False) or getattr(rec, 'id', False) or 0
         past_rdvs = self.search([
             ('patient_id', '=', rec.patient_id.id),
             ('id', '!=', rec_id),
-            ('state', 'in', ['present', 'en_consultation', 'termine', 'absent', 'annule'])
+            ('date', '<', rec.date),
+            ('state', 'in', ['termine', 'absent'])
         ])
         prev_count = len(past_rdvs)
         if prev_count == 0:
@@ -396,9 +401,9 @@ class Appointment(models.Model):
             day_of_week = rec.date.weekday() if rec.date else 0
             is_afternoon = 1 if (rec.heure and rec.heure >= 13.0) else 0
             is_urgence = 1 if rec.is_urgence else 0
-            is_nouveau = 1 if (rec.is_nouveau_patient or not rec.patient_id) else 0
 
             prev_count, hist_rate = self._calculate_patient_rdv_history(rec)
+            is_nouveau = 1 if (prev_count == 0 or not rec.patient_id) else 0
 
             score, level, _ = predict_no_show_risk(
                 lead_days=lead_days,
@@ -444,9 +449,9 @@ class Appointment(models.Model):
             day_of_week = rec.date.weekday() if rec.date else 0
             is_afternoon = 1 if (rec.heure and rec.heure >= 13.0) else 0
             is_urgence = 1 if rec.is_urgence else 0
-            is_nouveau = 1 if (rec.is_nouveau_patient or not rec.patient_id) else 0
 
             prev_count, hist_rate = self._calculate_patient_rdv_history(rec)
+            is_nouveau = 1 if (prev_count == 0 or not rec.patient_id) else 0
 
             _, _, factors = predict_no_show_risk(
                 lead_days=lead_days,
