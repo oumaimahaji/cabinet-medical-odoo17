@@ -432,8 +432,8 @@ def _get_transformer_model():
     with _TRANSFORMER_LOCK:
         if _TRANSFORMER_MODEL is None or _SENTENCE_TRANSFORMER_LIB is None:
             try:
-                from sentence_transformers import SentenceTransformer, util
-                import torch
+                from sentence_transformers import SentenceTransformer, util  # type: ignore
+                import torch  # type: ignore
 
                 try:
                     torch.set_num_threads(1)

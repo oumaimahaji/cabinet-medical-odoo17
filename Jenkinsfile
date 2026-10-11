@@ -164,8 +164,9 @@ pipeline {
                     docker stop cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
                     docker rm cabinet_odoo cabinet-deploy-odoo-1 2>/dev/null || true
                     mkdir -p /vagrant/custom_addons
-                    rm -rf /vagrant/custom_addons/cabinet_medical
+                    docker run --rm -v /vagrant:/vagrant alpine rm -rf /vagrant/custom_addons/cabinet_medical 2>/dev/null || rm -rf /vagrant/custom_addons/cabinet_medical 2>/dev/null || true
                     cp -r custom_addons/cabinet_medical /vagrant/custom_addons/
+                    docker run --rm -v /vagrant:/vagrant alpine chmod -R 777 /vagrant/custom_addons 2>/dev/null || true
                     cd /vagrant/docker-deploy
                     if docker compose version >/dev/null 2>&1; then
                         docker compose -p cabinet-deploy up -d --force-recreate odoo nginx

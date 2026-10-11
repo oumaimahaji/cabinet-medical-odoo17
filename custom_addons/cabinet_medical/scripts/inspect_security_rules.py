@@ -54,11 +54,19 @@ def run_security_inspection():
         
         # Check portal security group rules specifically
         portal_group = env.ref('base.group_portal', raise_if_not_found=False)
+        if not portal_group:
+            portal_group = env.ref('portal.group_portal', raise_if_not_found=False)
+        if not portal_group:
+            portal_group = env['res.groups'].search([('name', 'ilike', 'Porta')], limit=1)
+
         print(f"\nRègles associées directement au groupe Portal ({portal_group.name if portal_group else 'Non trouvé'}) :")
-        portal_rules = env['ir.rule'].search([('groups', 'in', [portal_group.id])])
-        for pr in portal_rules:
-            if pr.model_id.model.startswith('cabinet.'):
-                print(f"  * {pr.model_id.model}: {pr.domain_force} (R={pr.perm_read}, W={pr.perm_write}, C={pr.perm_create}, D={pr.perm_unlink})")
+        if portal_group:
+            portal_rules = env['ir.rule'].search([('groups', 'in', [portal_group.id])])
+            for pr in portal_rules:
+                if pr.model_id.model.startswith('cabinet.'):
+                    print(f"  * {pr.model_id.model}: {pr.domain_force} (R={pr.perm_read}, W={pr.perm_write}, C={pr.perm_create}, D={pr.perm_unlink})")
+        else:
+            print("  [AVERTISSEMENT] Groupe Portal introuvable dans la base.")
 
         print("\n" + "=" * 70)
         print("2. TEST D'ISOLATION PATIENT A VS PATIENT B")
@@ -81,12 +89,14 @@ def run_security_inspection():
         def get_or_create_portal_user(login, name, email):
             user = user_model.search([('login', '=', login)], limit=1)
             if not user:
-                user = user_model.create({
+                user_vals = {
                     'name': name,
                     'login': login,
                     'email': email,
-                    'groups_id': [(6, 0, [portal_group.id])],
-                })
+                }
+                if portal_group:
+                    user_vals['groups_id'] = [(6, 0, [portal_group.id])]
+                user = user_model.create(user_vals)
             return user
 
         user_a = get_or_create_portal_user('patient_a_test@cabinet.tn', 'PATIENT TEST A', 'patient_a_test@cabinet.tn')
