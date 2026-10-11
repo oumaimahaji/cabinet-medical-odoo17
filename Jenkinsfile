@@ -31,7 +31,7 @@ pipeline {
                         python3 -m venv /var/jenkins_home/shared_venv
                     fi
                     . /var/jenkins_home/shared_venv/bin/activate
-                    pip install --no-cache-dir scikit-learn==1.9.0 joblib pandas numpy passlib openpyxl torch sentence-transformers coverage --extra-index-url https://download.pytorch.org/whl/cpu
+                    pip install --no-cache-dir scikit-learn==1.7.2 joblib pandas numpy passlib openpyxl torch sentence-transformers coverage --extra-index-url https://download.pytorch.org/whl/cpu
                     echo "✅ Environnement virtuel prêt !"
                 '''
             }

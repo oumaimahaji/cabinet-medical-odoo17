@@ -19,7 +19,7 @@ Lors de l'audit initial de la base de données du cabinet médical (`cabinet_med
 
 ## 🔬 2. Caractéristiques (Features) et Règle Métier
 
-### Modèle Actif en Production : `no_show_model_public.joblib` (5 variables)
+### Modèle intégré au module : `no_show_model_public.joblib` (5 variables)
 
 | Variable | Type | Rôle / Règle Métier |
 | :--- | :--- | :--- |
@@ -37,7 +37,7 @@ Lors de l'audit initial de la base de données du cabinet médical (`cabinet_med
 
 ## 🌲 3. Choix de l'Algorithme et Calibrage : `RandomForestClassifier`
 
-Le modèle déployé en production (`data/no_show_model_public.joblib`) est une **Forêt Aléatoire (`RandomForestClassifier`)** calibrée sur la distribution naturelle de prévalence (taux d'absence réel de 20.19%) :
+Le modèle intégré au module (`data/no_show_model_public.joblib`) est une **Forêt Aléatoire (`RandomForestClassifier`)** calibrée sur la distribution naturelle de prévalence (taux d'absence réel de 20.19%) :
 * Hyperparamètres : `n_estimators=100`, `max_depth=6`, `min_samples_leaf=3`, `min_samples_split=5`, `random_state=42`.
 * Seuil d'alerte décisionnel : $\tau = 30\%$ (optimisé pour capter un maximum d'absences réelles tout en limitant les faux positifs).
 
@@ -50,7 +50,7 @@ Le modèle déployé en production (`data/no_show_model_public.joblib`) est une 
 
 ## 📊 4. Métriques Officielles du Modèle Public (Jeu de Test : 22 105 RDV)
 
-Entraînement officiel généré par [train_no_show_public.py](file:///c:/odoo%20-%20Copie/custom_addons/cabinet_medical/scripts/train_no_show_public.py) (`scikit-learn 1.9.0`, `random_state=42`) :
+Entraînement officiel généré par [train_no_show_public.py](scripts/train_no_show_public.py) (`scikit-learn 1.7.2`, `random_state=42`) :
 
 ### 📈 Performances Globales Réelles
 
@@ -75,7 +75,7 @@ Entraînement officiel généré par [train_no_show_public.py](file:///c:/odoo%2
 
 ## 🔄 5. Architecture de Résilience (Double Repli / Fallback)
 
-Le système implémente une chaîne de tolérance aux pannes à trois niveaux dans [models/ml_no_show.py](file:///c:/odoo%20-%20Copie/custom_addons/cabinet_medical/models/ml_no_show.py) :
+Le système implémente une chaîne de tolérance aux pannes à trois niveaux dans [models/ml_no_show.py](models/ml_no_show.py) :
 
 1. **Niveau 1 (Actif) :** `data/no_show_model_public.joblib` (5 variables issues des 110 521 RDV Kaggle).
 2. **Niveau 2 (Repli PoC) :** `data/no_show_model.joblib` (7 variables synthétiques initiales).

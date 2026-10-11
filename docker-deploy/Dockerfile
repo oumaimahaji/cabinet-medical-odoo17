@@ -6,7 +6,7 @@ USER root
 RUN pip3 install --no-cache-dir \
     passlib \
     openpyxl \
-    scikit-learn \
+    scikit-learn==1.7.2 \
     joblib \
     pandas \
     numpy \

@@ -433,7 +433,10 @@ class TestNoShowPipeline(unittest.TestCase):
         """Test 9: Échoue si le modèle public ou le modèle de repli émet InconsistentVersionWarning ou est invalide."""
         import warnings
         import joblib
-        from sklearn.exceptions import InconsistentVersionWarning
+        import sklearn.exceptions as sklearn_exceptions
+        InconsistentVersionWarning = getattr(
+            sklearn_exceptions, "InconsistentVersionWarning", UserWarning
+        )
         from models.ml_no_show import load_ml_model
 
         data_dir = os.path.join(addon_dir, "data")
