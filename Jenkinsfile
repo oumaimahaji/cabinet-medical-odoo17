@@ -46,7 +46,7 @@ pipeline {
                 sh '''
                     . /var/jenkins_home/shared_venv/bin/activate
                     coverage run custom_addons/cabinet_medical/tests/run_unit_tests.py
-                    coverage xml -o coverage.xml
+                    coverage xml --ignore-errors -o coverage.xml
                 '''
             }
         }

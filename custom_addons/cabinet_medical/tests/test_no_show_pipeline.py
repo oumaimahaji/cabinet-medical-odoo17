@@ -519,7 +519,7 @@ class TestNoShowPipeline(unittest.TestCase):
             if isinstance(node, ast.FunctionDef) and node.name == '_calculate_patient_rdv_history':
                 mod = ast.Module(body=[node], type_ignores=[])
                 ast.fix_missing_locations(mod)
-                code = compile(mod, filename='rendezvous.py', mode='exec')
+                code = compile(mod, filename=rendezvous_file, mode='exec')
                 ns = {}
                 exec(code, ns)
                 fn = ns['_calculate_patient_rdv_history']
