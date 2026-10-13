@@ -8,6 +8,11 @@
                 <div class="row mb-4">
                     <div class="col-12 d-flex justify-content-between align-items-center">
                         <h2 class="text-primary fw-bold"><i class="fa fa-dashboard me-2"/>Tableau de Bord</h2>
+                        <button class="btn btn-sm btn-outline-primary shadow-sm" t-on-click="regenerateAI" t-att-disabled="state.isRegenerating">
+                            <i t-attf-class="fa {{ state.isRegenerating ? 'fa-spinner fa-spin' : 'fa-refresh' }} me-1"/>
+                            <span t-if="!state.isRegenerating">Régénérer l'analyse IA</span>
+                            <span t-else="">Génération IA en cours...</span>
+                        </button>
                     </div>
                 </div>
 
@@ -43,10 +48,10 @@
                                                     <t t-esc="state.aiStats.health_score"/>/100
                                                 </div>
                                                 <t t-if="!state.aiStats.is_fallback">
-                                                    <p class="text-muted mt-2 small"><i class="fa fa-magic text-warning me-1"/> Calculé par l'IA (Qwen2.5:1.5b)</p>
+                                                    <p class="text-muted mt-2 small"><i class="fa fa-shield text-success me-1"/> Analyse IA Ollama (qwen2.5:1.5b)</p>
                                                 </t>
                                                 <t t-else="">
-                                                    <p class="text-muted mt-2 small"><i class="fa fa-calculator text-secondary me-1"/> Calculé par les algorithmes locaux</p>
+                                                    <p class="text-muted mt-2 small"><i class="fa fa-calculator text-secondary me-1"/> Analyse locale (chiffres modifiés ou en attente d'actualisation IA)</p>
                                                 </t>
                                             </div>
                                         </div>
@@ -79,10 +84,10 @@
                                                 <hr class="my-3"/>
                                                 
                                                 <t t-if="!state.aiStats.is_fallback">
-                                                    <h6 class="text-secondary fw-bold"><i class="fa fa-commenting-o me-2"/>Analyse générée par Ollama — qwen2.5:1.5b</h6>
+                                                    <h6 class="text-secondary fw-bold"><i class="fa fa-shield text-success me-2"/>Synthèse clinique Ollama (qwen2.5:1.5b)</h6>
                                                 </t>
                                                 <t t-else="">
-                                                    <h6 class="text-secondary fw-bold"><i class="fa fa-info-circle text-warning me-2"/>Mode de secours heuristique — Ollama indisponible</h6>
+                                                    <h6 class="text-secondary fw-bold"><i class="fa fa-info-circle text-warning me-2"/>Analyse locale (chiffres modifiés ou non encore analysés par l'IA)</h6>
                                                 </t>
                                                 <div class="small ai-insights-content text-muted mb-0">
                                                     <t t-out="state.aiHtml"/>

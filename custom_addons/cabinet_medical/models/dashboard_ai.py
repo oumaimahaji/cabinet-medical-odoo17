@@ -55,22 +55,33 @@ class DashboardAI(models.AbstractModel):
         """Collecte les indicateurs d'activité globaux et financiers (Médecin)."""
         metrics: dict[str, Any] = {'isMedecin': True}
         
-        # Consultations
-        metrics['consults_jour'] = self.env['cabinet.consultation'].search_count([('date_consultation', '=', today)])
-        metrics['consults_ce_mois'] = self.env['cabinet.consultation'].search_count([('date_consultation', '>=', first_day_month)])
-        metrics['consults_mois_dernier'] = self.env['cabinet.consultation'].search_count([
+        # Consultations (chiffres globaux du cabinet via sudo pour cohérence stricte cron/dashboard)
+        metrics['consults_jour'] = self.env['cabinet.consultation'].sudo().search_count([('date_consultation', '=', today)])
+        metrics['consults_ce_mois'] = self.env['cabinet.consultation'].sudo().search_count([('date_consultation', '>=', first_day_month)])
+        metrics['consults_mois_dernier'] = self.env['cabinet.consultation'].sudo().search_count([
             ('date_consultation', '>=', first_day_last_month),
             ('date_consultation', '<=', last_day_last_month)
         ])
         metrics['tendance_consults'] = metrics['consults_ce_mois'] - metrics['consults_mois_dernier']
         
-        # Impayés
-        factures_impayees = self.env['cabinet.facture'].search([('state', '=', 'validated'), ('reste_a_charge_final', '>', 0)])
+        # Impayés patients
+        factures_impayees = self.env['cabinet.facture'].sudo().search([('state', '=', 'validated'), ('reste_a_charge_final', '>', 0)])
         metrics['impayes_patients'] = round(sum(f.reste_a_charge_final for f in factures_impayees), 3)
         metrics['nb_factures_impayees'] = len(factures_impayees)
         
+        # Facturation (mois en cours et mois précédent pour analyse de tendance réelle)
+        metrics['factures_ce_mois'] = self.env['cabinet.facture'].sudo().search_count([
+            ('state', '=', 'validated'), ('date_facture', '>=', first_day_month)
+        ])
+        metrics['factures_mois_dernier'] = self.env['cabinet.facture'].sudo().search_count([
+            ('state', '=', 'validated'), ('date_facture', '>=', first_day_last_month), ('date_facture', '<=', last_day_last_month)
+        ])
+        
+        # Total patients
+        metrics['patients_total'] = self.env['cabinet.patient'].sudo().search_count([])
+        
         # Profils Patients
-        patients_du_mois = self.env['cabinet.consultation'].search([('date_consultation', '>=', first_day_month)]).mapped('patient_id')
+        patients_du_mois = self.env['cabinet.consultation'].sudo().search([('date_consultation', '>=', first_day_month)]).mapped('patient_id')
         profils = [p.profil_couverture for p in patients_du_mois if p.profil_couverture]
         profil_dominant_key = max(set(profils), key=profils.count) if profils else 'aucun'
         metrics['profil_dominant'] = dict(self.env['cabinet.patient']._fields['profil_couverture'].selection).get(profil_dominant_key, 'Aucun')
@@ -92,7 +103,7 @@ class DashboardAI(models.AbstractModel):
         from datetime import timedelta
         today = fields.Date.context_today(self)
         fenetre_30j = today - timedelta(days=30)
-        ordonnances = self.env['cabinet.prescription'].search(
+        ordonnances = self.env['cabinet.prescription'].sudo().search(
             [('date_prescription', '>=', fenetre_30j)]
         )
         
@@ -101,13 +112,8 @@ class DashboardAI(models.AbstractModel):
         meds_prescrits = []
         
         for ordo in ordonnances:
-            # BUG FIX #1 : On utilise le champ STOCKÉ ia_statut plutôt qu'une recherche
-            # textuelle dans ia_message (fragile car le message peut avoir des variantes).
-            # ia_statut == 'allergy_risk' est positionné par _verify_ia_in_memory() et
-            # persisté via action_verifier_ia() -> write().
             if ordo.ia_statut == 'allergy_risk':
                 nb_alertes += 1
-                # Alerte critique : score ≥ 90% OU mot-clé 'critique' dans le message IA
                 if ordo.ia_message and (
                     '100%' in ordo.ia_message
                     or '90%' in ordo.ia_message
@@ -126,14 +132,14 @@ class DashboardAI(models.AbstractModel):
         med_metrics['top_medicaments'] = ", ".join(top_meds) if top_meds else "Aucun"
         
         # Taux de consultation avec/sans ordonnance
-        consults = self.env['cabinet.consultation'].search([('date_consultation', '>=', first_day_month)])
+        consults = self.env['cabinet.consultation'].sudo().search([('date_consultation', '>=', first_day_month)])
         avec_ordo = sum(1 for c in consults if c.prescription_ids)
         sans_ordo = len(consults) - avec_ordo
         med_metrics['consults_avec_ordo'] = avec_ordo
         med_metrics['consults_sans_ordo'] = sans_ordo
         
         # Patients à risque (ayant des allergies)
-        patients = self.env['cabinet.patient'].search([('allergies', '!=', False)])
+        patients = self.env['cabinet.patient'].sudo().search([('allergies', '!=', False)])
         med_metrics['patients_allergiques'] = len(patients)
         
         return med_metrics
@@ -399,87 +405,272 @@ class DashboardAI(models.AbstractModel):
     # ---------------------------------------------------------
 
     def _call_ia_api(self, metrics, is_medecin):
-        """Redirige vers l'IA locale (Ollama)."""
+        """Lit l'analyse Ollama stockée si elle correspond aux données actuelles, sinon bascule sur l'analyse locale."""
         if not is_medecin:
-            # BUG FIX #1 (insights secrétaire) : on retourne le HTML pré-généré
-            # par _collect_secretaire_metrics() au lieu du message "en maintenance".
             metrics['is_fallback'] = False
             html = metrics.pop('_insights_html', "<p class='text-muted'>Aucune donnée disponible.</p>")
             return {'html': html, 'stats': metrics}
             
-        _logger.info("IA : Appel direct sur Ollama local.")
-        return self._call_ollama_fallback(metrics, "Prompt ignoré", is_medecin)
+        import hashlib
+        from markupsafe import escape
 
-    def _call_ollama_fallback(self, metrics, prompt, is_medecin):
-        """Appelle le LLM local Ollama."""
-        import requests
         ir_config_param = self.env['ir.config_parameter'].sudo()
-        url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate')
-        model = ir_config_param.get_param('cabinet_medical.ollama_model')
-        if not model:
-            _logger.warning("Modèle Ollama non configuré dans 'cabinet_medical.ollama_model'. Passage au moteur local.")
-            return self._generate_local_fallback(metrics, is_medecin)
+        current_hash = self._compute_metrics_hash(metrics)
+        stored_hash = ir_config_param.get_param('cabinet_medical.ai_analysis_hash')
+        stored_text = ir_config_param.get_param('cabinet_medical.ai_analysis_text')
+        stored_date = ir_config_param.get_param('cabinet_medical.ai_analysis_date')
+        stored_duration = ir_config_param.get_param('cabinet_medical.ai_analysis_duration')
+        stored_model = ir_config_param.get_param('cabinet_medical.ai_analysis_model', 'qwen2.5:1.5b')
 
-        ollama_prompt = f"""Tu es une IA d'analyse médicale. Retourne UNIQUEMENT un objet JSON strictement formaté contenant exactement ces deux clés : "top_insights_html" (du texte HTML) et "recommendations" (du texte court). Ne retourne rien d'autre. Stats: {metrics.get('consults_ce_mois', 0)} RDV, {metrics.get('nb_alertes_allergies', 0)} alerte"""
+        # Condition stricte : Le texte Ollama n'est affiché QUE si le hash correspond exactement aux chiffres actuels
+        if stored_text and stored_hash == current_hash:
+            metrics['is_fallback'] = False
+            metrics['ai_recommendations'] = stored_text
+            metrics['ai_clinical'] = f"Analyse générée par Ollama ({stored_model}) le {stored_date}, en {stored_duration} s."
+            escaped_text = escape(stored_text)
+            html = f"""
+            <div class='alert alert-success border-0 rounded-3 mb-0' style='background: #f0fdf4; border-left: 4px solid #16a34a !important;'>
+                <p class='mb-2 fw-bold text-success'><i class='fa fa-shield me-2'></i>Analyse générée par Ollama ({stored_model}) le {stored_date}, en {stored_duration} s :</p>
+                <p class='mb-0 text-dark' style='font-size: 13.5px; line-height: 1.5; white-space: pre-line;'>{escaped_text}</p>
+                <p class='mb-0 mt-2 text-muted fst-italic' style='font-size: 11.5px;'>Texte généré par une IA locale, à vérifier par le médecin.</p>
+            </div>
+            """
+            return {'html': html, 'stats': metrics}
 
-        try:
-            payload = {
-                "model": model,
-                "prompt": ollama_prompt,
-                "stream": False,
-                "format": "json",
-                "options": {
-                    "temperature": 0.1,
-                    "num_predict": 150
-                }
+        _logger.info("Chiffres du cabinet modifiés ou analyse non encore générée par l'IA (actuel: %s, stocké: %s). Passage à l'analyse locale.", current_hash, stored_hash)
+        return self._generate_local_fallback(metrics, is_medecin)
+
+    def _compute_metrics_hash(self, metrics):
+        """Calcule un hash SHA-256 déterministe des chiffres réels du cabinet."""
+        import hashlib
+        sig = (
+            f"consults={metrics.get('consults_ce_mois', 0)}|"
+            f"alertes={metrics.get('nb_alertes_allergies', 0)}|"
+            f"factures={metrics.get('nb_factures_impayees', 0)}|"
+            f"impayes={metrics.get('impayes_patients', 0)}|"
+            f"patients={metrics.get('patients_total', 0)}|"
+            f"consults_prec={metrics.get('consults_mois_dernier', 0)}|"
+            f"fact_mois={metrics.get('factures_ce_mois', 0)}|"
+            f"fact_prec={metrics.get('factures_mois_dernier', 0)}"
+        )
+        return hashlib.sha256(sig.encode('utf-8')).hexdigest()[:16]
+
+    @api.model
+    def _generate_ai_analysis(self):
+        """Génère l'analyse réelle via Ollama et enregistre texte, hash, date, modèle et durée."""
+        import requests
+        import time
+        from datetime import datetime
+        import pytz
+
+        ir_config_param = self.env['ir.config_parameter'].sudo()
+        url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate') or 'http://ollama:11434/api/generate'
+        model = ir_config_param.get_param('cabinet_medical.ollama_model', 'qwen2.5:1.5b') or 'qwen2.5:1.5b'
+
+        # 1. Verrou anti-concurrence (5 minutes max)
+        lock_ts = float(ir_config_param.get_param('cabinet_medical.ai_generation_lock', '0') or '0')
+        now_ts = time.time()
+        if lock_ts and (now_ts - lock_ts < 300):
+            _logger.warning("Génération IA déjà en cours (verrou actif depuis %.1f s).", now_ts - lock_ts)
+            return {'status': 'locked', 'reason': 'generation_in_progress'}
+
+        # 2. Calcul des métriques globales réelles du cabinet
+        today = fields.Date.context_today(self)
+        first_day_month = today.replace(day=1)
+        first_day_last_month = (first_day_month - relativedelta(months=1))
+        last_day_last_month = first_day_month - timedelta(days=1)
+        metrics = self._collect_base_metrics(today, first_day_month, first_day_last_month, last_day_last_month)
+        med_metrics = self._collect_medical_metrics(first_day_month)
+        metrics.update(med_metrics)
+        current_hash = self._compute_metrics_hash(metrics)
+
+        # 3. Sauter si le hash actuel est déjà identique au hash stocké
+        stored_hash = ir_config_param.get_param('cabinet_medical.ai_analysis_hash')
+        stored_text = ir_config_param.get_param('cabinet_medical.ai_analysis_text')
+        if stored_text and stored_hash == current_hash:
+            _logger.info("Cron/Génération IA : Chiffres inchangés (hash %s identique). Appel Ollama ignoré.", current_hash)
+            return {'status': 'skipped', 'reason': 'hash_unchanged'}
+
+        # Poser le verrou
+        ir_config_param.set_param('cabinet_medical.ai_generation_lock', str(now_ts))
+
+        consults = metrics.get('consults_ce_mois', 0)
+        consults_prec = metrics.get('consults_mois_dernier', 0)
+        factures = metrics.get('factures_ce_mois', 0)
+        factures_prec = metrics.get('factures_mois_dernier', 0)
+        alertes = metrics.get('nb_alertes_allergies', 0)
+        impayees = metrics.get('nb_factures_impayees', 0)
+        montant_imp = metrics.get('impayes_patients', 0)
+        patients_tot = metrics.get('patients_total', 0)
+
+        medecin_nom = "le médecin"
+        if self.env.user and self.env.user.name and self.env.user.id != 1:
+            medecin_nom = self.env.user.name
+
+        prompt = (
+            f"Rédige une analyse concise pour {medecin_nom}, médecin du cabinet.\n"
+            f"Règles strictes :\n"
+            f"- Utilise uniquement les chiffres fournis. N'invente aucun chiffre.\n"
+            f"- Ne parle d'aucune tendance ou comparaison absente des données.\n"
+            f"- Format : 3 phrases courtes, puis une ligne 'Recommandations :' suivie de 2 recommandations numérotées.\n"
+            f"- N'utilise aucun markdown, aucun astérisque, aucun titre.\n"
+            f"- Réponds en français.\n\n"
+            f"Exemple (chiffres fictifs) :\n"
+            f"Données : ce mois : 40 consultations, mois précédent : 55 ; factures : 38 ce mois, 50 le mois précédent ; 1 alerte allergie ; 12 factures impayées (300 DT) ; 200 patients.\n"
+            f"Réponse :\n"
+            f"Le cabinet compte 40 consultations ce mois contre 55 sur tout le mois précédent. Une alerte d'allergie médicamenteuse a été bloquée avant prescription. Douze factures restent impayées pour un montant total de 300 DT.\n"
+            f"Recommandations :\n"
+            f"1. Relancer les 12 factures impayées.\n"
+            f"2. Examiner le dossier lié à l'alerte d'allergie.\n\n"
+            f"Données réelles du cabinet :\n"
+            f"Données : ce mois : {consults} consultations, mois précédent : {consults_prec} ; factures : {factures} ce mois, {factures_prec} le mois précédent ; {alertes} alerte(s) allergie bloquée(s) ; {impayees} factures impayées ({montant_imp} DT) ; {patients_tot} patients.\n"
+            f"Réponse :\n"
+        )
+
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "keep_alive": "60m",
+            "options": {
+                "num_predict": 200,
+                "num_ctx": 2048,
+                "temperature": 0.2,
             }
-            response = requests.post(url, json=payload, timeout=(2.0, 150.0))
-            if response.status_code == 200:
-                _logger.info("Ollama local → réponse reçue")
-                result = response.json()
-                raw_text = result.get('response', '').strip()
-                json_str = raw_text
-                if JSON_BLOCK_DELIMITER in json_str:
-                    json_str = json_str.split(JSON_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
-                elif CODE_BLOCK_DELIMITER in json_str:
-                    json_str = json_str.split(CODE_BLOCK_DELIMITER)[1].split(CODE_BLOCK_DELIMITER)[0]
-                try:
-                    ai_data = json.loads(json_str.strip())
-                    if not isinstance(ai_data, dict):
-                        raise ValueError("Le JSON généré n'est pas un objet (dict).")
-                    
-                    if "top_insights_html" not in ai_data or "recommendations" not in ai_data:
-                        raise ValueError("Les clés 'top_insights_html' et 'recommendations' sont manquantes.")
-                        
-                    if not isinstance(ai_data["top_insights_html"], str) or not isinstance(ai_data["recommendations"], str):
-                        raise ValueError("Les types des valeurs du JSON sont invalides (attendu: string).")
+        }
 
-                    metrics['health_score'] = ai_data.get('global_health_score', metrics.get('health_score', 100))
-                    metrics['ai_anomalies'] = ai_data.get('detected_anomalies', metrics.get('ai_anomalies', ''))
-                    metrics['ai_recommendations'] = ai_data.get('recommendations', metrics.get('ai_recommendations', ''))
-                    metrics['ai_forecasts'] = ai_data.get('forecasts', metrics.get('ai_forecasts', ''))
-                    metrics['ai_us35'] = ai_data.get('us35_comment', '')
-                    metrics['ai_us36'] = ai_data.get('us36_comment', '')
-                    metrics['ai_us37'] = ai_data.get('us37_comment', '')
-                    metrics['ai_us39'] = ai_data.get('us39_comment', '')
-                    metrics['is_fallback'] = False
-                    insights_html = ai_data.get('top_insights_html', '')
-                    _logger.info(f"Ollama local (modèle {model}) a généré les insights avec succès.")
-                    html = insights_html if insights_html else f"<p>{raw_text[:250]}</p>"
-                    return {'html': html, 'stats': metrics}
-                except Exception as e:
-                    _logger.warning(f"Échec du parsing JSON depuis Ollama local (modèle {model}): {e}. Passage au moteur local heuristique.")
-                    return self._generate_local_fallback(metrics, is_medecin)
-            else:
-                _logger.warning(f"Ollama API Error status {response.status_code}: {response.text[:200]}. Passage au moteur local heuristique.")
-                return self._generate_local_fallback(metrics, is_medecin)
+        t0 = time.time()
+        try:
+            response = requests.post(url, json=payload, timeout=300)
+            duration = round(time.time() - t0, 1)
+            if response.status_code != 200:
+                _logger.error("Ollama a répondu HTTP %s : %s", response.status_code, response.text[:200])
+                return {'status': 'error', 'reason': f'http_{response.status_code}'}
+
+            data = response.json()
+            done_reason = data.get('done_reason')
+            result_text = self._clean_ai_text(data.get('response', ''), truncated=(done_reason == 'length'))
+
+            if len(result_text) < 40:
+                _logger.warning("Réponse Ollama refusée (vide ou < 40 caractères) : %r", result_text)
+                return {'status': 'rejected', 'reason': 'too_short', 'text': result_text}
+
+            tunis_tz = pytz.timezone('Africa/Tunis')
+            now_tunis = datetime.now(pytz.utc).astimezone(tunis_tz)
+            now_str = now_tunis.strftime('%d/%m/%Y à %H:%M')
+
+            ir_config_param.set_param('cabinet_medical.ai_analysis_text', result_text)
+            ir_config_param.set_param('cabinet_medical.ai_analysis_date', now_str)
+            ir_config_param.set_param('cabinet_medical.ai_analysis_hash', current_hash)
+            ir_config_param.set_param('cabinet_medical.ai_analysis_duration', str(duration))
+            ir_config_param.set_param('cabinet_medical.ai_analysis_model', model)
+            _logger.info("Analyse Ollama générée en %ss (done_reason=%s, eval_count=%s) pour le hash %s",
+                         duration, done_reason, data.get('eval_count'), current_hash)
+            return {'status': 'success', 'duration': duration, 'text': result_text,
+                    'done_reason': done_reason, 'eval_count': data.get('eval_count'),
+                    'eval_duration': data.get('eval_duration'), 'load_duration': data.get('load_duration')}
         except Exception as e:
-            _logger.warning(f"Ollama local non joignable ou timeout ({type(e).__name__}: {e}), passage au moteur local heuristique.")
-            return self._generate_local_fallback(metrics, is_medecin)
+            _logger.error("Erreur lors de l'appel Ollama : %s", e)
+            return {'status': 'error', 'reason': str(e)}
+        finally:
+            ir_config_param.set_param('cabinet_medical.ai_generation_lock', '0')
+
+    @api.model
+    def _warmup_ollama(self):
+        """Envoie à Ollama un prompt minimal ('ok') avec keep_alive 60m pour précharger le modèle en mémoire."""
+        import requests
+        import time
+        ir_config_param = self.env['ir.config_parameter'].sudo()
+        url = ir_config_param.get_param('cabinet_medical.ollama_url', 'http://ollama:11434/api/generate') or 'http://ollama:11434/api/generate'
+        model = ir_config_param.get_param('cabinet_medical.ollama_model', 'qwen2.5:1.5b') or 'qwen2.5:1.5b'
+        payload = {
+            "model": model,
+            "prompt": "ok",
+            "keep_alive": "60m",
+            "options": {"num_predict": 1}
+        }
+        t0 = time.time()
+        try:
+            resp = requests.post(url, json=payload, timeout=300)
+            duration = round(time.time() - t0, 1)
+            if resp.status_code == 200:
+                _logger.info("Préchauffage Ollama réussi en %ss (modèle %s maintenu 60m).", duration, model)
+                return {'status': 'success', 'duration': duration, 'model': model}
+            _logger.warning("Préchauffage Ollama code HTTP %s", resp.status_code)
+            return {'status': 'error', 'reason': f'http_{resp.status_code}'}
+        except Exception as e:
+            _logger.warning("Échec du préchauffage Ollama : %s", e)
+            return {'status': 'error', 'reason': str(e)}
+
+    @api.model
+    def _clean_ai_text(self, text, truncated=False):
+        """Supprime le markdown (**, #, titres) et coupe à la dernière phrase complète si la réponse est tronquée."""
+        import re
+        if not text:
+            return ''
+        text = text.replace('**', '').replace('__', '')
+        lines = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            # Ligne de titre markdown (#, ##, ...) : supprimée
+            if stripped.startswith('#'):
+                continue
+            # Ligne de titre sans ponctuation finale terminée par ':' (sauf la ligne 'Recommandations :')
+            if stripped.endswith(':') and not stripped.lower().startswith('recommandation') and len(stripped) < 60:
+                continue
+            stripped = stripped.replace('#', '').strip()
+            if stripped.startswith(('- ', '* ')):
+                stripped = stripped[2:].strip()
+            lines.append(stripped)
+        text = '\n'.join(lines).strip()
+
+        # Si tronqué en plein milieu de phrase (done_reason == 'length' ou manque de ponctuation terminale)
+        clean_stripped = text.rstrip()
+        missing_punct = bool(clean_stripped and clean_stripped[-1] not in ('.', '!', '?'))
+        if truncated or missing_punct:
+            # Couper proprement après la dernière fin de phrase complète
+            # (?<!\d) : ne pas considérer « 1. » / « 2. » comme une fin de phrase
+            matches = list(re.finditer(r'(?<!\d)[.!?](?=\s|$)', text))
+            if matches:
+                text = text[:matches[-1].end()].strip()
+        return text
+
+    @api.model
+    def action_trigger_ai_regeneration(self):
+        """Action RPC appelée depuis le bouton pour lancer la génération en arrière-plan."""
+        import threading
+        import time
+        ir_config_param = self.env['ir.config_parameter'].sudo()
+        lock_ts = float(ir_config_param.get_param('cabinet_medical.ai_generation_lock', '0') or '0')
+        now_ts = time.time()
+        if lock_ts and (now_ts - lock_ts < 300):
+            return {'status': 'locked'}
+
+        def worker():
+            with self.pool.cursor() as new_cr:
+                new_env = api.Environment(new_cr, self.env.uid, self.env.context)
+                new_env['cabinet.dashboard.ai']._generate_ai_analysis()
+                new_cr.commit()
+
+        thread = threading.Thread(target=worker, daemon=True)
+        thread.start()
+        return {'status': 'started'}
+
+    @api.model
+    def check_ai_status(self):
+        """Vérifie l'état de la génération en cours pour le polling JS."""
+        import time
+        ir_config_param = self.env['ir.config_parameter'].sudo()
+        lock_ts = float(ir_config_param.get_param('cabinet_medical.ai_generation_lock', '0') or '0')
+        now_ts = time.time()
+        is_generating = bool(lock_ts and (now_ts - lock_ts < 300))
+        return {'is_generating': is_generating}
 
     def _generate_local_fallback(self, metrics, is_medecin):
-        """Moteur local générant des analyses basiques justifiées en cas d'absence d'IA."""
-        _logger.warning("Passage au mode de secours heuristique local pour le tableau de bord.")
+        """Moteur local heuristique lorsque l'IA n'a pas encore calculé le hash actuel."""
+        _logger.warning("Affichage de l'analyse locale heuristique.")
         metrics['is_fallback'] = True
         metrics['ai_us35'] = f"Consultations {'en hausse' if metrics['tendance_consults']>0 else 'en baisse'} ({metrics['tendance_consults']} RDV)."
         metrics['ai_us36'] = "Répartition stable."
@@ -487,10 +678,13 @@ class DashboardAI(models.AbstractModel):
         metrics['ai_us39'] = "Maintien de la patientèle."
         
         html = f"""
-        <ul class='list-unstyled mb-0'>
-            <li class='mb-2'><strong>🩺 Intelligence Clinique :</strong> {metrics.get('nb_alertes_allergies',0)} alertes allergies bloquées par l'IA ce mois-ci.</li>
-            <li class='mb-2'><strong>💊 Prescription :</strong> Médicaments fréquents: {metrics.get('top_medicaments','Aucun')}.</li>
-            <li class='mb-2'><strong>⚠️ Statut Santé :</strong> Score calculé localement à {metrics['health_score']}/100. {metrics.get('health_context','')}</li>
-        </ul>
+        <div class='alert alert-light border rounded-3 mb-0' style='background: #f8fafc; border-left: 4px solid #64748b !important;'>
+            <p class='mb-2 fw-bold text-secondary'><i class='fa fa-calculator me-2'></i>Analyse locale (chiffres modifiés ou en attente d'actualisation IA) :</p>
+            <ul class='list-unstyled mb-0 small text-muted'>
+                <li class='mb-1'><strong>Activité :</strong> {metrics.get('consults_ce_mois', 0)} consultations ce mois. {metrics.get('ai_us35', '')}</li>
+                <li class='mb-1'><strong>Sécurité clinique :</strong> {metrics.get('nb_alertes_allergies', 0)} alertes allergies interceptées.</li>
+                <li class='mb-1'><strong>Impayés :</strong> {metrics.get('nb_factures_impayees', 0)} factures à recouvrer ({metrics.get('impayes_patients', 0)} DT).</li>
+            </ul>
+        </div>
         """
         return {'html': html, 'stats': metrics}

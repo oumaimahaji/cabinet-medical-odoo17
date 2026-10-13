@@ -12,5 +12,27 @@
             <field name="doall" eval="False"/>
             <field name="active" eval="True"/>
         </record>
+        <record id="ir_cron_generate_ai_analysis" model="ir.cron">
+            <field name="name">Cabinet Médical : Analyse IA souveraine (Ollama)</field>
+            <field name="model_id" ref="cabinet_medical.model_cabinet_dashboard_ai"/>
+            <field name="state">code</field>
+            <field name="code">model._generate_ai_analysis()</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="active" eval="True"/>
+        </record>
+        <record id="ir_cron_warmup_ollama" model="ir.cron">
+            <field name="name">Cabinet Médical : Préchauffage IA Ollama (Keep-Alive 60m)</field>
+            <field name="model_id" ref="cabinet_medical.model_cabinet_dashboard_ai"/>
+            <field name="state">code</field>
+            <field name="code">model._warmup_ollama()</field>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="active" eval="True"/>
+        </record>
     </data>
 </odoo>

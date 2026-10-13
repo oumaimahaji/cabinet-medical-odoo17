@@ -8,7 +8,9 @@ import { loadBundle } from "@web/core/assets";
 export class AIDashboard extends Component {
     setup() {
         this.orm = useService("orm");
+        this.notification = useService("notification");
         this.charts = {};
+        this.pollInterval = null;
         
         this.state = useState({
             loadingAI: true,
@@ -16,6 +18,7 @@ export class AIDashboard extends Component {
             aiStats: {},
             isMedecin: false,
             error: false,
+            isRegenerating: false,
         });
 
         onWillStart(async () => {
@@ -31,6 +34,9 @@ export class AIDashboard extends Component {
 
         onWillUnmount(() => {
             this.destroyCharts();
+            if (this.pollInterval) {
+                clearInterval(this.pollInterval);
+            }
         });
     }
 
@@ -55,6 +61,46 @@ export class AIDashboard extends Component {
             this.state.error = true;
         } finally {
             this.state.loadingAI = false;
+        }
+    }
+
+    async regenerateAI() {
+        if (this.state.isRegenerating) return;
+        this.state.isRegenerating = true;
+        this.notification.add("Génération de l'analyse IA lancée en arrière-plan via Ollama...", { type: "info" });
+        try {
+            const res = await this.orm.call("cabinet.dashboard.ai", "action_trigger_ai_regeneration", []);
+            if (res && res.status === "locked") {
+                this.notification.add("Une génération IA est déjà en cours d'exécution.", { type: "warning" });
+                this.state.isRegenerating = false;
+                return;
+            }
+
+            let attempts = 0;
+            const maxAttempts = 18; // 18 x 10s = 180s (3 minutes max)
+            this.pollInterval = setInterval(async () => {
+                attempts++;
+                try {
+                    const status = await this.orm.call("cabinet.dashboard.ai", "check_ai_status", []);
+                    if (!status.is_generating || attempts >= maxAttempts) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                        this.state.isRegenerating = false;
+                        await this.loadAI();
+                        if (!status.is_generating) {
+                            this.notification.add("Nouvelle analyse IA générée avec succès et chargée !", { type: "success" });
+                        }
+                    }
+                } catch (e) {
+                    clearInterval(this.pollInterval);
+                    this.pollInterval = null;
+                    this.state.isRegenerating = false;
+                }
+            }, 10000);
+        } catch (error) {
+            console.error(error);
+            this.state.isRegenerating = false;
+            this.notification.add("Erreur lors de la communication avec le serveur.", { type: "danger" });
         }
     }
 
