@@ -54,10 +54,16 @@ print("\n=== RUNNING test_sprint1_patient_import.py ===")
 suite10 = unittest.defaultTestLoader.discover(test_dir, pattern='test_sprint1_patient_import.py')
 res10 = unittest.TextTestRunner(verbosity=2).run(suite10)
 
+# 11. Run test_tunisian_pharmacology
+print("\n=== RUNNING test_tunisian_pharmacology.py ===")
+suite11 = unittest.defaultTestLoader.discover(test_dir, pattern='test_tunisian_pharmacology.py')
+res11 = unittest.TextTestRunner(verbosity=2).run(suite11)
+
 print("\n================ TOTAL SUMMARY ================")
-total_ran = res1.testsRun + res2.testsRun + res3.testsRun + res4.testsRun + res5.testsRun + res6.testsRun + res7.testsRun + res8.testsRun + res9.testsRun + res10.testsRun
-total_errors = len(res1.errors) + len(res2.errors) + len(res3.errors) + len(res4.errors) + len(res5.errors) + len(res6.errors) + len(res7.errors) + len(res8.errors) + len(res9.errors) + len(res10.errors)
-total_failures = len(res1.failures) + len(res2.failures) + len(res3.failures) + len(res4.failures) + len(res5.failures) + len(res6.failures) + len(res7.failures) + len(res8.failures) + len(res9.failures) + len(res10.failures)
+all_results = [res1, res2, res3, res4, res5, res6, res7, res8, res9, res10, res11]
+total_ran = sum(r.testsRun for r in all_results)
+total_errors = sum(len(r.errors) for r in all_results)
+total_failures = sum(len(r.failures) for r in all_results)
 print(f"Total Unit Tests Ran: {total_ran}, Errors: {total_errors}, Failures: {total_failures}")
 sys.exit(1 if (total_errors or total_failures) else 0)
 

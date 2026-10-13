@@ -412,7 +412,15 @@ INTERACTIONS_MEDICAMENTEUSES = [
 FAMILLES_ANTIBIOTIQUES = {FAMILLE_PENICILLINE, FAMILLE_CEPHALOSPORINE, FAMILLE_MACROLIDE, FAMILLE_QUINOLONE, FAMILLE_SULFAMIDE}
 TERMES_GENERIQUE_ANTIBIO = {"antibiotique", "antibiotiques", "antibio", "antibios", "مضاد حيوي"}
 
+TERMES_GENERIQUES_EXCLUS = {
+    'solution', 'gelule', 'comprime', 'sirop', 'poudre', 'creme', 'pommade',
+    'gouttes', 'suspension', 'injectable', 'ampoule', 'collyre', 'gel',
+    'huile', 'eau', 'acide', 'sel', 'chlorhydrate', 'vitamine', 'extrait',
+    'emulsion', 'lotion', 'spray', 'aerosol', 'pansement'
+}
+
 _BDPM_CACHE = None
+_MULTI_FAMILY_CACHE = None
 _BDPM_LOCK = threading.Lock()
 _TRANSFORMER_MODEL = None
 _SENTENCE_TRANSFORMER_LIB = None
@@ -503,7 +511,7 @@ def _classify_dci(dci):
     # 6. Anti-inflammatoires (AINS), Aspirine & Paracétamol
     if any(a in dci_upper for a in ["ASPIRIN", "ACETYLSALICYL", "ASPEGIC", "KARDEGIC"]):
         return "aspirine"
-    if any(i in dci_upper for i in ["IBUPROFEN", "KETOPROFEN", "DICLOFENAC", "VOLTAREN", "NAPROXEN", "APRANAX", "CELECOXIB", "ETORICOXIB", "MELOXICAM", "PIROXICAM", "INDOMETACIN", "FLURBIPROFEN", "TIAPROFEN", "PROFEN", "ADVIL", "NUROFEN", "AINS"]):
+    if any(i in dci_upper for i in ["IBUPROFEN", "KETOPROFEN", "DICLOFENAC", "VOLTAREN", "NAPROXEN", "APRANAX", "CELECOXIB", "ETORICOXIB", "MELOXICAM", "PIROXICAM", "INDOMETACIN", "FLURBIPROFEN", "TIAPROFEN", "MEFENAM", "NIFLUM", "PROFEN", "ADVIL", "NUROFEN", "AINS"]):
         return "ibuprofene"
     if any(p in dci_upper for p in ["PARACETAMOL", "ACETAMINOPHEN", "DOLIPRANE", "DAFALGAN", "EFFERALGAN"]):
         return "paracetamol"
@@ -558,98 +566,237 @@ def _classify_dci(dci):
 
 
 def _get_bdpm_ontology():
-    """Charge et structure l'ontologie médicamenteuse depuis FAMILLES_ALLERGIES, CLASSES_PHARMACOLOGIQUES et la BDPM (Thread-Safe Singleton)."""
-    global _BDPM_CACHE
-    if _BDPM_CACHE is not None:
+    """Charge et structure l'ontologie médicamenteuse depuis FAMILLES_ALLERGIES, CLASSES_PHARMACOLOGIQUES, DPM Tunisie et BDPM France (Thread-Safe Singleton)."""
+    global _BDPM_CACHE, _MULTI_FAMILY_CACHE
+    if _BDPM_CACHE is not None and _MULTI_FAMILY_CACHE is not None:
         return _BDPM_CACHE
 
     with _BDPM_LOCK:
-        if _BDPM_CACHE is not None:
+        if _BDPM_CACHE is not None and _MULTI_FAMILY_CACHE is not None:
             return _BDPM_CACHE
 
         med_to_family = {}
+        multi_family_map = {}
 
-    # 1. Chargement des familles allergies et synonymes
-    for famille, meds in FAMILLES_ALLERGIES.items():
-        fam_norm = _normalize_text(famille)
-        if fam_norm and len(fam_norm) >= 2:
-            med_to_family[fam_norm] = fam_norm
-            for m in meds:
-                m_norm = _normalize_text(m)
-                if m_norm and len(m_norm) >= 2:
-                    med_to_family[m_norm] = fam_norm
-
-    # 2. Chargement des classes pharmacologiques (interactions & doublons)
-    for classe, meds in CLASSES_PHARMACOLOGIQUES.items():
-        fam_target = 'ibuprofene' if classe == 'ains' else classe
-        fam_norm = _normalize_text(fam_target)
-        if fam_norm and len(fam_norm) >= 2:
-            if fam_norm not in med_to_family:
+        # 1. Chargement des familles allergies et synonymes
+        for famille, meds in FAMILLES_ALLERGIES.items():
+            fam_norm = _normalize_text(famille)
+            if fam_norm and len(fam_norm) >= 2:
                 med_to_family[fam_norm] = fam_norm
-            for m in meds:
-                m_norm = _normalize_text(m)
-                if m_norm and len(m_norm) >= 2 and m_norm not in med_to_family:
-                    med_to_family[m_norm] = fam_norm
+                multi_family_map.setdefault(fam_norm, set()).add(fam_norm)
+                for m in meds:
+                    m_norm = _normalize_text(m)
+                    if m_norm and len(m_norm) >= 2:
+                        med_to_family[m_norm] = fam_norm
+                        multi_family_map.setdefault(m_norm, set()).add(fam_norm)
 
-    # 3. Chargement dynamique depuis les fichiers BDPM
-    try:
-        from odoo.tools.misc import file_path
-        cis_file = file_path('cabinet_medical/data/CIS_bdpm.txt')
-        compo_file = file_path('cabinet_medical/data/CIS_COMPO_bdpm.txt')
-    except Exception:
-        cis_file = get_module_resource('cabinet_medical', 'data', 'CIS_bdpm.txt')
-        compo_file = get_module_resource('cabinet_medical', 'data', 'CIS_COMPO_bdpm.txt')
+        # 2. Chargement des classes pharmacologiques (interactions & doublons)
+        for classe, meds in CLASSES_PHARMACOLOGIQUES.items():
+            fam_target = 'ibuprofene' if classe == 'ains' else classe
+            fam_norm = _normalize_text(fam_target)
+            if fam_norm and len(fam_norm) >= 2:
+                if fam_norm not in med_to_family:
+                    med_to_family[fam_norm] = fam_norm
+                multi_family_map.setdefault(fam_norm, set()).add(fam_norm)
+                for m in meds:
+                    m_norm = _normalize_text(m)
+                    if m_norm and len(m_norm) >= 2:
+                        if m_norm not in med_to_family:
+                            med_to_family[m_norm] = fam_norm
+                        multi_family_map.setdefault(m_norm, set()).add(fam_norm)
 
-    if not cis_file or not compo_file:
+        # 3. Chargement dynamique depuis la liste officielle DPM Tunisie (TSV)
+        try:
+            from odoo.tools.misc import file_path
+            dpm_file = file_path('cabinet_medical/data/liste_amm_tunisie.tsv')
+        except Exception:
+            dpm_file = get_module_resource('cabinet_medical', 'data', 'liste_amm_tunisie.tsv')
+
+        if dpm_file and os.path.exists(dpm_file):
+            try:
+                with open(dpm_file, 'r', encoding='utf-8') as f:
+                    header_line = f.readline()
+                    if header_line:
+                        cols = [c.strip().lower() for c in header_line.strip('\n').split('\t')]
+                        nom_idx = cols.index('nom') if 'nom' in cols else 1
+                        dci_idx = cols.index('dci') if 'dci' in cols else 4
+
+                        for line in f:
+                            parts = line.strip('\n').split('\t')
+                            if len(parts) > max(nom_idx, dci_idx):
+                                nom_comm = parts[nom_idx].strip()
+                                dci_brut = parts[dci_idx].strip()
+                                if not nom_comm or not dci_brut:
+                                    continue
+
+                                # Traitement indépendant de chaque composant multi-DCI
+                                dci_parts = [p.strip() for p in dci_brut.replace('/', '+').split('+') if p.strip()]
+                                fams_by_dci = {}
+                                for single_dci in dci_parts:
+                                    fam = _classify_dci(single_dci)
+                                    if fam:
+                                        fams_by_dci[single_dci] = _normalize_text(fam)
+
+                                if fams_by_dci:
+                                    priorite_clinique = [
+                                        'opioide', 'avk', 'diuretique_epargneur_potassium', 'iec', 'ara2',
+                                        'statine', 'quinolone', 'cephalosporine', 'penicilline', 'macrolide',
+                                        'isrs', 'benzodiazepine', 'corticoide', 'methotrexate', 'lithium',
+                                        'digoxine', 'amiodarone', 'ibuprofene', 'aspirine', 'paracetamol'
+                                    ]
+                                    fam_norm = None
+                                    for p_fam in priorite_clinique:
+                                        if p_fam in fams_by_dci.values():
+                                            fam_norm = p_fam
+                                            break
+                                    if not fam_norm:
+                                        fam_norm = next(iter(fams_by_dci.values()))
+
+                                    nom_norm = _normalize_text(nom_comm)
+                                    if nom_norm and len(nom_norm) >= 2:
+                                        if nom_norm not in med_to_family:
+                                            med_to_family[nom_norm] = fam_norm
+                                        for f_val in fams_by_dci.values():
+                                            multi_family_map.setdefault(nom_norm, set()).add(f_val)
+
+                                    mots = nom_norm.split()
+                                    if mots:
+                                        premier_mot = mots[0]
+                                        if (len(premier_mot) >= 3 and not premier_mot.isdigit() 
+                                            and premier_mot not in TERMES_GENERIQUES_EXCLUS):
+                                            if premier_mot not in med_to_family:
+                                                med_to_family[premier_mot] = fam_norm
+                                            if len(fams_by_dci) == 1 or len(mots) == 1 or premier_mot not in multi_family_map:
+                                                for f_val in fams_by_dci.values():
+                                                    multi_family_map.setdefault(premier_mot, set()).add(f_val)
+
+                                    for single_dci, fam_dci in fams_by_dci.items():
+                                        dci_norm = _normalize_text(single_dci)
+                                        if dci_norm and len(dci_norm) >= 3:
+                                            if dci_norm not in med_to_family:
+                                                med_to_family[dci_norm] = fam_dci
+                                            multi_family_map.setdefault(dci_norm, set()).add(fam_dci)
+            except Exception:
+                pass
+
+        # 4. Chargement dynamique depuis les fichiers BDPM
+        try:
+            from odoo.tools.misc import file_path
+            cis_file = file_path('cabinet_medical/data/CIS_bdpm.txt')
+            compo_file = file_path('cabinet_medical/data/CIS_COMPO_bdpm.txt')
+        except Exception:
+            cis_file = get_module_resource('cabinet_medical', 'data', 'CIS_bdpm.txt')
+            compo_file = get_module_resource('cabinet_medical', 'data', 'CIS_COMPO_bdpm.txt')
+
+        if cis_file and compo_file:
+            try:
+                cis_to_dci = {}
+                with open(compo_file, 'r', encoding='latin-1') as f:
+                    for line in f:
+                        parts = line.strip('\n').split('\t')
+                        if len(parts) >= 4:
+                            cis = parts[0].strip()
+                            dci = parts[3].strip()
+                            type_substance = parts[6].strip() if len(parts) >= 7 else 'SA'
+                            if type_substance == 'SA':
+                                if cis not in cis_to_dci:
+                                    cis_to_dci[cis] = set()
+                                cis_to_dci[cis].add(dci)
+
+                with open(cis_file, 'r', encoding='latin-1') as f:
+                    for line in f:
+                        parts = line.strip('\n').split('\t')
+                        if len(parts) >= 2:
+                            cis = parts[0].strip()
+                            nom_commercial = parts[1].strip()
+
+                            if cis in cis_to_dci:
+                                nom_norm = _normalize_text(nom_commercial)
+                                premier_mot = nom_norm.split()[0] if nom_norm.split() else ""
+                                for single_dci in cis_to_dci[cis]:
+                                    fam = _classify_dci(single_dci)
+                                    if fam:
+                                        fam_norm = _normalize_text(fam)
+                                        if nom_norm and len(nom_norm) >= 2:
+                                            if nom_norm not in med_to_family:
+                                                med_to_family[nom_norm] = fam_norm
+                                            multi_family_map.setdefault(nom_norm, set()).add(fam_norm)
+
+                                        if (premier_mot and len(premier_mot) >= 3 
+                                            and not premier_mot.isdigit() 
+                                            and premier_mot not in TERMES_GENERIQUES_EXCLUS):
+                                            if premier_mot not in med_to_family:
+                                                med_to_family[premier_mot] = fam_norm
+                                            if len(cis_to_dci[cis]) == 1 or len(nom_norm.split()) == 1 or premier_mot not in multi_family_map:
+                                                multi_family_map.setdefault(premier_mot, set()).add(fam_norm)
+
+                                        dci_norm = _normalize_text(single_dci)
+                                        if dci_norm and len(dci_norm) >= 3:
+                                            if dci_norm not in med_to_family:
+                                                med_to_family[dci_norm] = fam_norm
+                                            multi_family_map.setdefault(dci_norm, set()).add(fam_norm)
+            except Exception:
+                pass
+
+        _MULTI_FAMILY_CACHE = MappingProxyType({k: frozenset(v) for k, v in multi_family_map.items()})
         _BDPM_CACHE = MappingProxyType(med_to_family)
         return _BDPM_CACHE
 
-    try:
-        # Mapping CIS -> liste de DCI
-        cis_to_dci = {}
-        with open(compo_file, 'r', encoding='latin-1') as f:
-            for line in f:
-                parts = line.strip('\n').split('\t')
-                if len(parts) >= 4:
-                    cis = parts[0].strip()
-                    dci = parts[3].strip()
-                    type_substance = parts[6].strip() if len(parts) >= 7 else 'SA'
-                    if type_substance == 'SA':
-                        if cis not in cis_to_dci:
-                            cis_to_dci[cis] = set()
-                        cis_to_dci[cis].add(dci)
 
-        # Mapping Nom Commercial -> Famille via DCI
-        with open(cis_file, 'r', encoding='latin-1') as f:
-            for line in f:
-                parts = line.strip('\n').split('\t')
-                if len(parts) >= 2:
-                    cis = parts[0].strip()
-                    nom_commercial = parts[1].strip()
+def _classify_medicament_all_familles(med_text):
+    """
+    Identifie TOUTES les familles pharmacologiques associées à un médicament ou formule multi-DCI.
+    Retourne un ensemble (set) de clés de familles normalisées (ex: {'paracetamol', 'opioide'}).
+    Ne s'arrête pas au premier token et préserve l'ensemble des principes actifs reconnus.
+    """
+    if not med_text:
+        return set()
+    med_norm = _normalize_text(med_text)
+    if not med_norm:
+        return set()
 
-                    if cis in cis_to_dci:
-                        for single_dci in cis_to_dci[cis]:
-                            fam = _classify_dci(single_dci)
-                            if fam:
-                                fam_norm = _normalize_text(fam)
-                                nom_norm = _normalize_text(nom_commercial)
-                                if nom_norm and len(nom_norm) >= 2:
-                                    med_to_family[nom_norm] = fam_norm
+    familles = set()
+    _get_bdpm_ontology()
 
-                                # Indexer également le premier mot (nom de marque seul, ex: "AUGMENTIN")
-                                premier_mot = nom_norm.split()[0] if nom_norm.split() else ""
-                                if premier_mot and len(premier_mot) >= 3 and premier_mot not in med_to_family:
-                                    med_to_family[premier_mot] = fam_norm
-                                # Indexer la DCI elle-même
-                                dci_norm = _normalize_text(single_dci)
-                                if dci_norm and len(dci_norm) >= 3 and dci_norm not in med_to_family:
-                                    med_to_family[dci_norm] = fam_norm
-                                break
-    except Exception:
-        pass
+    # 1. Matching exact dans l'ontologie multi-familles
+    if _MULTI_FAMILY_CACHE and med_norm in _MULTI_FAMILY_CACHE:
+        familles.update(_MULTI_FAMILY_CACHE[med_norm])
 
-    _BDPM_CACHE = MappingProxyType(med_to_family)
-    return _BDPM_CACHE
+    # 2. Découpage sur les séparateurs explicites d'associations multi-DCI (+, /, &, et, avec)
+    morceaux = [m.strip() for m in re.split(r'[\+/&]|(?:\s+et\s+)|(?:\s+avec\s+)', med_norm) if m.strip()]
+    if len(morceaux) > 1:
+        for morceau in morceaux:
+            if _MULTI_FAMILY_CACHE and morceau in _MULTI_FAMILY_CACHE:
+                familles.update(_MULTI_FAMILY_CACHE[morceau])
+            fam_dci = _classify_dci(morceau)
+            if fam_dci:
+                familles.add(_normalize_text(fam_dci))
+            sub_tokens = re.findall(r'[a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+', morceau)
+            for st in sub_tokens:
+                if len(st) >= 3 and st not in TERMES_GENERIQUES_EXCLUS:
+                    if _MULTI_FAMILY_CACHE and st in _MULTI_FAMILY_CACHE:
+                        familles.update(_MULTI_FAMILY_CACHE[st])
+                    fam_dci_st = _classify_dci(st)
+                    if fam_dci_st:
+                        familles.add(_normalize_text(fam_dci_st))
+
+    # 3. Analyse de tous les tokens pour les spécialités avec dosages / formes galéniques
+    tokens = re.findall(r'[a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+', med_norm)
+    for t in tokens:
+        if len(t) >= 3 and t not in TERMES_GENERIQUES_EXCLUS:
+            if _MULTI_FAMILY_CACHE and t in _MULTI_FAMILY_CACHE:
+                familles.update(_MULTI_FAMILY_CACHE[t])
+            fam_dci_tok = _classify_dci(t)
+            if fam_dci_tok:
+                familles.add(_normalize_text(fam_dci_tok))
+
+    # 4. Fallback si aucune famille détectée
+    if not familles:
+        single_fam = _classify_medicament_or_famille(med_text)
+        if single_fam:
+            familles.add(single_fam)
+
+    return familles
 
 
 def _classify_medicament_or_famille(med_text):
@@ -1061,6 +1208,12 @@ class Prescription(models.Model):
                                 best_fuzzy_score = ratio
                                 famille_med = v
 
+            fams_med = _classify_medicament_all_familles(med)
+            if not fams_med and famille_med:
+                fams_med = {famille_med}
+            elif not fams_med:
+                fams_med = {None}
+
             for phrase_allergie in allergies_list_brut:
                 mots_al = phrase_allergie.split()
                 mots_al_utiles = [m for m in mots_al if _normalize_text(m) not in stop_words and len(m) > 2]
@@ -1083,70 +1236,71 @@ class Prescription(models.Model):
                         if famille_allergie:
                             break
 
+                for fam_curr in fams_med:
+                    score_max = 0.0
+                    raison = ""
+                    type_detection = "fuzzy"
 
-                score_max = 0.0
-                raison = ""
-                type_detection = "fuzzy"
-
-                # A. Règles strictes / Exact match
-                for mot_med in med_mots:
-                    for mot_al in allergie_mots:
-                        if mot_med == mot_al or (len(mot_al) > 3 and mot_al in mot_med) or (len(mot_med) > 3 and mot_med in mot_al):
-                            score_max = 1.0
-                            type_detection = "exact"
-                            raison = "Correspondance exacte détectée"
-                            break
-                    if score_max >= 1.0:
-                        break
-
-                # B. Règles d'ontologie par famille pharmacologique
-                if score_max < 1.0 and famille_med:
-                    synonymes_famille = FAMILLES_ALLERGIES.get(famille_med, [])
-                    if famille_allergie and famille_med == famille_allergie:
-                        score_max = 1.0
-                        type_detection = "famille"
-                        raison = f"Alerte Famille : {famille_med.capitalize()}"
-                    elif _normalize_text(famille_med) in allergie_norm:
-                        score_max = 1.0
-                        type_detection = "famille"
-                        raison = f"Appartient à la famille des {famille_med.capitalize()}s"
-                    elif any(_normalize_text(syn) in allergie_norm for syn in synonymes_famille if len(_normalize_text(syn)) >= 3):
-                        score_max = 1.0
-                        type_detection = "famille"
-                        raison = f"Correspondance avec un dérivé de la famille {famille_med.capitalize()}"
-                    elif famille_med in FAMILLES_ANTIBIOTIQUES and any(_normalize_text(t) in allergie_norm for t in TERMES_GENERIQUE_ANTIBIO):
-                        score_max = 1.0
-                        type_detection = "famille"
-                        raison = f"Alerte Classe Générique : Antibiotique (Famille : {famille_med.capitalize()})"
-
-
-                # C. Correspondance Floue (difflib.SequenceMatcher)
-                if score_max < 1.0:
+                    # A. Règles strictes / Exact match
                     for mot_med in med_mots:
                         for mot_al in allergie_mots:
-                            ratio_med = difflib.SequenceMatcher(None, mot_med, mot_al).ratio()
-                            if ratio_med > score_max:
-                                score_max = ratio_med
-                                type_detection = "fuzzy"
-                                raison = "Correction orthographique automatique (Fuzzy matching)"
+                            if mot_med == mot_al or (len(mot_al) > 3 and mot_al in mot_med) or (len(mot_med) > 3 and mot_med in mot_al):
+                                score_max = 1.0
+                                type_detection = "exact"
+                                raison = "Correspondance exacte détectée"
+                                break
+                        if score_max >= 1.0:
+                            break
 
-                    if famille_med:
-                        for mot_al in allergie_mots:
-                            ratio_fam = difflib.SequenceMatcher(None, famille_med, mot_al).ratio()
-                            if ratio_fam > score_max:
-                                score_max = ratio_fam
-                                type_detection = "fuzzy"
-                                raison = f"Correction orthographique sur la famille {famille_med.capitalize()}"
+                    # B. Règles d'ontologie par famille pharmacologique
+                    if score_max < 1.0 and fam_curr:
+                        synonymes_famille = FAMILLES_ALLERGIES.get(fam_curr, [])
+                        if famille_allergie and fam_curr == famille_allergie:
+                            score_max = 1.0
+                            type_detection = "famille"
+                            raison = f"Alerte Famille : {fam_curr.capitalize()}"
+                        elif _normalize_text(fam_curr) in allergie_norm:
+                            score_max = 1.0
+                            type_detection = "famille"
+                            raison = f"Appartient à la famille des {fam_curr.capitalize()}s"
+                        elif any(_normalize_text(syn) in allergie_norm for syn in synonymes_famille if len(_normalize_text(syn)) >= 3):
+                            score_max = 1.0
+                            type_detection = "famille"
+                            raison = f"Correspondance avec un dérivé de la famille {fam_curr.capitalize()}"
+                        elif fam_curr in FAMILLES_ANTIBIOTIQUES and any(_normalize_text(t) in allergie_norm for t in TERMES_GENERIQUE_ANTIBIO):
+                            score_max = 1.0
+                            type_detection = "famille"
+                            raison = f"Alerte Classe Générique : Antibiotique (Famille : {fam_curr.capitalize()})"
 
-                if score_max >= seuil_fuzzy:
-                    alertes_n1.append({
-                        KEY_MEDICAMENT: med,
-                        'allergie': phrase_allergie,
-                        KEY_SCORE: score_max,
-                        KEY_TYPE: type_detection,
-                        KEY_RAISON: raison,
-                        KEY_FAMILLE: famille_med,
-                    })
+                    # C. Correspondance Floue (difflib.SequenceMatcher)
+                    if score_max < 1.0:
+                        for mot_med in med_mots:
+                            for mot_al in allergie_mots:
+                                ratio_med = difflib.SequenceMatcher(None, mot_med, mot_al).ratio()
+                                if ratio_med > score_max:
+                                    score_max = ratio_med
+                                    type_detection = "fuzzy"
+                                    raison = "Correction orthographique automatique (Fuzzy matching)"
+
+                        if fam_curr:
+                            for mot_al in allergie_mots:
+                                ratio_fam = difflib.SequenceMatcher(None, fam_curr, mot_al).ratio()
+                                if ratio_fam > score_max:
+                                    score_max = ratio_fam
+                                    type_detection = "fuzzy"
+                                    raison = f"Correction orthographique sur la famille {fam_curr.capitalize()}"
+
+                    if score_max >= seuil_fuzzy:
+                        dedup_key = (_normalize_text(med), _normalize_text(phrase_allergie), fam_curr)
+                        if not any((_normalize_text(a[KEY_MEDICAMENT]), _normalize_text(a['allergie']), a.get(KEY_FAMILLE)) == dedup_key for a in alertes_n1):
+                            alertes_n1.append({
+                                KEY_MEDICAMENT: med,
+                                'allergie': phrase_allergie,
+                                KEY_SCORE: score_max,
+                                KEY_TYPE: type_detection,
+                                KEY_RAISON: raison,
+                                KEY_FAMILLE: fam_curr or famille_med,
+                            })
 
         return alertes_n1
 
@@ -1296,20 +1450,24 @@ class Prescription(models.Model):
            DANS la même ordonnance (entre tous les médicaments nouvellement prescrits).
         2. Les interactions médicamenteuses dangereuses (Type A) ET doublons thérapeutiques (Type B)
            ENTRE les médicaments prescrits et les traitements actifs du patient (chroniques + ordonnances récentes non expirées).
+        Gère les spécialités et formules multi-DCI en comparant toutes les familles reconnues sans duplication d'alertes.
         """
         alertes = []
         if not medicaments_prescrits:
             return alertes
 
-        # 1. Classification de tous les médicaments de la nouvelle ordonnance
+        # 1. Classification de tous les médicaments de la nouvelle ordonnance (toutes familles conservées)
         meds_prescrits_classes = []
         for med in medicaments_prescrits:
             if not med or not str(med).strip():
                 continue
-            fam = _classify_medicament_or_famille(med)
+            med_clean = str(med).strip()
+            fams = _classify_medicament_all_familles(med_clean)
+            fam = _classify_medicament_or_famille(med_clean)
             meds_prescrits_classes.append({
-                'medicament': str(med).strip(),
-                'famille': fam
+                KEY_MEDICAMENT: med_clean,
+                'familles': fams,
+                KEY_FAMILLE: fam
             })
 
         # 2. Récupération et classification des traitements actifs existants
@@ -1323,12 +1481,15 @@ class Prescription(models.Model):
             m_name = t.get('medicament', '')
             if not m_name or not str(m_name).strip():
                 continue
-            fam = _classify_medicament_or_famille(m_name)
+            m_clean = str(m_name).strip()
+            fams = _classify_medicament_all_familles(m_clean)
+            fam = _classify_medicament_or_famille(m_clean)
             traitements_classes.append({
-                'medicament': str(m_name).strip(),
-                'famille': fam,
-                'source': t.get('source', 'Traitement actif'),
-                'source_type': t.get('source_type', 'inconnu')
+                KEY_MEDICAMENT: m_clean,
+                'familles': fams,
+                KEY_FAMILLE: fam,
+                KEY_SOURCE: t.get('source', 'Traitement actif'),
+                KEY_SOURCE_TYPE: t.get('source_type', 'inconnu')
             })
 
         # Index des interactions connues (clé symétrique ordonnée)
@@ -1349,118 +1510,124 @@ class Prescription(models.Model):
             for j in range(i + 1, n):
                 m1 = meds_prescrits_classes[i]
                 m2 = meds_prescrits_classes[j]
-                fam1 = m1[KEY_FAMILLE]
-                fam2 = m2[KEY_FAMILLE]
+                fams1 = m1['familles'] or (set([m1[KEY_FAMILLE]]) if m1.get(KEY_FAMILLE) else set())
+                fams2 = m2['familles'] or (set([m2[KEY_FAMILLE]]) if m2.get(KEY_FAMILLE) else set())
 
-                if not fam1 or not fam2:
+                if not fams1 or not fams2:
                     continue
 
                 pair_key = tuple(sorted([_normalize_text(m1[KEY_MEDICAMENT]), _normalize_text(m2[KEY_MEDICAMENT])]))
 
-                # 1. Doublon thérapeutique intra-ordonnance (même famille, ex: 2 AINS ou 2 IEC)
-                is_same_family = (fam1 == fam2) or (fam1 in (FAMILLE_AINS, FAMILLE_IBUPROFENE) and fam2 in (FAMILLE_AINS, FAMILLE_IBUPROFENE))
-                if is_same_family:
-                    dedup_key = (TYPE_DOUBLON, pair_key)
-                    if dedup_key not in vus:
-                        vus.add(dedup_key)
-                        fam_nom = _format_family_name(fam1)
-                        alertes.append({
-                            KEY_TYPE: TYPE_DOUBLON,
-                            KEY_TYPE_LABEL: 'Doublon Thérapeutique',
-                            KEY_GRAVITE: GRAVITE_MODEREE,
-                            KEY_MEDICAMENT_A: m1[KEY_MEDICAMENT],
-                            KEY_MEDICAMENT_B: m2[KEY_MEDICAMENT],
-                            KEY_FAMILLE_A: fam1,
-                            KEY_FAMILLE_B: fam2,
-                            KEY_TITRE: f"Doublon thérapeutique : {fam_nom}",
-                            KEY_RAISON: f"Prescription simultanée de deux médicaments de la même famille pharmacologique ('{m1[KEY_MEDICAMENT]}' et '{m2[KEY_MEDICAMENT]}'). Risque de surdosage ou d'effets indésirables cumulatifs sans bénéfice thérapeutique démontré.",
-                            KEY_CONTEXTE: "Même ordonnance",
-                        })
+                for fam1 in fams1:
+                    for fam2 in fams2:
+                        # 1. Doublon thérapeutique intra-ordonnance (même famille, ex: 2 AINS ou 2 Paracétamol)
+                        is_same_family = (fam1 == fam2) or (fam1 in (FAMILLE_AINS, FAMILLE_IBUPROFENE) and fam2 in (FAMILLE_AINS, FAMILLE_IBUPROFENE))
+                        if is_same_family:
+                            fam_canon = FAMILLE_AINS if fam1 in (FAMILLE_AINS, FAMILLE_IBUPROFENE) else fam1
+                            dedup_key = (TYPE_DOUBLON, pair_key, fam_canon)
+                            if dedup_key not in vus:
+                                vus.add(dedup_key)
+                                fam_nom = _format_family_name(fam1)
+                                alertes.append({
+                                    KEY_TYPE: TYPE_DOUBLON,
+                                    KEY_TYPE_LABEL: 'Doublon Thérapeutique',
+                                    KEY_GRAVITE: GRAVITE_MODEREE,
+                                    KEY_MEDICAMENT_A: m1[KEY_MEDICAMENT],
+                                    KEY_MEDICAMENT_B: m2[KEY_MEDICAMENT],
+                                    KEY_FAMILLE_A: fam1,
+                                    KEY_FAMILLE_B: fam2,
+                                    KEY_TITRE: f"Doublon thérapeutique : {fam_nom}",
+                                    KEY_RAISON: f"Prescription simultanée de deux médicaments de la même famille pharmacologique ('{m1[KEY_MEDICAMENT]}' et '{m2[KEY_MEDICAMENT]}'). Risque de surdosage ou d'effets indésirables cumulatifs sans bénéfice thérapeutique démontré.",
+                                    KEY_CONTEXTE: "Même ordonnance",
+                                })
 
-                # 2. Interaction dangereuse intra-ordonnance
-                inter_key = tuple(sorted([fam1, fam2]))
-                if inter_key not in interactions_map:
-                    f1_equiv = FAMILLE_AINS if fam1 == FAMILLE_IBUPROFENE else fam1
-                    f2_equiv = FAMILLE_AINS if fam2 == FAMILLE_IBUPROFENE else fam2
-                    inter_key = tuple(sorted([f1_equiv, f2_equiv]))
+                        # 2. Interaction dangereuse intra-ordonnance
+                        inter_key = tuple(sorted([fam1, fam2]))
+                        if inter_key not in interactions_map:
+                            f1_equiv = FAMILLE_AINS if fam1 == FAMILLE_IBUPROFENE else fam1
+                            f2_equiv = FAMILLE_AINS if fam2 == FAMILLE_IBUPROFENE else fam2
+                            inter_key = tuple(sorted([f1_equiv, f2_equiv]))
 
-                if inter_key in interactions_map:
-                    inter = interactions_map[inter_key]
-                    dedup_key = (TYPE_INTERACTION, pair_key)
-                    if dedup_key not in vus:
-                        vus.add(dedup_key)
-                        alertes.append({
-                            KEY_TYPE: TYPE_INTERACTION,
-                            KEY_TYPE_LABEL: 'Interaction Dangereuse',
-                            KEY_GRAVITE: inter[KEY_GRAVITE],
-                            KEY_MEDICAMENT_A: m1[KEY_MEDICAMENT],
-                            KEY_MEDICAMENT_B: m2[KEY_MEDICAMENT],
-                            KEY_FAMILLE_A: fam1,
-                            KEY_FAMILLE_B: fam2,
-                            KEY_TITRE: inter[KEY_TITRE],
-                            KEY_RAISON: inter[KEY_RAISON],
-                            KEY_CONTEXTE: "Même ordonnance",
-                        })
+                        if inter_key in interactions_map:
+                            inter = interactions_map[inter_key]
+                            dedup_key = (TYPE_INTERACTION, pair_key, inter_key)
+                            if dedup_key not in vus:
+                                vus.add(dedup_key)
+                                alertes.append({
+                                    KEY_TYPE: TYPE_INTERACTION,
+                                    KEY_TYPE_LABEL: 'Interaction Dangereuse',
+                                    KEY_GRAVITE: inter[KEY_GRAVITE],
+                                    KEY_MEDICAMENT_A: m1[KEY_MEDICAMENT],
+                                    KEY_MEDICAMENT_B: m2[KEY_MEDICAMENT],
+                                    KEY_FAMILLE_A: fam1,
+                                    KEY_FAMILLE_B: fam2,
+                                    KEY_TITRE: inter[KEY_TITRE],
+                                    KEY_RAISON: inter[KEY_RAISON],
+                                    KEY_CONTEXTE: "Même ordonnance",
+                                })
 
         # ---------------------------------------------------------------------
         # B. VÉRIFICATION AVEC L'HISTORIQUE & TRAITEMENTS ACTIFS DU PATIENT
         # ---------------------------------------------------------------------
         for m in meds_prescrits_classes:
-            fam_presc = m[KEY_FAMILLE]
-            if not fam_presc:
+            fams_presc = m['familles'] or (set([m[KEY_FAMILLE]]) if m.get(KEY_FAMILLE) else set())
+            if not fams_presc:
                 continue
 
             for t in traitements_classes:
-                fam_trait = t[KEY_FAMILLE]
-                if not fam_trait:
+                fams_trait = t['familles'] or (set([t[KEY_FAMILLE]]) if t.get(KEY_FAMILLE) else set())
+                if not fams_trait:
                     continue
 
                 pair_key = tuple(sorted([_normalize_text(m[KEY_MEDICAMENT]), _normalize_text(t[KEY_MEDICAMENT])]))
 
-                # 1. Doublon thérapeutique avec traitement actif
-                is_same_family = (fam_presc == fam_trait) or (fam_presc in (FAMILLE_AINS, FAMILLE_IBUPROFENE) and fam_trait in (FAMILLE_AINS, FAMILLE_IBUPROFENE))
-                if is_same_family:
-                    dedup_key = (TYPE_DOUBLON, pair_key)
-                    if dedup_key not in vus:
-                        vus.add(dedup_key)
-                        fam_nom = _format_family_name(fam_presc)
-                        alertes.append({
-                            KEY_TYPE: TYPE_DOUBLON,
-                            KEY_TYPE_LABEL: 'Doublon Thérapeutique',
-                            KEY_GRAVITE: GRAVITE_MODEREE,
-                            KEY_MEDICAMENT_A: m[KEY_MEDICAMENT],
-                            KEY_MEDICAMENT_B: t[KEY_MEDICAMENT],
-                            KEY_FAMILLE_A: fam_presc,
-                            KEY_FAMILLE_B: fam_trait,
-                            KEY_TITRE: f"Doublon thérapeutique : {fam_nom}",
-                            KEY_RAISON: f"Le patient prend déjà '{t[KEY_MEDICAMENT]}' ({t[KEY_SOURCE]}) appartenant à la même famille des {fam_nom}. La nouvelle prescription de '{m[KEY_MEDICAMENT]}' entraîne un doublon thérapeutique redondant.",
-                            KEY_CONTEXTE: t[KEY_SOURCE],
-                        })
+                for fam_p in fams_presc:
+                    for fam_tr in fams_trait:
+                        # 1. Doublon thérapeutique avec traitement actif
+                        is_same_family = (fam_p == fam_tr) or (fam_p in (FAMILLE_AINS, FAMILLE_IBUPROFENE) and fam_tr in (FAMILLE_AINS, FAMILLE_IBUPROFENE))
+                        if is_same_family:
+                            fam_canon = FAMILLE_AINS if fam_p in (FAMILLE_AINS, FAMILLE_IBUPROFENE) else fam_p
+                            dedup_key = (TYPE_DOUBLON, pair_key, fam_canon)
+                            if dedup_key not in vus:
+                                vus.add(dedup_key)
+                                fam_nom = _format_family_name(fam_p)
+                                alertes.append({
+                                    KEY_TYPE: TYPE_DOUBLON,
+                                    KEY_TYPE_LABEL: 'Doublon Thérapeutique',
+                                    KEY_GRAVITE: GRAVITE_MODEREE,
+                                    KEY_MEDICAMENT_A: m[KEY_MEDICAMENT],
+                                    KEY_MEDICAMENT_B: t[KEY_MEDICAMENT],
+                                    KEY_FAMILLE_A: fam_p,
+                                    KEY_FAMILLE_B: fam_tr,
+                                    KEY_TITRE: f"Doublon thérapeutique : {fam_nom}",
+                                    KEY_RAISON: f"Le patient prend déjà '{t[KEY_MEDICAMENT]}' ({t[KEY_SOURCE]}) appartenant à la même famille des {fam_nom}. La nouvelle prescription de '{m[KEY_MEDICAMENT]}' entraîne un doublon thérapeutique redondant.",
+                                    KEY_CONTEXTE: t[KEY_SOURCE],
+                                })
 
-                # 2. Interaction dangereuse avec traitement actif
-                inter_key = tuple(sorted([fam_presc, fam_trait]))
-                if inter_key not in interactions_map:
-                    f1_equiv = FAMILLE_AINS if fam_presc == FAMILLE_IBUPROFENE else fam_presc
-                    f2_equiv = FAMILLE_AINS if fam_trait == FAMILLE_IBUPROFENE else fam_trait
-                    inter_key = tuple(sorted([f1_equiv, f2_equiv]))
+                        # 2. Interaction dangereuse avec traitement actif
+                        inter_key = tuple(sorted([fam_p, fam_tr]))
+                        if inter_key not in interactions_map:
+                            f1_equiv = FAMILLE_AINS if fam_p == FAMILLE_IBUPROFENE else fam_p
+                            f2_equiv = FAMILLE_AINS if fam_tr == FAMILLE_IBUPROFENE else fam_tr
+                            inter_key = tuple(sorted([f1_equiv, f2_equiv]))
 
-                if inter_key in interactions_map:
-                    inter = interactions_map[inter_key]
-                    dedup_key = (TYPE_INTERACTION, pair_key)
-                    if dedup_key not in vus:
-                        vus.add(dedup_key)
-                        alertes.append({
-                            KEY_TYPE: TYPE_INTERACTION,
-                            KEY_TYPE_LABEL: 'Interaction Dangereuse',
-                            KEY_GRAVITE: inter[KEY_GRAVITE],
-                            KEY_MEDICAMENT_A: m[KEY_MEDICAMENT],
-                            KEY_MEDICAMENT_B: t[KEY_MEDICAMENT],
-                            KEY_FAMILLE_A: fam_presc,
-                            KEY_FAMILLE_B: fam_trait,
-                            KEY_TITRE: inter[KEY_TITRE],
-                            KEY_RAISON: inter[KEY_RAISON],
-                            KEY_CONTEXTE: t[KEY_SOURCE],
-                        })
+                        if inter_key in interactions_map:
+                            inter = interactions_map[inter_key]
+                            dedup_key = (TYPE_INTERACTION, pair_key, inter_key)
+                            if dedup_key not in vus:
+                                vus.add(dedup_key)
+                                alertes.append({
+                                    KEY_TYPE: TYPE_INTERACTION,
+                                    KEY_TYPE_LABEL: 'Interaction Dangereuse',
+                                    KEY_GRAVITE: inter[KEY_GRAVITE],
+                                    KEY_MEDICAMENT_A: m[KEY_MEDICAMENT],
+                                    KEY_MEDICAMENT_B: t[KEY_MEDICAMENT],
+                                    KEY_FAMILLE_A: fam_p,
+                                    KEY_FAMILLE_B: fam_tr,
+                                    KEY_TITRE: inter[KEY_TITRE],
+                                    KEY_RAISON: inter[KEY_RAISON],
+                                    KEY_CONTEXTE: t[KEY_SOURCE],
+                                })
 
         gravite_ordre = {GRAVITE_MAJEURE: 0, GRAVITE_MODEREE: 1, 'mineure': 2}
         alertes.sort(key=lambda x: gravite_ordre.get(x.get(KEY_GRAVITE, GRAVITE_MODEREE), 9))
@@ -1475,14 +1642,26 @@ class Prescription(models.Model):
         Fusionne les résultats des vérifications Allergies (N1 + N2) et Interactions médicamenteuses / Doublons :
         - Évite les doublons.
         - Consolide les informations et formule un compte-rendu clair et distinct.
-        - Détermine le statut final ('safe' ou 'allergy_risk') et formule les notifications.
+        - Détermine le statut final ('safe', 'allergy_risk' ou 'non_verifie') et formule les notifications.
+        - Distingue rigoureusement :
+            1) Médicament reconnu sans alerte (safe).
+            2) Médicament avec risque avéré (allergy_risk).
+            3) Médicament non reconnu dans les référentiels (non_verifie, sans fausse garantie d'innocuité).
         """
         if not medicaments_prescrits:
-            return 'non_verifie', "Veuillez d'abord ajouter au moins un médicament.", {
-                'title': "IA : Prescription vide",
+            return IA_STATUT_NON_VERIFIE, "Veuillez d'abord ajouter au moins un médicament.", {
+                KEY_TITLE: "IA : Prescription vide",
                 KEY_MESSAGE: "Veuillez ajouter au moins un médicament à l'ordonnance.",
                 KEY_TYPE: LEVEL_WARNING
             }
+
+        # Détection des spécialités non reconnues par les bases pharmacologiques (DPM Tunisie & BDPM France)
+        meds_non_reconnus = []
+        for m in medicaments_prescrits:
+            if m and str(m).strip():
+                fams = _classify_medicament_all_familles(str(m).strip())
+                if not fams:
+                    meds_non_reconnus.append(str(m).strip())
 
         # Dictionnaire pour consolider les alertes allergies par clé normalisée (med, allergie)
         dedup_map_allergies = {}
@@ -1511,12 +1690,30 @@ class Prescription(models.Model):
         has_allergy_risk = bool(dedup_map_allergies)
         has_interaction_risk = bool(interactions)
 
-        # Si aucun risque allergique et aucune interaction
+        # CAS 1 : Aucun risque allergique et aucune interaction détectée
         if not has_allergy_risk and not has_interaction_risk:
+            # Si un ou plusieurs médicaments ne sont pas reconnus, NE PAS conclure à un statut 'safe'
+            if meds_non_reconnus:
+                meds_inconnus_str = ", ".join(meds_non_reconnus)
+                msg = (
+                    "⚠️ Médicament non reconnu : vérification pharmacologique automatique impossible. Une vérification complémentaire est nécessaire.\n\n"
+                    f"• Médicament(s) non répertorié(s) : {meds_inconnus_str}\n"
+                    "• Ce ou ces médicaments ne figurent ni dans la base tunisienne (DPM) ni dans la base française (BDPM) sous cette dénomination ou DCI.\n"
+                    "• En l'absence de données pharmacologiques reconnues, l'innocuité ne peut être confirmée automatiquement.\n"
+                    "• Le praticien doit procéder à une vérification manuelle approfondie avant validation."
+                )
+                return IA_STATUT_NON_VERIFIE, msg, {
+                    KEY_TITLE: "IA : Médicament non reconnu",
+                    KEY_MESSAGE: f"Médicament non reconnu ({meds_inconnus_str}) : vérification automatique impossible.",
+                    KEY_TYPE: LEVEL_WARNING
+                }
+
             msg = (
                 "✅ Aucun risque allergique détecté.\n"
-                "• Niveau 1 (Ontologie BDPM & Fuzzy Matching) : Validé (0 risque)\n"
-                "• Niveau 2 (Analyse Sémantique Transformer NLP) : Validé (0 risque)"
+                "• Niveau 1 (Ontologie BDPM/DPM & Fuzzy Matching) : Validé (0 risque)\n"
+                "• Niveau 2 (Analyse Sémantique Transformer NLP) : Validé (0 risque)\n"
+                "• Interactions & Doublons : Aucun risque détecté parmi les règles répertoriées.\n\n"
+                "ℹ️ Note : Cette vérification automatique est limitée aux familles et interactions répertoriées dans le système et ne garantit pas l'innocuité médicale absolue."
             )
             return IA_STATUT_SAFE, msg, {
                 KEY_TITLE: "IA Locale : Sécurisé",
@@ -1524,8 +1721,18 @@ class Prescription(models.Model):
                 KEY_TYPE: LEVEL_SUCCESS
             }
 
+        # CAS 2 : Alertes confirmées (Allergies ou Interactions)
         sections = []
         noms_meds_risques = set()
+
+        # Section Avertissement Médicaments non reconnus si présents conjointement
+        if meds_non_reconnus:
+            meds_non_rec_str = ", ".join(meds_non_reconnus)
+            sections.append(
+                "⚠️ AVERTISSEMENT — Médicament(s) non reconnu(s) :\n\n"
+                f"• {meds_non_rec_str} : non répertorié(s) dans les bases DPM/BDPM.\n"
+                "  Vérification automatique impossible pour ce(s) produit(s). Une vérification manuelle par le praticien est requise."
+            )
 
         # Section 1 : Risques Allergiques
         if has_allergy_risk:
@@ -1791,7 +1998,7 @@ class Prescription(models.Model):
                 write_vals[FIELD_IS_IA_TEMPORARY_DRAFT] = True
 
         current_fp = self._compute_ia_fingerprint(medicaments, allergies)
-        if self.ia_fingerprint != current_fp or self.ia_statut == IA_STATUT_NON_VERIFIE:
+        if self.ia_fingerprint != current_fp or not self.ia_message:
             statut, message, notif = self._calculate_ia_status()
             write_vals.update({
                 FIELD_IA_STATUT: statut,
@@ -1821,7 +2028,7 @@ class Prescription(models.Model):
                 if meds:
                     fp = record._compute_ia_fingerprint(meds, allergies)
                     # Si l'analyse n'a pas été effectuée avant sauvegarde ou si composition modifiée
-                    if record.ia_fingerprint != fp or record.ia_statut not in (IA_STATUT_SAFE, IA_STATUT_ALLERGY_RISK):
+                    if record.ia_fingerprint != fp or not record.ia_message:
                         statut, message, notif = record._calculate_ia_status()
                         record.with_context(in_ia_check=True).write({
                             FIELD_IA_STATUT: statut,
@@ -1870,7 +2077,7 @@ class Prescription(models.Model):
                         })
                 else:
                     fp = record._compute_ia_fingerprint(meds, allergies)
-                    if record.ia_fingerprint != fp or record.ia_statut not in (IA_STATUT_SAFE, IA_STATUT_ALLERGY_RISK):
+                    if record.ia_fingerprint != fp or not record.ia_message:
                         statut, message, notif = record._calculate_ia_status()
                         write_data: dict[str, Any] = {
                             FIELD_IA_STATUT: statut,
