@@ -56,7 +56,10 @@ class PatientPortal(CustomerPortal):
                 ('patient_id', '=', patient.id),
                 ('state', 'in', ['termine', 'en_attente', 'absent'])
             ])
-            values['ordonnance_count'] = request.env['cabinet.prescription'].search_count([('patient_id', '=', patient.id)])
+            values['ordonnance_count'] = request.env['cabinet.prescription'].search_count([
+                ('patient_id', '=', patient.id),
+                ('state', '=', 'signed')
+            ])
             values['facture_count'] = request.env['cabinet.facture'].search_count([('patient_id', '=', patient.id)])
             
             # Activités récentes combinées
@@ -79,7 +82,10 @@ class PatientPortal(CustomerPortal):
                     'text_color': '#06b6d4'
                 })
                 
-            prescriptions = request.env['cabinet.prescription'].search([('patient_id', '=', patient.id)], order='date_prescription desc, id desc', limit=3)
+            prescriptions = request.env['cabinet.prescription'].search([
+                ('patient_id', '=', patient.id),
+                ('state', '=', 'signed')
+            ], order='date_prescription desc, id desc', limit=3)
             for p in prescriptions:
                 med_str = f" : {p.medicaments_resume}" if p.medicaments_resume and p.medicaments_resume != '—' else ""
                 activities.append({
@@ -228,7 +234,7 @@ class PatientPortal(CustomerPortal):
             return request.redirect('/my')
 
         Prescription = request.env['cabinet.prescription']
-        domain = [('patient_id', '=', patient.id)]
+        domain = [('patient_id', '=', patient.id), ('state', '=', 'signed')]
 
         searchbar_sortings = {
             'date': {'label': 'Date', 'order': 'date_prescription desc'},
@@ -267,7 +273,8 @@ class PatientPortal(CustomerPortal):
 
         prescription = request.env['cabinet.prescription'].search([
             ('id', '=', ordo_id),
-            ('patient_id', '=', patient.id)
+            ('patient_id', '=', patient.id),
+            ('state', '=', 'signed')
         ], limit=1)
 
         if not prescription:

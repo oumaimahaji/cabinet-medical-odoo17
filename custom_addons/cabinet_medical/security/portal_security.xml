@@ -38,11 +38,11 @@
             <field name="perm_unlink" eval="False"/>
         </record>
 
-        <!-- Règle de sécurité pour cabinet.prescription -->
+        <!-- Règle de sécurité pour cabinet.prescription (Uniquement ordonnances signées) -->
         <record id="rule_cabinet_prescription_portal" model="ir.rule">
-            <field name="name">Prescriptions Portal: Own Records Only</field>
+            <field name="name">Prescriptions Portal: Own Signed Records Only</field>
             <field name="model_id" ref="cabinet_medical.model_cabinet_prescription"/>
-            <field name="domain_force">[('patient_id.user_id', '=', user.id)]</field>
+            <field name="domain_force">[('patient_id.user_id', '=', user.id), ('state', '=', 'signed')]</field>
             <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -50,11 +50,11 @@
             <field name="perm_unlink" eval="False"/>
         </record>
 
-        <!-- Règle de sécurité pour cabinet.prescription.line -->
+        <!-- Règle de sécurité pour cabinet.prescription.line (Uniquement ordonnances signées) -->
         <record id="rule_cabinet_prescription_line_portal" model="ir.rule">
-            <field name="name">Lignes Prescription Portal: Own Records Only</field>
+            <field name="name">Lignes Prescription Portal: Own Signed Records Only</field>
             <field name="model_id" ref="cabinet_medical.model_cabinet_prescription_line"/>
-            <field name="domain_force">[('prescription_id.patient_id.user_id', '=', user.id)]</field>
+            <field name="domain_force">[('prescription_id.patient_id.user_id', '=', user.id), ('prescription_id.state', '=', 'signed')]</field>
             <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
