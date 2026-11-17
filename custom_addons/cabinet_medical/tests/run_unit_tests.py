@@ -4,67 +4,47 @@ import sys
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
-# 1. Run test_bdpm_ontology
-print("=== RUNNING test_bdpm_ontology.py ===")
-suite1 = unittest.defaultTestLoader.discover(test_dir, pattern='test_bdpm_ontology.py')
-res1 = unittest.TextTestRunner(verbosity=2).run(suite1)
 
-# 2. Run test_prescription_ia
-print("\n=== RUNNING test_prescription_ia.py ===")
-suite2 = unittest.defaultTestLoader.discover(test_dir, pattern='test_prescription_ia.py')
-res2 = unittest.TextTestRunner(verbosity=2).run(suite2)
+def _is_odoo_integration_test(filepath):
+    """Détecte les fichiers utilisant TransactionCase/HttpCase (exécutés via odoo-bin --test-enable)."""
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+            head = f.read(2048)
+        return 'odoo.tests.common' in head or 'TransactionCase' in head
+    except OSError:
+        return False
 
-# 3. Run test_no_show_pipeline
-print("\n=== RUNNING test_no_show_pipeline.py ===")
-suite3 = unittest.defaultTestLoader.discover(test_dir, pattern='test_no_show_pipeline.py')
-res3 = unittest.TextTestRunner(verbosity=2).run(suite3)
 
-# 4. Run test_res_users
-print("\n=== RUNNING test_res_users.py ===")
-suite4 = unittest.defaultTestLoader.discover(test_dir, pattern='test_res_users.py')
-res4 = unittest.TextTestRunner(verbosity=2).run(suite4)
+# Découverte dynamique : tous les fichiers test_*.py du dossier, triés pour
+# garantir un ordre d'exécution reproductible.
+test_files = sorted([
+    f for f in os.listdir(test_dir)
+    if f.startswith("test_") and f.endswith(".py")
+])
 
-# 5. Run test_cnam_groupe1
-print("\n=== RUNNING test_cnam_groupe1.py ===")
-suite5 = unittest.defaultTestLoader.discover(test_dir, pattern='test_cnam_groupe1.py')
-res5 = unittest.TextTestRunner(verbosity=2).run(suite5)
-
-# 6. Run test_cnam_groupe2
-print("\n=== RUNNING test_cnam_groupe2.py ===")
-suite6 = unittest.defaultTestLoader.discover(test_dir, pattern='test_cnam_groupe2.py')
-res6 = unittest.TextTestRunner(verbosity=2).run(suite6)
-
-# 7. Run test_cnam_groupe3
-print("\n=== RUNNING test_cnam_groupe3.py ===")
-suite7 = unittest.defaultTestLoader.discover(test_dir, pattern='test_cnam_groupe3.py')
-res7 = unittest.TextTestRunner(verbosity=2).run(suite7)
-
-# 8. Run test_cnam_groupe4
-print("\n=== RUNNING test_cnam_groupe4.py ===")
-suite8 = unittest.defaultTestLoader.discover(test_dir, pattern='test_cnam_groupe4.py')
-res8 = unittest.TextTestRunner(verbosity=2).run(suite8)
-
-# 9. Run test_unique_consultation_facture
-print("\n=== RUNNING test_unique_consultation_facture.py ===")
-suite9 = unittest.defaultTestLoader.discover(test_dir, pattern='test_unique_consultation_facture.py')
-res9 = unittest.TextTestRunner(verbosity=2).run(suite9)
-
-# 10. Run test_sprint1_patient_import
-print("\n=== RUNNING test_sprint1_patient_import.py ===")
-suite10 = unittest.defaultTestLoader.discover(test_dir, pattern='test_sprint1_patient_import.py')
-res10 = unittest.TextTestRunner(verbosity=2).run(suite10)
-
-# 11. Run test_tunisian_pharmacology
-print("\n=== RUNNING test_tunisian_pharmacology.py ===")
-suite11 = unittest.defaultTestLoader.discover(test_dir, pattern='test_tunisian_pharmacology.py')
-res11 = unittest.TextTestRunner(verbosity=2).run(suite11)
+all_results = []
+load_errors = 0
+for test_file in test_files:
+    full_path = os.path.join(test_dir, test_file)
+    if _is_odoo_integration_test(full_path):
+        print(f"\n=== SKIPPING {test_file} (tests d'intégration Odoo -> exécuter avec odoo-bin --test-enable) ===")
+        continue
+    print(f"\n=== RUNNING {test_file} ===")
+    suite = unittest.defaultTestLoader.discover(test_dir, pattern=test_file)
+    # Vérifier que la suite contient au moins un test chargé (détecte les
+    # erreurs d'import silencieuses).
+    if suite.countTestCases() == 0:
+        print(f"  [AVERTISSEMENT] Aucun test découvert dans {test_file}")
+        load_errors += 1
+    res = unittest.TextTestRunner(verbosity=2).run(suite)
+    all_results.append(res)
 
 print("\n================ TOTAL SUMMARY ================")
-all_results = [res1, res2, res3, res4, res5, res6, res7, res8, res9, res10, res11]
 total_ran = sum(r.testsRun for r in all_results)
 total_errors = sum(len(r.errors) for r in all_results)
 total_failures = sum(len(r.failures) for r in all_results)
-print(f"Total Unit Tests Ran: {total_ran}, Errors: {total_errors}, Failures: {total_failures}")
-sys.exit(1 if (total_errors or total_failures) else 0)
-
-
+print(
+    f"Total Unit Tests Ran: {total_ran}, "
+    f"Errors: {total_errors}, Failures: {total_failures}"
+)
+sys.exit(1 if (total_errors or total_failures or load_errors) else 0)

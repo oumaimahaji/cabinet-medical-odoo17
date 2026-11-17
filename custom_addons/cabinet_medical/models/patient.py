@@ -673,63 +673,76 @@ class Patient(models.Model):
 
     @api.model
     def _cron_check_cnam_expiration(self):
-        """Cron scheduler method to alert patients and secretary on CNAM expiration with AI assistance."""
-        from datetime import date, timedelta
+        """Cron scheduler method to alert patients on CNAM expiration (J, J+2, J+7) without duplicates."""
+        from datetime import date, datetime, time, timedelta
         today = date.today()
         two_days_later = today + timedelta(days=2)
         seven_days_later = today + timedelta(days=7)
-        
-        # 1. Patients expirés aujourd'hui ou déjà expirés récemment
+        Notification = self.env[NOTIFICATION_MODEL]
+
+        # 1. Patients expirés aujourd'hui ou déjà expirés
         expiring_today = self.search([
             ('is_cnam', '=', True),
             ('date_validite_cnam', '<=', today)
         ])
         for patient in expiring_today:
-            # Notification portail pour le patient
-            self.env[NOTIFICATION_MODEL].create_notification(
-                patient_id=getattr(patient, 'id'),
-                title="Couverture CNAM expirée",
-                message="Votre couverture CNAM a expiré. Veuillez contacter le secrétariat et renouveler vos droits auprès de votre caisse.",
-                notif_type='cnam',
-                res_url='/my/couverture'
-            )
-            
-            # Notification interne pour la secrétaire médicale avec analyse IA
-            contexte = f"Patient: {patient.name}, Date validite CNAM expiree le {patient.date_validite_cnam}, Filiere: {patient.filiere_cnam or 'Non specifiee'}, Regime: {patient.regime_cnam or 'Non specifie'}"
-            default_msg = f"La carte CNAM de {patient.name} est expirée ({patient.date_validite_cnam}). Prévenez le patient pour qu'il fournisse son attestation de renouvellement."
-            ia_msg = self.env[FACTURE_MODEL]._get_llm_alert("Alerte expiration CNAM", contexte, default_msg)
-            
-            patient.message_post(
-                body=f"⚠️ <strong>Alerte Secrétariat (IA CNAM) :</strong><br/>{ia_msg}",
-                message_type='notification',
-                subtype_xmlid='mail.mt_note'
-            )
-            
+            title_exp = "Couverture CNAM expirée"
+            expiry_start = datetime.combine(patient.date_validite_cnam, time.min) if patient.date_validite_cnam else datetime.combine(today, time.min)
+            already_notified = Notification.search_count([
+                ('patient_id', '=', patient.id),
+                ('type', '=', 'cnam'),
+                ('title', '=', title_exp),
+                ('date', '>=', fields.Datetime.to_string(expiry_start)),
+            ])
+            if not already_notified:
+                Notification.create_notification(
+                    patient_id=getattr(patient, 'id'),
+                    title=title_exp,
+                    message="Votre couverture CNAM a expiré. Veuillez contacter le secrétariat et renouveler vos droits auprès de votre caisse.",
+                    notif_type='cnam',
+                    res_url='/my/couverture'
+                )
+                if hasattr(patient, 'message_post'):
+                    contexte = f"Patient: {patient.name}, Date validite CNAM expiree le {patient.date_validite_cnam}, Filiere: {patient.filiere_cnam or 'Non specifiee'}, Regime: {patient.regime_cnam or 'Non specifie'}"
+                    default_msg = f"La carte CNAM de {patient.name} est expirée ({patient.date_validite_cnam}). Prévenez le patient pour qu'il fournisse son attestation de renouvellement."
+                    ia_msg = self.env[FACTURE_MODEL]._get_llm_alert("Alerte expiration CNAM", contexte, default_msg)
+                    patient.message_post(
+                        body=f"⚠️ <strong>Alerte Secrétariat (IA CNAM) :</strong><br/>{ia_msg}",
+                        message_type='notification',
+                        subtype_xmlid='mail.mt_note'
+                    )
+
         # 2. Patients dont la carte expire dans exactement 2 jours (alerte imminente)
         expiring_2_days = self.search([
             ('is_cnam', '=', True),
             ('date_validite_cnam', '=', two_days_later)
         ])
         for patient in expiring_2_days:
-            # Notification portail pour le patient (anticipation à J-2)
-            self.env[NOTIFICATION_MODEL].create_notification(
-                patient_id=getattr(patient, 'id'),
-                title="Expiration CNAM imminente (dans 2 jours)",
-                message=f"Attention : Votre couverture CNAM expire dans 2 jours (le {patient.date_validite_cnam.strftime(DATE_FORMAT)}). Pensez à renouveler vos droits dès maintenant.",
-                notif_type='cnam',
-                res_url='/my/couverture'
-            )
-            
-            # Alerte Secrétaire avec recommandation IA
-            contexte_2j = f"Patient: {patient.name}, Expiration CNAM dans 2 jours ({patient.date_validite_cnam}), Filiere: {patient.filiere_cnam or 'Non specifiee'}"
-            default_msg_2j = f"La carte CNAM de {patient.name} arrive à expiration dans 2 jours ({patient.date_validite_cnam.strftime(DATE_FORMAT)}). Veuillez lui rappeler d'entamer le renouvellement."
-            ia_msg_2j = self.env[FACTURE_MODEL]._get_llm_alert("Expiration CNAM imminente", contexte_2j, default_msg_2j)
-            
-            patient.message_post(
-                body=f"⏳ <strong>Alerte Secrétariat - Expiration dans 2 jours (IA) :</strong><br/>{ia_msg_2j}",
-                message_type='notification',
-                subtype_xmlid='mail.mt_note'
-            )
+            title_2j = "Expiration CNAM imminente (dans 2 jours)"
+            date_str_2j = patient.date_validite_cnam.strftime(DATE_FORMAT)
+            already_notified = Notification.search_count([
+                ('patient_id', '=', patient.id),
+                ('type', '=', 'cnam'),
+                ('title', '=', title_2j),
+                ('message', 'ilike', date_str_2j),
+            ])
+            if not already_notified:
+                Notification.create_notification(
+                    patient_id=getattr(patient, 'id'),
+                    title=title_2j,
+                    message=f"Attention : Votre couverture CNAM expire dans 2 jours (le {date_str_2j}). Pensez à renouveler vos droits dès maintenant.",
+                    notif_type='cnam',
+                    res_url='/my/couverture'
+                )
+                if hasattr(patient, 'message_post'):
+                    contexte_2j = f"Patient: {patient.name}, Expiration CNAM dans 2 jours ({patient.date_validite_cnam}), Filiere: {patient.filiere_cnam or 'Non specifiee'}"
+                    default_msg_2j = f"La carte CNAM de {patient.name} arrive à expiration dans 2 jours ({date_str_2j}). Veuillez lui rappeler d'entamer le renouvellement."
+                    ia_msg_2j = self.env[FACTURE_MODEL]._get_llm_alert("Expiration CNAM imminente", contexte_2j, default_msg_2j)
+                    patient.message_post(
+                        body=f"⏳ <strong>Alerte Secrétariat - Expiration dans 2 jours (IA) :</strong><br/>{ia_msg_2j}",
+                        message_type='notification',
+                        subtype_xmlid='mail.mt_note'
+                    )
 
         # 3. Notification préventive à 7 jours
         expiring_soon = self.search([
@@ -737,13 +750,22 @@ class Patient(models.Model):
             ('date_validite_cnam', '=', seven_days_later)
         ])
         for patient in expiring_soon:
-            self.env[NOTIFICATION_MODEL].create_notification(
-                patient_id=getattr(patient, 'id'),
-                title="Expiration CNAM proche (7 jours)",
-                message=f"Votre couverture CNAM expire dans 7 jours (le {patient.date_validite_cnam.strftime(DATE_FORMAT)}). Pensez à renouveler vos droits.",
-                notif_type='cnam',
-                res_url='/my/couverture'
-            )
+            title_7j = "Expiration CNAM proche (7 jours)"
+            date_str_7j = patient.date_validite_cnam.strftime(DATE_FORMAT)
+            already_notified = Notification.search_count([
+                ('patient_id', '=', patient.id),
+                ('type', '=', 'cnam'),
+                ('title', '=', title_7j),
+                ('message', 'ilike', date_str_7j),
+            ])
+            if not already_notified:
+                Notification.create_notification(
+                    patient_id=getattr(patient, 'id'),
+                    title=title_7j,
+                    message=f"Votre couverture CNAM expire dans 7 jours (le {date_str_7j}). Pensez à renouveler vos droits.",
+                    notif_type='cnam',
+                    res_url='/my/couverture'
+                )
 
     @api.model
     def get_secretary_cnam_alerts(self):
